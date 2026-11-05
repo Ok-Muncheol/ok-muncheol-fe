@@ -6,11 +6,25 @@
 검토·승인하는 업무 화면이다. 신입 담당자는 같은 근거를 따라가며 학습하고, 심사 책임자는 판정 상태와 수정·승인 이력을 확인한다.
 
 - 설계 원본: [AI 기반 자동차보험 보상 의사결정 지원 솔루션 설계 초안](https://app.notion.com/p/40eada0d3ad7816d91b0c73930ba2455) — 2026-11-05 확인
+- 아키텍처 이미지: [v7 원본·최신 텍스트와의 대조](https://github.com/Ok-Muncheol/ok-muncheol-be#아키텍처-원본과-적용-기준)
 - 백엔드·계약 제안: [ok-muncheol-be](https://github.com/Ok-Muncheol/ok-muncheol-be)
 - 역할별 작업·완료 기준: [TEAM.md](TEAM.md)
 
 현재는 **문서 초기화 단계**다. 이 저장소에는 README.md와 TEAM.md만 있으며, 아래 화면·디렉터리·API·명령은
 구현 계획이다. Next.js 앱, API 클라이언트, 목업, CI, 배포는 아직 없다.
+
+## 아키텍처 참고
+
+![전체 아키텍처 v7 — 확장 기능 포함](https://raw.githubusercontent.com/Ok-Muncheol/ok-muncheol-be/main/docs/architecture/accident-review-architecture-v7.png)
+
+로컬 `ok-muncheol/서비스아키텍처/accident-review-architecture-v7.png`를 2026-11-05 직접 확인했다.
+그림은 확장 기능까지 포함한다. 선행 MVP에서는 사실 카드 확인→판단·검증→과실비율 보고서까지 구현하며,
+손해액·보험금·약관·구상·질의응답은 후속 단계다. 범위와 상세 규칙은 최신 Notion 텍스트를 적용한다.
+
+그림의 ‘확신도 0.7 미만’은 제안값이다. FE는 임계값을 박아 확인 필드를 자체 결정하지 않고 BE가 반환한
+필드별 확인 상태·질문을 표시한다. ‘9항목 보고서’도 MVP에서는 1~7번만 제공하며, 8~9번은 자차 확장에서 추가한다.
+서류 추가에 따른 공식 새 버전 생성과, 점선으로 표시된 what-if 가정 실행을 화면에서도 구분한다.
+그림과 최신 텍스트의 나머지 차이는 [BE 적용 기준](https://github.com/Ok-Muncheol/ok-muncheol-be#아키텍처-원본과-적용-기준)에 정리했다.
 
 ## 범위와 사용자 흐름
 
