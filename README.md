@@ -10,8 +10,12 @@
 - 백엔드·계약 제안: [ok-muncheol-be](https://github.com/Ok-Muncheol/ok-muncheol-be)
 - 역할별 작업·완료 기준: [TEAM.md](TEAM.md)
 
-현재는 **문서 초기화 단계**다. 이 저장소에는 README.md와 TEAM.md만 있으며, 아래 화면·디렉터리·API·명령은
-구현 계획이다. Next.js 앱, API 클라이언트, 목업, CI, 배포는 아직 없다.
+현재는 **A–D 담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약/클라이언트
+인터페이스, `src/fixtures/`에 BE 생성 합성 양식이 있다. 일부 컴포넌트는 값을 표시하지만 완성 업무 화면은 아니다.
+Next.js 앱·라우터·인증·실제 요청·상태 저장·실행 가능한 목업·CI·배포는 아직 없다.
+
+**개발 마감: 2026-11-13(금).** 11/12 기능 통합·11/13 최종 검수 목표다.
+날짜별 합류 기준은 [TEAM.md](TEAM.md)와 [공통 일정](https://github.com/Ok-Muncheol/ok-muncheol-be/blob/main/docs/development-plan.md)을 따른다.
 
 ## 아키텍처 참고
 
@@ -83,7 +87,8 @@ BE에서 관리한다. 실제 변수명과 `.env.example`은 앱 부트스트랩
 
 ## 화면·경로 제안
 
-**아래 경로는 아직 존재하지 않는다.** 담당자용 데스크톱 업무 화면을 우선 설계하고 좁은 화면에서도
+**아래 URL 라우트는 아직 없다.** 역할별 컴포넌트 초안은 생성했으며 `src/app/README.md`에 연결 계획이 있다.
+담당자용 데스크톱 업무 화면을 우선 설계하고 좁은 화면에서도
 핵심 정보·확인·저장이 가능하도록 한다. lumi의 모바일 웰니스 화면 구성을 그대로 가져오지 않는다.
 
 | 경로 제안 | 화면과 주요 동작 |
@@ -98,15 +103,20 @@ BE에서 관리한다. 실제 변수명과 `.env.example`은 앱 부트스트랩
 
 ```text
 src/
-  app/                  라우팅·레이아웃·로그인·사건 화면
-  features/cases/       접수·목록·작업 상태
-  features/facts/       영상·근거 프레임·필드 편집·확정
-  features/evidence/    도표·수정요소·결정례·원문 보기
-  features/reports/     질문·판정·보고서·승인·버전
-  lib/api/              BE 계약 타입·클라이언트·오류·복원
-  lib/supabase/         인증·업로드·Realtime
-  fixtures/             비식별 계약 견본
-  components/           공통 UI·상태·접근성
+  app/                  D 통합: 라우트 구성 계획 (앱 미구현)
+  features/cases/       A: 접수·영상/수동 입력
+  features/facts/       A: 영상·사실 카드·담당자 확인
+  features/judgment/    B: 판단·검증 3겹·구분 질문
+  features/qa/          B: 근거 질의응답·what-if
+  features/evidence/    C: 인정기준·결정례·약관/원문
+  features/knowledge/   C: 개발용 코퍼스 검수 미리보기
+  features/calculation/ D: 손해액·보험금
+  features/claims/      D: 구상 청구 패키지
+  features/reports/     D: 검토 초안·승인·버전
+  lib/api/              D 통합·전원: 수동 계약 타입·클라이언트 인터페이스
+  lib/supabase/         A 구현·D 통합: 인증/업로드/Realtime 계획
+  fixtures/             BE 생성 합성 양식 (시연/평가 정답 아님)
+  components/           공통 상태 표시 초안
 ```
 
 ## BE 연동 계약 제안
@@ -152,7 +162,8 @@ Realtime 연결이 끊겨도 업로드·분석·판단을 자동 중복 생성�
 
 ## 개발 시작과 검증
 
-현재 가능한 작업은 문서 확인과 계약 논의다.
+현재 가능한 작업은 역할별 타입·컴포넌트 본문 작성과 계약 검토다. `src/lib/api/client.ts`는 요청을 보내지 않는
+인터페이스 초안이다. `src/fixtures/contracts.json`은 BE 생성 양식이며 실행 가능한 목업 시나리오가 아니다.
 
 ```bash
 git clone https://github.com/Ok-Muncheol/ok-muncheol-fe.git
