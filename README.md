@@ -87,6 +87,47 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — 아직 읽는 코드는 없다). 비공개 사건 데이터나
 서명 URL을 문서·견본·추적 로그에 넣지 않는다.
 
+## 디자인 시스템: 청람
+
+보상 담당자가 데스크톱에서 하루 종일 쓰는 업무 화면이라 **푸른색 한 가지를 주요 색**으로 두고, 나머지는 회색 면·선·글자로만
+구성한다(삼성화재 약관을 근거로 쓰는 솔루션의 인상에 맞춘다). 상태는 색 이름이 아니라 뜻으로 고르는 여섯 톤으로 표시한다.
+색 세트는 라이트·다크 둘이고 다크는 OS 설정(`prefers-color-scheme`)을 따른다. 글꼴은 본문 Noto Sans KR, 숫자·ID는 IBM Plex Mono다.
+`/dev`에서 토큰과 컨트롤을 한 화면으로 본다.
+
+토큰은 `src/app/globals.css`에 있다. 값은 `--ok-*` 변수에 두고 아래 Tailwind 클래스로 쓴다. 색 토큰은 `bg-` · `text-` · `border-` 어디에나 붙는다.
+
+| 쓰임 | 클래스 |
+| --- | --- |
+| 화면 바탕 · 카드/표/머리글 · 표 머리줄과 비활성 입력 | `bg-page` · `bg-surface` · `bg-surface-muted` |
+| 글자 · 보조 글자 · placeholder/빈 값 | `text-ink` · `text-ink-muted` · `text-ink-faint` |
+| 구분선 · 입력과 보조 버튼 테두리 | `border-line` · `border-line-strong` |
+| 입력 바탕 | `bg-control` |
+| 주요 버튼 · 현재 메뉴 · 링크 | `bg-primary` · `text-on-primary` · `hover:bg-primary-hover` · `text-primary` |
+| 선택 · quiet 버튼 hover | `bg-primary-soft` · `text-on-primary-soft` |
+| 상태 톤(배지·안내 상자) | `bg-{info,success,warning,danger,model}-soft` + `text-on-{톤}-soft`, 점·테두리는 `bg-{톤}` · `border-{톤}` |
+| 그림자 | `shadow-card`(카드) · `shadow-raised`(팝오버·드롭다운) |
+| 반경 | `rounded-card` 12 · `rounded-control` 8(버튼·입력) · `rounded-badge` 6 (px) |
+| 글자 크기 | `text-title` 22 · `text-heading` 17 · `text-body` 14 · `text-caption` 12 (px) |
+| 글꼴 | 기본 `font-sans`, 사건 ID·금액·버전·비율은 `font-mono tabular-nums` |
+
+| 톤 | 뜻 | 예 |
+| --- | --- | --- |
+| neutral | 아직 시작하지 않았거나 초안 | 대기 · 초안 |
+| info | 진행 중이거나 다음 단계로 갈 수 있음 | 처리 중 · 초안 작성 가능 · 검토 초안 안내 |
+| success | 끝났고 사람이 확인함 | 작업 완료 · 담당자 확인 · 승인 |
+| warning | 사람이 봐야 다음으로 감 | 확인 대기 · 추가 확인 필요 · 판단 보류 |
+| danger | 실패했거나 충돌함 | 작업 실패 · 버전 충돌 · 범위 밖 |
+| model | 모델이 낸 값(담당자 값과 구분) | 모델 원값 · 확신도 |
+
+공통 컨트롤은 `src/ui/controls.tsx`에 있다 — `Button`·`ButtonLink`(primary·secondary·quiet·danger, md·sm), `Badge`·`Notice`(톤),
+`PageHeader`·`Card`·`DescriptionList`/`DescriptionRow`, `Field`·`Input`·`Select`·`Textarea`, `Table`·`Th`·`Td`, `Spinner`·`Empty`.
+앱 틀(머리글·주 메뉴)은 `src/ui/app-shell.tsx`이고 `/login`은 머리글 없이 그린다. 작업 진행·판정 상태는 `src/components/status-label.tsx`가 톤을 정한다.
+
+- Tailwind 기본 팔레트(`bg-gray-100` 등)는 지웠다. 고정 색은 다크 모드에서 그대로 남기 때문이다. 영상 프레임 위 오버레이용 `white`·`black`만 남겼다.
+- 두 세트 모두 WCAG AA 대비(글자 4.5:1, 표시선·컨트롤 테두리·상태 점 3:1)를 넘긴다. 새 토큰은 두 세트에 모두 넣고 같은 기준으로 확인한다.
+- 키보드 초점은 `globals.css`가 모든 컨트롤에 2px 고리로 둔다(`:focus-visible`). 마우스 클릭에는 보이지 않는다.
+- 다크를 보려면 브라우저 개발자 도구 Rendering 패널에서 `prefers-color-scheme: dark`를 켠다.
+
 ## 화면·경로 제안
 
 **아래 라우트는 빈 페이지 골격만 있다**(`/cases/new`만 `CaseIntake`를 붙였다). 컴포넌트 연결 계획은 `src/app/README.md`에 있다.
