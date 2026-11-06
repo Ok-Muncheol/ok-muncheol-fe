@@ -12,7 +12,7 @@ const routes = [
 export default function Home() {
   return (
     <>
-      <PageHeader title="옥문철" description="과실비율 검토 초안 — 화면 골격만 있고 기능은 준비 중입니다." />
+      <PageHeader title="OK문철" description="과실비율 검토 초안 — 화면 골격만 있고 기능은 준비 중입니다." />
       <Card title="화면">
         <ul className="flex flex-col gap-2">
           {routes.map((route) => (
