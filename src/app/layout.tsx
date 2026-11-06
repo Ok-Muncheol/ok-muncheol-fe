@@ -9,7 +9,7 @@ const notoSansKr = Noto_Sans_KR({ subsets: ["latin"], variable: "--font-noto-san
 const ibmPlexMono = IBM_Plex_Mono({ weight: ["400", "600"], subsets: ["latin"], variable: "--font-ibm-plex-mono" });
 
 export const metadata: Metadata = {
-  title: "옥문철",
+  title: "OK문철",
   description: "AI 기반 자동차보험 보상 의사결정 지원 — 과실비율 검토 초안",
 };
 

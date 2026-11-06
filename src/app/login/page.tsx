@@ -7,9 +7,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <div className="mb-6 flex items-center gap-2 text-heading font-bold">
           <span aria-hidden className="flex size-7 items-center justify-center rounded-control bg-primary text-caption text-on-primary">
-            옥
+            OK
           </span>
-          옥문철
+          OK문철
         </div>
         <h1 className="text-title font-bold">담당자 로그인</h1>
         <p className="mt-1 text-body text-ink-muted">준비 중 — Supabase 로그인을 연결합니다.</p>

@@ -28,9 +28,9 @@ export function AppShell({ children, showDev }: { children: ReactNode; showDev: 
         <div className="mx-auto flex h-14 w-full max-w-[1280px] items-center gap-6 px-6">
           <Link href="/" className="flex items-center gap-2 text-heading font-bold text-ink">
             <span aria-hidden className="flex size-7 items-center justify-center rounded-control bg-primary text-caption text-on-primary">
-              옥
+              OK
             </span>
-            옥문철
+            OK문철
           </Link>
           <nav aria-label="주 메뉴" className="flex h-full items-stretch gap-1">
             {NAV.filter((item) => !item.devOnly || showDev).map((item) => {
