@@ -77,7 +77,7 @@ flowchart TD
 | 영상·파일 | Supabase Storage의 서명 URL로 직접 업로드·권한 있는 조회 |
 | 진행 상태 | Supabase Realtime 변경 알림 + BE 상태 조회·복원 |
 | 연동 계약 | BE 스키마·OpenAPI를 원천으로 FE 타입·비식별 견본 동기화 |
-| 배포 | Vercel, FE·API를 한 프로젝트로 묶는 설계 목표의 연결 방식은 미정 |
+| 배포 | Vercel 프로젝트 `ok-muncheol-fe`에 연결(2026-11-06). `main` push마다 프로덕션 배포, PR 브랜치는 Preview 배포. FE·API를 한 프로젝트로 묶는 설계 목표의 연결 방식은 미정 |
 
 공개 저장소 두 개와 배포 단위는 별개다. 두 저장소를 빌드 때 결합할지 통합 배포 저장소를 사용할지
 인프라 작업에서 정하고, API 경로·인증·CORS·환경 변수와 함께 기록한다. 운영 URL은 아직 없다.
@@ -242,7 +242,7 @@ BE 레포와 같은 규칙이다. feature → `main`으로 올린다 (`dev` 없�
 
 위 1~3을 자동화한 것이 **ship 하네스**다. 코드 수정을 끝낸 뒤 Claude Code에서는 `/ship`, Codex에서는
 `$ship`(또는 "ship"·"배포해줘")으로 부르면 검증(CI `check`와 같은 명령) → 이슈·브랜치 생성 → PR → CI 게이트 →
-squash 머지 → main CI 확인 → (Vercel 연결 시) 프로덕션 배포 확인까지 진행한다. 절차 원본은 하네스 중립 명세
+squash 머지 → main CI 확인 → 머지 커밋의 Vercel 프로덕션 배포 확인까지 진행한다. 절차 원본은 하네스 중립 명세
 `automation/ship.md`·`automation/pipeline.md`이고, `.claude/commands/ship.md`와 `.agents/skills/ship/SKILL.md`는
 각 하네스의 진입 어댑터다. 폴링·게이트 스크립트(`automation/bin/*.mjs`)는 Node 표준 라이브러리만 써서 bash·jq가
 필요 없고, `automation/test/`가 회귀 검증한다. 처음 쓰는 PC에서 할 준비(도구 설치·로그인, Codex 설정,
