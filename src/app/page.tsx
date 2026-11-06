@@ -1,4 +1,4 @@
-/** D 통합: 첫 화면 자리. TODO: 로그인 상태에 따라 /login 또는 /cases로 보낸다. */
+/** B 통합: 첫 화면 자리. TODO: 로그인 상태에 따라 /login 또는 /cases로 보낸다. */
 import Link from "next/link";
 import { Card, PageHeader } from "@/ui/controls";
 

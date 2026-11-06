@@ -11,7 +11,7 @@ Codex·Claude Code 같은 AI 에이전트가 이 저장소에서 작업할 때 �
 - Tailwind 기본 팔레트는 지웠다. `bg-gray-100`·`text-blue-600` 같은 클래스는 에러 없이 무시되고 색이 칠해지지 않는다. 영상 프레임 위 오버레이용 `white`·`black`만 남아 있다.
 - 상태 색은 뜻으로 고른다. `Badge`·`Notice`의 톤은 neutral(대기·초안) · info(처리 중·초안 작성 가능) · success(완료·확정·승인) · warning(확인 대기·추가 확인 필요·보류) · danger(실패·충돌) · model(모델 원값·확신도)이다. 작업 진행과 판정 결과는 `src/components/status-label.tsx`로 표시하고, 톤을 바꾸려면 거기서 바꾼다.
 - 모델이 낸 값에만 model 톤을 쓴다. 담당자가 고친 값은 ink, 확인한 값은 success다. 미확정 비율·금액은 `Empty`로 비워 두고 0이나 빈 문자열로 채우지 않는다.
-- 버튼·입력·표·카드·이름값 목록은 `src/ui/controls.tsx`의 컨트롤을 먼저 쓴다. 없는 컨트롤이 필요하면 담당 폴더에 만들지 말고 통합 담당(옥석현)과 맞춰 여기에 더한다.
+- 버튼·입력·표·카드·이름값 목록은 `src/ui/controls.tsx`의 컨트롤을 먼저 쓴다. 없는 컨트롤이 필요하면 담당 폴더에 만들지 말고 통합 담당(구준휘)과 맞춰 여기에 더한다.
 - 반경·글자 크기·글꼴도 README 표의 토큰(`rounded-card`, `text-body`, `font-mono` 등)을 먼저 쓴다. 사건 ID·금액·버전·비율은 `font-mono tabular-nums`다.
 - 색 토큰을 추가하면 `src/app/globals.css`의 두 색 세트(라이트·다크)에 모두 값을 넣는다. 글자는 4.5:1, 표시선과 컨트롤 테두리·상태 점은 3:1 대비를 넘겨야 한다.
 - 새 화면은 라이트·다크 둘 다 확인한다. 다크는 개발자 도구 Rendering 패널에서 `prefers-color-scheme: dark`를 켜서 본다. 데스크톱(1280px) 배치를 먼저 맞추고 좁은 화면(360px)에서도 확인·저장이 되게 한다.

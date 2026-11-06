@@ -1,4 +1,4 @@
-/** D 통합: 루트 레이아웃. 글꼴 · 색 토큰(globals.css) · 앱 틀(머리글)을 붙인다. TODO: 인증 상태 · 오류 경계. */
+/** B 통합: 루트 레이아웃. 글꼴 · 색 토큰(globals.css) · 앱 틀(머리글)을 붙인다. TODO: 인증 상태 · 오류 경계. */
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Noto_Sans_KR } from "next/font/google";
 import { AppShell } from "@/ui/app-shell";

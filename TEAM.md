@@ -26,7 +26,7 @@ BE와 같은 담당(정지원(A)·구준휘(B)·김지은(C)·옥석현(D), 코�
 | 김지은 | 검색툴 3개·PDF 파싱/청킹/문서 임베딩·평가셋 | `src/features/evidence/`, `knowledge/`: 도표/결정례/약관·원문/페이지·개발용 품질 확인 |
 | 옥석현 | 공통 RAG·손해액/보험금·구상·검토 초안 보고서 | `src/features/calculation/`, `claims/`, `reports/`: 산정·구상 패키지·보고서·버전/승인 |
 
-공통 기반은 **옥석현이 통합 창구**를 맡되 전원이 함께 구현한다. 옥석현은 `src/app/`, `src/lib/api/`, 공통 UI와 타입·견본 동기화를 정리한다.
+공통 기반은 **구준휘가 통합 창구**를 맡되 전원이 함께 구현한다. 구준휘는 `src/app/`, `src/lib/api/`, 공통 UI와 타입·견본 동기화를 정리한다.
 정지원은 `src/lib/supabase/`의 인증/업로드·Realtime/조회 복원을, 구준휘는 질문/판단 상태 연결을, 김지은은 근거 표시 계약을 함께 맡는다.
 PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책임이다. FE 브라우저에 PDF 처리 파이프라인이나 모델 비밀키를 두지 않는다.
 
@@ -49,6 +49,8 @@ PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책�
 | `src/features/judgment/judgment-panel.tsx` | 작업 진행과 세 판정 상태, 근거 체크/반박 검토/코드 계산 검증·실패 이유 |
 | `src/features/judgment/question-panel.tsx` | BE 질문/보기/불명 응답, 기대 카드 버전, 답변→정지원 카드 재확정→재판단 |
 | `src/features/qa/qa-panel.tsx` | 근거 답변·추가 질문·가정 조건/결과. 공식 결과와 나란히 구분 |
+| `src/lib/api/types.ts`, `client.ts` | BE 계약 대응·요청 클라이언트·인증/오류·버전 충돌·복원 |
+| `src/components/status-label.tsx`, `src/app/README.md` | 공통 상태 표현·앱/라우트 통합 |
 
 완료 기준: 초안 작성 가능/추가 확인 필요/판단 보류를 오류와 구분,
 질문/재개·재실행 상한 결과 표시, 인용 근거로 이동, QA가 공식 보고서/승인을 덮어쓰지 않음.
@@ -73,8 +75,6 @@ PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책�
 | `src/features/calculation/calculation-panel.tsx` | 인정 손해액·보험금·자기부담금·추정/자료 필요/확정·근거/규칙 버전 |
 | `src/features/claims/claim-package-panel.tsx` | 예정액/청구액/회수액/고객 자기부담금 검토액, 승인 후 PDF/JSON 다운로드 |
 | `src/features/reports/review-report.tsx` | 1~7항목·확장 8~9항목, 근거·계산 로그·보고서 버전·승인/이력 |
-| `src/lib/api/types.ts`, `client.ts` | BE 계약 대응·요청 클라이언트·인증/오류·버전 충돌·복원 |
-| `src/components/status-label.tsx`, `src/app/README.md` | 공통 상태 표현·앱/라우트 통합 |
 
 완료 기준: 표시한 버전에만 승인, 근거·수치·버전 일치, 자료 없으면 미확정,
 공식 재산정과 what-if 분리, 견적만 추가하면 금액 단계부터 재실행, 승인 전 외부 전달 차단.
