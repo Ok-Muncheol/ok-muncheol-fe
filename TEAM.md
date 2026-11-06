@@ -5,9 +5,9 @@ BE와 같은 A–D가 같은 기능의 화면을 맡는다. lumi의 담당별 �
 서비스 범위는 [README.md](README.md), 판단·검색·계산 계약은
 [BE TEAM.md](https://github.com/Ok-Muncheol/ok-muncheol-be/blob/main/TEAM.md)를 따른다.
 
-아래 파일은 **타입·화면 컴포넌트 초안**이다. Next.js 앱·라우팅·인증·요청·업로드·상태 저장은 아직 연결하지 않았다.
+아래 파일은 **타입·화면 컴포넌트 초안**이다. Next.js 앱은 라우트 골격(빈 페이지)만 있고 인증·요청·업로드·상태 저장은 아직 연결하지 않았다.
 컴포넌트 일부는 전달받은 값을 표시하지만 완성 화면/업무 동작을 뜻하지 않는다. 타입은 수동 초안이며 OpenAPI 생성물이 아니다.
-아직 package.json·설치/개발 서버/빌드 명령은 없다. lumi의 런타임·모바일 화면·배포 완료 상태를 복제하지 않는다.
+설치·개발 서버·검증 명령은 README 「개발 시작과 검증」에 있다. lumi의 런타임·모바일 화면·배포 완료 상태를 복제하지 않는다.
 
 ## 원칙
 
@@ -100,8 +100,8 @@ BE와 같은 [날짜별 작업 계획](https://github.com/Ok-Muncheol/ok-muncheo
 
 ## 검증·PR 규칙
 
-현재 FE 단독 설치/실행/빌드 명령은 없다. Next.js 부트스트랩에서 `dev`·`lint`·`typecheck`·`build`를 만들고 기록한다.
-지금 CI `check`는 ship 스크립트 테스트(`node --test "automation/test/*.test.mjs"`)만 돌며, 부트스트랩에서 같은 명령들로 늘린다.
+변경을 마치면 `npm run lint`·`npm run typecheck`·`npm test`·`npm run build`를 통과시킨다. CI `check`가 같은 명령을 같은 순서로 돈다.
+화면은 `src/app/`의 라우트 골격에 담당 컴포넌트를 붙여 만든다(`src/app/README.md`).
 각 화면은 정상·불명·불일치·질문·보류·작업 실패·버전 충돌 견본으로 확인한다.
 접수→확정→판단→근거→보고서/승인·산정/구상, 키보드·라벨·포커스·상태의 글자 표현을 검수한다.
 데스크톱 업무 배치를 먼저 확인하고 좁은 화면에서도 확인/저장을 유지한다.

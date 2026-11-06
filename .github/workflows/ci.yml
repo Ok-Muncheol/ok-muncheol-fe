@@ -1,8 +1,6 @@
 name: Frontend CI
 # feature → main PR을 검증한다. check·gitleaks는 main 브랜치 보호의 필수 체크다.
-# 앱(package.json)이 아직 없어 check는 ship 게이트·폴링 스크립트 테스트만 돈다. Next.js 부트스트랩에서
-# lumi처럼 npm ci → lint → typecheck → test → build로 늘리고(Node 버전은 .nvmrc로), automation/ship.md
-# Phase 2도 같은 순서로 고친다. package.json의 test 스크립트에는 아래 node --test를 그대로 넣는다.
+# check의 명령과 순서는 automation/ship.md Phase 2(로컬 선검증)와 같아야 한다 — 바꾸면 둘을 함께 고친다.
 on:
   push:
     branches: [main]
@@ -21,9 +19,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
       # automation/bin 게이트·폴링 스크립트 회귀 검증 (판정 fixture + fail-closed 성질 + 민감 파일 훅)
-      - run: node --test "automation/test/*.test.mjs"
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
 
   # 커밋 이력에 API 키 등 시크릿이 섞이지 않았는지 검사한다
   gitleaks:

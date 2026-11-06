@@ -1,6 +1,6 @@
 ---
 name: ship
-description: ok-muncheol-fe의 워킹 트리 변경을 검증(CI check와 같은 명령 — 지금은 ship 스크립트 테스트, 앱 부트스트랩 뒤에는 npm run lint·typecheck·test·build)하고 이슈 생성 → <타입>/#<이슈> 브랜치 → main PR → CI 게이트 → squash 머지 → main CI 확인 → (Vercel 연결 시) 프로덕션 배포 확인까지 자동화한다 (하네스 중립 워크플로우 automation/ship.md의 Codex 어댑터). 사용자가 "ship", "$ship", "배포해줘", "PR 올려서 머지까지 해줘" 등 코드 수정이 끝난 변경을 main에 올리라고 하면 사용한다. 코드 수정·버그 분석 요청에는 쓰지 않는다. Codex에는 사용자 정의 슬래시 커맨드가 없어 "/ship"은 동작하지 않는다 — $ship 멘션이나 평문으로 부른다.
+description: ok-muncheol-fe의 워킹 트리 변경을 검증(npm run lint·typecheck·test·build)하고 이슈 생성 → <타입>/#<이슈> 브랜치 → main PR → CI 게이트 → squash 머지 → main CI 확인 → (Vercel 연결 시) 프로덕션 배포 확인까지 자동화한다 (하네스 중립 워크플로우 automation/ship.md의 Codex 어댑터). 사용자가 "ship", "$ship", "배포해줘", "PR 올려서 머지까지 해줘" 등 코드 수정이 끝난 변경을 main에 올리라고 하면 사용한다. 코드 수정·버그 분석 요청에는 쓰지 않는다. Codex에는 사용자 정의 슬래시 커맨드가 없어 "/ship"은 동작하지 않는다 — $ship 멘션이나 평문으로 부른다.
 ---
 
 # ship (Codex 어댑터)
@@ -41,6 +41,6 @@ Windows용 Codex는 명령을 PowerShell로 실행한다. WSL 없이 쓸 때는 
 
 - 필요한 도구는 Windows용 git, gh(`gh auth login` 완료), Node.js 24다. bash·jq는 없어도 된다 — 없는 도구가 있으면 진행하지 말고 사용자에게 알린다.
 - 폴링·게이트 스크립트는 macOS와 같은 명령으로 부른다: `node automation/bin/pr-gate.mjs <PR번호> 600 check gitleaks`. 로그 마커는 `Get-Content $LOG -Tail 5`로 읽는다.
-- Phase 2의 스크립트 테스트(`node --test "automation/test/*.test.mjs"`)도 같은 명령이다 — 글롭은 셸이 아니라 Node가 푼다. 앱 부트스트랩 뒤의 빌드는 `$env:NEXT_TELEMETRY_DISABLED = "1"; npm run build`로 돌린다.
+- Phase 2의 `npm` 명령은 같다 — `npm test`의 글롭은 셸이 아니라 Node가 푼다. 빌드만 `$env:NEXT_TELEMETRY_DISABLED = "1"; npm run build`로 돌린다.
 - 훅(`.codex/hooks.json`)은 승인하지 않는다 — bash 스크립트라 PowerShell에서 실행되지 않는다. 민감 파일은 `sensitive-gate.mjs`와 「안전 규칙」의 직접 준수로 지킨다.
 - `.codex/config.toml`의 `writable_roots`는 Windows 경로로 적는다 (「`.git` 쓰기」).

@@ -23,7 +23,7 @@ README 「브랜치·PR 규칙」이 원천이다 (BE 레포와 같은 규칙). 
 - **`dev` 없이 feature → `main`.** 배포 환경이 아직 없어 `dev`를 두어도 나뉘는 환경이 없다. `main`이 곧 통합 브랜치다.
 - **이슈 퍼스트.** 이슈 템플릿(`.github/ISSUE_TEMPLATE/*.yml`, BE와 동일)으로 이슈를 만들고 `<타입>/#<이슈번호>` 브랜치를 딴다. 타입 라벨(`✨ FEAT` 등 6개)이 레포에 없으면 Phase 3에서 만든다.
 - **PR 제목 `[<타입>/#<이슈번호>] 설명`, 본문에 `close #<이슈번호>`.** `main`은 PR 필수(승인 0명), 필수 체크 `check`·`gitleaks`, 강제 푸시·삭제 금지로 보호된다. 머지는 **squash**다 (`automation/pipeline.md` 「제목 규범」).
-- **앱은 아직 없다.** package.json이 없어 CI `check`는 ship 게이트·폴링 스크립트 테스트만 돈다. Next.js 부트스트랩에서 `check`를 lumi처럼 lint·typecheck·test·build로 늘리면 Phase 2도 같은 순서로 고친다 — CI와 Phase 2는 항상 같은 명령이어야 한다.
+- **CI `check`는 lint·typecheck·test·build다** (Next.js 16 App Router, Node 24 — `.nvmrc`). 화면은 라우트 골격만 있고 기능은 담당자가 채운다(`src/app/README.md`). CI와 Phase 2는 항상 같은 명령·순서여야 한다 — 한쪽을 바꾸면 다른 쪽도 고친다.
 - **계약은 BE와 짝으로 바꾼다.** `src/lib/api/types.ts`·`src/fixtures/contracts.json`은 BE `app/schemas/` → `make contracts`에서 온다(`src/fixtures/README.md`). PR 본문에 대응 BE PR을 적는다(TEAM.md 「검증·PR 규칙」).
 - **배포는 아직 연결되지 않았다** (README 「기술 구성」 — FE·API를 한 Vercel 프로젝트로 묶는 방식이 미정). 지금 ship의 종착점은 **`main` 머지 + main push CI 성공**이다. `automation/pipeline.md` Step 3이 머지 커밋의 `Vercel` 커밋 상태로 연결 여부를 판정해 미연결이면 `NOT_CONNECTED`로 알리고 끝나며, Vercel이 연결되면 같은 단계가 프로덕션 배포 결과까지 확인한다.
 - **DB·LLM·VLM·Modal·Supabase 서버 비밀키는 BE에서만 관리한다.** FE 환경변수는 공개용 Supabase URL·키처럼 브라우저 노출을 전제로 한 값만 둔다(README 「기술 구성」) — 비밀이 FE에 들어오려 하면 그 자체가 보고 대상이다.
@@ -77,11 +77,15 @@ README 「브랜치·PR 규칙」이 원천이다 (BE 레포와 같은 규칙). 
 
 CI(`.github/workflows/ci.yml`)의 **`check` 잡과 같은 명령을 같은 순서**로 로컬 선검증한다. `gitleaks` 잡(커밋 이력 시크릿 스캔)은 로컬 선검증 대상이 아니다 — Phase 4의 머지 게이트가 잡는다.
 
-1. **스크립트 테스트**: `node --test "automation/test/*.test.mjs"` (Node 22 이상 — 글롭을 Node가 푼다. CI는 Node 24). 게이트·폴링 스크립트와 민감 파일 훅의 회귀 검증이다.
-2. **앱 검증 (부트스트랩 뒤)**: package.json이 생겨 CI `check`가 늘어났으면 그 순서를 그대로 따른다 — lumi 기준 `npm ci`(`node_modules`가 없거나 `package-lock.json`이 변경에 포함됐으면) → `npm run lint` → `npm run typecheck` → `npm test` → `NEXT_TELEMETRY_DISABLED=1 npm run build`. CI에 없는 명령은 돌리지 않고, CI에 있는데 여기 없는 명령이 보이면 이 목록을 고칠 대상으로 보고한다.
-3. **계약 체크**: `src/lib/api/types.ts`·`src/fixtures/`가 변경에 포함됐으면 대응 BE 계약 변경이 필요한 변경으로 기록한다(Phase 4에 전달 — PR 「참고 사항」에 대응 BE PR을 적는다). `src/fixtures/contracts.json`은 BE `make contracts` 산출물을 옮겨 오는 파일이라 이 레포에서 손으로 고치지 않는다.
-4. **환경변수 체크**: 새 환경변수가 도입됐으면 `automation/pipeline.md`의 「환경변수 추가 체크리스트」를 확인한다. **비밀 값**(API 키·DB 접속 정보·서버 비밀키)이 FE 환경변수로 들어오면 보고하고 중단한다 — 비밀은 BE에서만 관리한다.
-5. 실패 시 → 사용자에게 실패 내용을 보고하고 **중단**한다 (자동 수정하지 않는다). 원인 확인은 파일 읽기 도구로 최소한만 하고, 심층 진단하지 않는다.
+1. **의존성**: `node_modules`가 없거나 `package-lock.json`이 변경에 포함됐으면 `npm ci` (Node 24 — `.nvmrc`).
+2. **린트**: `npm run lint` (ESLint — `eslint-config-next`)
+3. **타입 검사**: `npm run typecheck` (`next typegen && tsc --noEmit`) — 라우트가 바뀐 변경에서 stale 타입이 의심되면 `rm -rf .next` 후 다시 돈다 (CI는 fresh 체크아웃이라 이 문제가 없다).
+4. **테스트**: `npm test` (`node --test` — 게이트·폴링 스크립트와 민감 파일 훅 `automation/test/`, `src/**/*.test.mjs`가 생기면 함께 돈다)
+5. **빌드**: `NEXT_TELEMETRY_DISABLED=1 npm run build`
+6. CI에 있는데 여기 없는 명령, 또는 그 반대가 보이면 이 목록을 고칠 대상으로 보고한다.
+7. **계약 체크**: `src/lib/api/types.ts`·`src/fixtures/`가 변경에 포함됐으면 대응 BE 계약 변경이 필요한 변경으로 기록한다(Phase 4에 전달 — PR 「참고 사항」에 대응 BE PR을 적는다). `src/fixtures/contracts.json`은 BE `make contracts` 산출물을 옮겨 오는 파일이라 이 레포에서 손으로 고치지 않는다.
+8. **환경변수 체크**: 새 환경변수가 도입됐으면 `automation/pipeline.md`의 「환경변수 추가 체크리스트」를 확인한다. **비밀 값**(API 키·DB 접속 정보·서버 비밀키)이 FE 환경변수로 들어오면 보고하고 중단한다 — 비밀은 BE에서만 관리한다.
+9. 1~5가 실패하면 → 사용자에게 실패 내용을 보고하고 **중단**한다 (자동 수정하지 않는다). 원인 확인은 파일 읽기 도구로 최소한만 하고, 심층 진단하지 않는다.
 
 ## Phase 3: 이슈 & 브랜치
 

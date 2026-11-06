@@ -12,8 +12,8 @@
 
 현재는 **A–D 담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약/클라이언트
 인터페이스, `src/fixtures/`에 BE 생성 합성 양식이 있다. 일부 컴포넌트는 값을 표시하지만 완성 업무 화면은 아니다.
-Next.js 앱·라우터·인증·실제 요청·상태 저장·실행 가능한 목업·배포는 아직 없다. CI와 ship 하네스는 있다
-([브랜치·PR 규칙](#브랜치pr-규칙)) — 앱이 없어 CI는 ship 스크립트 테스트만 돈다.
+Next.js 앱은 라우트 골격(빈 페이지)까지 있다. 인증·실제 요청·상태 저장·실행 가능한 목업·배포는 아직 없다.
+CI(lint·typecheck·test·build)와 ship 하네스는 있다([브랜치·PR 규칙](#브랜치pr-규칙)).
 
 **개발 마감: 2026-11-13(금).** 11/12 기능 통합·11/13 최종 검수 목표다.
 날짜별 합류 기준은 [TEAM.md](TEAM.md)와 [공통 일정](https://github.com/Ok-Muncheol/ok-muncheol-be/blob/main/docs/development-plan.md)을 따른다.
@@ -72,7 +72,7 @@ flowchart TD
 
 | 구성 | 설계 또는 초기 제안 |
 | --- | --- |
-| 앱 | Next.js · React (설계 원본), App Router · TypeScript · Tailwind CSS는 lumi를 참고한 초기 제안 |
+| 앱 | Next.js 16 App Router · React 19 · TypeScript · Tailwind CSS v4, Node 24 · npm (설계 원본은 Next.js · React, 나머지 구성과 버전은 lumi를 따랐다) |
 | 인증 | Supabase Auth, BE에서 토큰·담당 사건 권한 검증, DB·Storage RLS |
 | 영상·파일 | Supabase Storage의 서명 URL로 직접 업로드·권한 있는 조회 |
 | 진행 상태 | Supabase Realtime 변경 알림 + BE 상태 조회·복원 |
@@ -83,12 +83,13 @@ flowchart TD
 인프라 작업에서 정하고, API 경로·인증·CORS·환경 변수와 함께 기록한다. 운영 URL은 아직 없다.
 
 FE에는 공개용 Supabase URL·키 등 브라우저 노출을 전제로 한 값만 둔다. DB·LLM·VLM·Modal·Supabase 서버 비밀키는
-BE에서 관리한다. 실제 변수명과 `.env.example`은 앱 부트스트랩에서 확정한다. 비공개 사건 데이터나
+BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEND_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — 아직 읽는 코드는 없다). 비공개 사건 데이터나
 서명 URL을 문서·견본·추적 로그에 넣지 않는다.
 
 ## 화면·경로 제안
 
-**아래 URL 라우트는 아직 없다.** 역할별 컴포넌트 초안은 생성했으며 `src/app/README.md`에 연결 계획이 있다.
+**아래 라우트는 빈 페이지 골격만 있다**(`/cases/new`만 `CaseIntake`를 붙였다). 컴포넌트 연결 계획은 `src/app/README.md`에 있다.
 담당자용 데스크톱 업무 화면을 우선 설계하고 좁은 화면에서도
 핵심 정보·확인·저장이 가능하도록 한다. lumi의 모바일 웰니스 화면 구성을 그대로 가져오지 않는다.
 
@@ -100,11 +101,11 @@ BE에서 관리한다. 실제 변수명과 `.env.example`은 앱 부트스트랩
 | `/cases/[id]` | 진행 상태·질문·현재 버전 요약 |
 | `/cases/[id]/facts` | 영상/키프레임 + 사실 카드, 수동 입력·근거·수정 이력·확정 |
 | `/cases/[id]/reports/[version]` | 판정·근거·비율 검토 초안, 버전 비교·담당자 승인 |
-| `/dev` | 개발 전용 비식별 견본·상태별 화면 미리보기 (운영 노출 차단 예정) |
+| `/dev` | 개발 전용 비식별 견본·상태별 화면 미리보기 (Vercel 운영 배포에서는 404 — `VERCEL_ENV=production`) |
 
 ```text
 src/
-  app/                  D 통합: 라우트 구성 계획 (앱 미구현)
+  app/                  D 통합: 루트 레이아웃·라우트 골격 (화면은 담당자가 채운다)
   features/cases/       A: 접수·영상/수동 입력
   features/facts/       A: 영상·사실 카드·담당자 확인
   features/judgment/    B: 판단·검증 3겹·구분 질문
@@ -166,23 +167,21 @@ Realtime 연결이 끊겨도 업로드·분석·판단을 자동 중복 생성�
 현재 가능한 작업은 역할별 타입·컴포넌트 본문 작성과 계약 검토다. `src/lib/api/client.ts`는 요청을 보내지 않는
 인터페이스 초안이다. `src/fixtures/contracts.json`은 BE 생성 양식이며 실행 가능한 목업 시나리오가 아니다.
 
+Node.js 24(`.nvmrc`)와 npm을 쓴다.
+
 ```bash
 git clone https://github.com/Ok-Muncheol/ok-muncheol-fe.git
 cd ok-muncheol-fe
+npm ci
+npm run dev   # http://localhost:3000
 ```
 
-Node.js 버전·의존성·패키지 관리자·`.env.example`과 개발/검증 명령은 부트스트랩 PR에서 추가한다.
-`npm run dev`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`는 lumi를 참고한
-도입 제안이며 **현재 package.json이 없어 실행할 수 없다**.
+변경을 마치면 `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`를 통과시킨다. CI `check`도 같은 명령을
+같은 순서로 돌린다. `npm test`는 지금 ship 게이트·폴링 스크립트 테스트(`automation/test/`)이고, `src/**/*.test.mjs`를
+만들면 함께 돈다. `.env.example`을 `.env`로 복사해 두지만 아직 읽는 코드는 없다.
 
-지금 돌릴 수 있는 검증은 ship 게이트·폴링 스크립트 테스트뿐이고, CI `check`도 이것만 돈다(Node.js 22 이상, CI는 24).
-
-```bash
-node --test "automation/test/*.test.mjs"
-```
-
-부트스트랩에서 package.json을 만들 때 `test` 스크립트에 이 명령을 넣고, CI `check`를 lumi처럼
-`npm ci` → lint → typecheck → test → build로 늘린다(`.github/workflows/ci.yml` 주석, `automation/ship.md` Phase 2).
+Next.js 16은 API와 파일 규칙이 학습 데이터와 다를 수 있다. AI 에이전트 안에서 `npm run dev`를 돌리면 Next가
+`AGENTS.md`에 설치된 버전의 문서(`node_modules/next/dist/docs/`) 안내 블록을 유지한다 — 그 블록은 고치지 않는다.
 
 앱 구축 후에는 BE·GPU·모델 키 없이 비식별 견본으로 정상·불명·불일치·질문·보류·실패·버전 충돌을
 검토할 수 있게 한다. 실제 연동에서는 로그인부터 영상/수동 접수·카드 확정·판단·근거 확인·승인·복원까지 검증한다.
