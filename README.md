@@ -146,7 +146,7 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 
 ```text
 src/
-  app/                  옥석현 통합: 루트 레이아웃·라우트 골격 (화면은 담당자가 채운다)
+  app/                  구준휘 통합: 루트 레이아웃·라우트 골격 (화면은 담당자가 채운다)
   features/cases/       정지원: 접수·영상/수동 입력
   features/facts/       정지원: 영상·사실 카드·담당자 확인
   features/judgment/    구준휘: 판단·검증 3겹·구분 질문
@@ -156,8 +156,8 @@ src/
   features/calculation/ 옥석현: 손해액·보험금
   features/claims/      옥석현: 구상 청구 패키지
   features/reports/     옥석현: 검토 초안·승인·버전
-  lib/api/              옥석현 통합·전원: 수동 계약 타입·클라이언트 인터페이스
-  lib/supabase/         정지원 구현·옥석현 통합: 인증/업로드/Realtime 계획
+  lib/api/              구준휘 통합·전원: 수동 계약 타입·클라이언트 인터페이스
+  lib/supabase/         정지원 구현·구준휘 통합: 인증/업로드/Realtime 계획
   fixtures/             BE 생성 합성 양식 (시연/평가 정답 아님)
   components/           공통 상태 표시 초안
 ```

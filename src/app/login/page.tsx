@@ -1,4 +1,4 @@
-/** D 통합·A 인증: 담당자 로그인. TODO: Supabase 로그인, 세션 토큰을 BE 공통 클라이언트에 전달(src/lib/supabase/README.md). */
+/** B 통합·A 인증: 담당자 로그인. TODO: Supabase 로그인, 세션 토큰을 BE 공통 클라이언트에 전달(src/lib/supabase/README.md). */
 import { Button, Card, Field, Input } from "@/ui/controls";
 
 export default function LoginPage() {

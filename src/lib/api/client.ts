@@ -1,4 +1,4 @@
-/** D 통합·각 담당 연결: 인터페이스 초안. 요청/인증/오류 처리는 미구현. */
+/** B 통합·각 담당 연결: 인터페이스 초안. 요청/인증/오류 처리는 미구현. */
 import type {
   CalculationResult, FactCard, FactPatch, QuestionAnswer, ReviewReport,
 } from "./types";
@@ -22,5 +22,5 @@ export interface ApiClient {
 
 export function createApiClient(): ApiClient {
   // TODO: 인증 토큰·HTTP·버전 충돌·중복 요청·상태 재조회. actor_id를 브라우저가 결정하지 않는다.
-  throw new Error("D: API 클라이언트 미구현");
+  throw new Error("B: API 클라이언트 미구현");
 }

@@ -1,5 +1,5 @@
 /**
- * D 통합: 작업 진행과 판정 결과의 서로 다른 타입을 그대로 표시한다.
+ * B 통합: 작업 진행과 판정 결과의 서로 다른 타입을 그대로 표시한다.
  * 톤은 뜻으로 고른다 — 작업 완료(success)와 초안 작성 가능(info)은 다른 상태라 색도 다르다(README 「화면 원칙」).
  */
 import type { JudgmentStatus, TaskStatus } from "../lib/api/types";
