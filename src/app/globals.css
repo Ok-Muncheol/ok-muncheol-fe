@@ -1,1 +1,168 @@
 @import "tailwindcss";
+
+/*
+ * 디자인 시스템 「청람(靑藍)」: 보상 담당자가 하루 종일 보는 업무 화면이다.
+ * 삼성화재 약관을 근거로 쓰므로 주요 색은 푸른색 한 가지로 두고, 상태(진행·확인 필요·보류·실패)는
+ * 색이 아니라 뜻으로 구분되는 네 가지 톤(info · success · warning · danger)으로만 표시한다.
+ * 색 세트는 라이트 · 다크 둘이고, 다크는 OS 설정(prefers-color-scheme)을 따른다. 시간대별 변화는 없다.
+ * 두 세트 모두 WCAG AA(글자 4.5:1, 표시선과 컨트롤 테두리 3:1)를 넘긴다. 새 토큰은 두 세트에 모두 넣는다.
+ */
+:root {
+  color-scheme: light;
+  --ok-page: #f3f5f9;
+  --ok-surface: #ffffff;
+  --ok-surface-muted: #eaeef5;
+  --ok-surface-raised: #ffffff;
+  --ok-ink: #14213a;
+  --ok-ink-muted: #56657c;
+  --ok-ink-faint: #8391a7;
+  --ok-line: #d9e0ea;
+  --ok-line-strong: #7b8aa1;
+  --ok-control: #ffffff;
+  --ok-primary: #1a4fc4;
+  --ok-primary-hover: #163f9e;
+  --ok-on-primary: #ffffff;
+  --ok-primary-soft: #e3ebfb;
+  --ok-on-primary-soft: #143a92;
+  --ok-focus: #1a4fc4;
+  --ok-info: #1a4fc4;
+  --ok-info-soft: #e3ebfb;
+  --ok-on-info-soft: #143a92;
+  --ok-success: #1b7a4b;
+  --ok-success-soft: #e0f3e8;
+  --ok-on-success-soft: #135c38;
+  --ok-warning: #9a5a00;
+  --ok-warning-soft: #fdf0d8;
+  --ok-on-warning-soft: #744300;
+  --ok-danger: #c0392b;
+  --ok-danger-soft: #fbe5e2;
+  --ok-on-danger-soft: #932a1f;
+  --ok-model: #6b4fc1;
+  --ok-model-soft: #ede8fa;
+  --ok-on-model-soft: #4d3594;
+  --ok-shadow-card: 0 1px 0 rgb(20 33 58 / 0.04), 0 2px 8px rgb(20 33 58 / 0.06);
+  --ok-shadow-raised: 0 4px 16px rgb(20 33 58 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ok-page: #0f1520;
+    --ok-surface: #161e2c;
+    --ok-surface-muted: #1d2738;
+    --ok-surface-raised: #1d2738;
+    --ok-ink: #e6ecf5;
+    --ok-ink-muted: #a4b2c7;
+    --ok-ink-faint: #7d8ba0;
+    --ok-line: #2a3649;
+    --ok-line-strong: #6f8099;
+    --ok-control: #161e2c;
+    --ok-primary: #8fb3f5;
+    --ok-primary-hover: #a9c4f8;
+    --ok-on-primary: #0d1b3a;
+    --ok-primary-soft: #1f3458;
+    --ok-on-primary-soft: #cfe0ff;
+    --ok-focus: #8fb3f5;
+    --ok-info: #8fb3f5;
+    --ok-info-soft: #1f3458;
+    --ok-on-info-soft: #cfe0ff;
+    --ok-success: #6fcf97;
+    --ok-success-soft: #173826;
+    --ok-on-success-soft: #b9ebcd;
+    --ok-warning: #f0b45a;
+    --ok-warning-soft: #3d2c10;
+    --ok-on-warning-soft: #fadfae;
+    --ok-danger: #f28b7d;
+    --ok-danger-soft: #42201c;
+    --ok-on-danger-soft: #fbc9c2;
+    --ok-model: #b8a4f3;
+    --ok-model-soft: #2c2449;
+    --ok-on-model-soft: #e0d7fb;
+    --ok-shadow-card: none;
+    --ok-shadow-raised: 0 4px 16px rgb(0 0 0 / 0.4);
+  }
+}
+
+/*
+ * 기본 팔레트를 지워 토큰만 쓰게 한다. bg-gray-100 같은 고정 색은 다크에서 그대로 남는다.
+ * white·black은 영상 프레임 위 오버레이용으로 남긴다.
+ */
+@theme {
+  --color-*: initial;
+  --color-white: #fff;
+  --color-black: #000;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-badge: 6px;
+
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.35;
+  --text-heading: 1.0625rem;
+  --text-heading--line-height: 1.4;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.6;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.5;
+}
+
+/* 런타임(다크 전환)에 바뀌는 값이라 inline으로 변수를 그대로 넘긴다. */
+@theme inline {
+  --color-page: var(--ok-page);
+  --color-surface: var(--ok-surface);
+  --color-surface-muted: var(--ok-surface-muted);
+  --color-surface-raised: var(--ok-surface-raised);
+  --color-ink: var(--ok-ink);
+  --color-ink-muted: var(--ok-ink-muted);
+  --color-ink-faint: var(--ok-ink-faint);
+  --color-line: var(--ok-line);
+  --color-line-strong: var(--ok-line-strong);
+  --color-control: var(--ok-control);
+  --color-primary: var(--ok-primary);
+  --color-primary-hover: var(--ok-primary-hover);
+  --color-on-primary: var(--ok-on-primary);
+  --color-primary-soft: var(--ok-primary-soft);
+  --color-on-primary-soft: var(--ok-on-primary-soft);
+  --color-focus: var(--ok-focus);
+  --color-info: var(--ok-info);
+  --color-info-soft: var(--ok-info-soft);
+  --color-on-info-soft: var(--ok-on-info-soft);
+  --color-success: var(--ok-success);
+  --color-success-soft: var(--ok-success-soft);
+  --color-on-success-soft: var(--ok-on-success-soft);
+  --color-warning: var(--ok-warning);
+  --color-warning-soft: var(--ok-warning-soft);
+  --color-on-warning-soft: var(--ok-on-warning-soft);
+  --color-danger: var(--ok-danger);
+  --color-danger-soft: var(--ok-danger-soft);
+  --color-on-danger-soft: var(--ok-on-danger-soft);
+  --color-model: var(--ok-model);
+  --color-model-soft: var(--ok-model-soft);
+  --color-on-model-soft: var(--ok-on-model-soft);
+
+  --shadow-card: var(--ok-shadow-card);
+  --shadow-raised: var(--ok-shadow-raised);
+
+  --font-sans: var(--font-noto-sans-kr), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+/* 키보드 초점은 모든 컨트롤에서 같은 2px 고리로 보인다. 마우스 클릭에는 보이지 않는다(focus-visible). */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--ok-focus);
+    outline-offset: 2px;
+  }
+}
+
+/*
+ * 터치 기기의 입력란은 16px 아래로 내리지 않는다. iOS 사파리는 그보다 작은 입력란에 초점이 가면
+ * 화면을 확대하고 되돌리지 않는다. text-body 같은 유틸리티를 이기도록 레이어 밖에 둔다.
+ */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
