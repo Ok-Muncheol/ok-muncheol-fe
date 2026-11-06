@@ -49,7 +49,7 @@ CI·Vercel 체크 대기는 `automation/bin/`의 **폴링 스크립트**(`pr-gat
 4. PR 확보 — **기존 PR 확인부터** (재시작 시 같은 브랜치에 열린 PR이 이미 있다):
    - `gh pr list --head "<브랜치명>" --base main --state open --json number --jq '.[0].number // empty'` — 번호가 나오면 **생성을 스킵**하고 그 번호를 `<PR번호>`로 재사용한다 (3의 push만으로 같은 PR이 업데이트되고 체크가 재실행된다).
    - 없으면 `.github/PULL_REQUEST_TEMPLATE.md`를 채워 `gh pr create --base main --head "<브랜치명>" --title "[<타입>/#<이슈번호>] 설명"`:
-     - **변경 사항**: 변경 요점을 불릿으로. UI 변경이 있으면 "스크린샷은 사람이 첨부" 한 줄을 남긴다. **변경 타입**: 타입 표의 해당 항목 하나만 `[x]`. **테스트 방법**: Phase 2에서 실제 수행한 명령과 결과(지금은 `node --test "automation/test/*.test.mjs"` 통과 개수, 부트스트랩 뒤에는 `npm run lint`·`npm run typecheck`·`npm test`·`npm run build` 통과). **참고 사항**: 계약 변경이면 대응 BE PR, 환경변수 추가(배포 환경 설정 필요) 등 머지 후 사람이 할 일 — 없으면 "없음". **연결된 이슈**: `close #<이슈번호>`. **체크리스트**: 실제 확인한 항목만 `[x]`(테스트는 게이트·폴링 스크립트에만 있어 「테스트 추가/수정 완료」는 해당 시에만), 환경변수 변경이 있으면 키 이름만 적는다.
+     - **변경 사항**: 변경 요점을 불릿으로. UI 변경이 있으면 "스크린샷은 사람이 첨부" 한 줄을 남긴다. **변경 타입**: 타입 표의 해당 항목 하나만 `[x]`. **테스트 방법**: Phase 2에서 실제 수행한 명령과 결과(`npm run lint`·`npm run typecheck`·`npm test`·`npm run build` 통과, `npm test` 통과 개수). **참고 사항**: 계약 변경이면 대응 BE PR, 환경변수 추가(배포 환경 설정 필요) 등 머지 후 사람이 할 일 — 없으면 "없음". **연결된 이슈**: `close #<이슈번호>`. **체크리스트**: 실제 확인한 항목만 `[x]`(테스트는 게이트·폴링 스크립트에만 있어 「테스트 추가/수정 완료」는 해당 시에만), 환경변수 변경이 있으면 키 이름만 적는다.
      - 본문 끝에 현재 하네스의 **PR 본문 서명**(있으면)을 붙인다. **라벨·담당자를 붙이지 않는다.**
      - 출력 URL 끝 숫자가 `<PR번호>`.
 5. 머지 게이트 폴링: **`node automation/bin/pr-gate.mjs <PR번호> 600 check gitleaks`** (30초 간격, 최대 10분) → `PR_GATE_DONE` 마커. **게이트 = `mergeable` MERGEABLE + 앵커 체크(`check`·`gitleaks`) 존재 + 비차단 예외를 제외한 모든 체크가 완료·성공 (실패 0, 대기 0, 체크 1개 이상)** — 정확한 판정 로직·비차단 예외 목록은 `automation/bin/pr-gate.mjs`의 `judge()`·`EXEMPT`가 원천이다(`automation/test/pr-gate.test.mjs`가 fixture로 검증). 체크를 이름 허용목록으로 고르지 않으므로 잡이 추가·개명돼도 따라간다. Vercel을 연결하면 PR 브랜치의 Preview 배포가 `Vercel` 커밋 상태로 붙을 수 있고, 붙으면 같은 규칙으로 게이트에 들어간다. 이 클라이언트 게이트는 관측·진행 판단용이고, **강제는 `main` 브랜치 보호(required checks `check`·`gitleaks`)가 서버에서 한다** — CI 잡 이름을 바꾸면 브랜치 보호 설정도 함께 갱신한다. 의심스러우면 `gh api repos/Ok-Muncheol/ok-muncheol-fe/branches/main/protection`으로 확인하고, 확인한 값과 다르면 이 문장을 고친다.
@@ -79,7 +79,7 @@ CI 폴링: **`node automation/bin/run-wait.mjs ci.yml main "<MERGE_SHA>" 600`** 
 - `result=NOT_FOUND` → 직전 `main` 커밋은 배포됐는데 이 커밋의 배포가 생기지 않았다 — Vercel 프로젝트의 Production Branch가 `main`인지, Git 연동이 살아 있는지 확인을 안내한다. 팀원이 작성한 커밋이면 Hobby 플랜 제한(프로젝트 소유자가 작성한 커밋만 배포)일 수 있으니 대시보드의 Redeploy도 안내한다.
 - `result=TIMEOUT` → 아직 진행 중일 수 있으니 단정하지 말고 `url=`로 확인을 안내한다. `API_ERROR` → 스크립트 stderr를 요약한다. `ERROR`(대문자) → 배포 상태 `error`와 다른 실행 환경 문제다 — 「폴링 실행 규칙」대로 처리한다.
 
-> Vercel을 연결할 때 PR 브랜치의 Preview 배포를 켤지 함께 정한다. lumi는 Hobby가 배포를 하루(24시간) 100번까지만 만들어 PR push마다 Preview를 만들면 `main` 배포까지 막혀서, `vercel.json`의 `git.deploymentEnabled`로 `main`만 배포한다(2026-10-29). 그러면 변경이 Vercel에서 처음 빌드되는 곳이 프로덕션 배포이므로, 머지 전 빌드 확인은 CI `check`(부트스트랩 뒤 `npm run build`)가 맡는다. 어느 쪽이든 브랜치 보호의 required check에는 `Vercel`을 넣지 않는다.
+> Vercel을 연결할 때 PR 브랜치의 Preview 배포를 켤지 함께 정한다. lumi는 Hobby가 배포를 하루(24시간) 100번까지만 만들어 PR push마다 Preview를 만들면 `main` 배포까지 막혀서, `vercel.json`의 `git.deploymentEnabled`로 `main`만 배포한다(2026-10-29). 그러면 변경이 Vercel에서 처음 빌드되는 곳이 프로덕션 배포이므로, 머지 전 빌드 확인은 CI `check`의 `npm run build`가 맡는다. 어느 쪽이든 브랜치 보호의 required check에는 `Vercel`을 넣지 않는다.
 
 ## Step 4: 정리 & 보고
 
@@ -110,7 +110,7 @@ CI 폴링: **`node automation/bin/run-wait.mjs ci.yml main "<MERGE_SHA>" 600`** 
 
 **새 환경변수** 도입 시 머지 전 아래를 모두 확인한다. FE는 **비밀 아닌 값만** 둔다(DB·LLM·VLM·Modal·Supabase 서버 비밀키는 BE 몫. 공개용인 Supabase URL·키는 FE에 둔다 — README 「기술 구성」) — 비밀이 들어오면 그 자체를 보고하고 중단한다.
 
-1. `.env.example` — 키·주석 추가 (실값 금지. `.env.example`만 커밋 허용이다. 앱 부트스트랩 전이라 파일이 없으면 이 변경에서 만든다)
+1. `.env.example` — 키·주석 추가 (실값 금지. `.env.example`만 커밋 허용이다)
 2. `.env` — 로컬 값 추가 (커밋 금지 — `.gitignore`의 `.env`·`.env.*`. BE와 같은 파일 이름을 쓴다)
 3. 브라우저 노출 여부 — 클라이언트 번들에 실리는 값은 Next.js `NEXT_PUBLIC_` 접두사가 필요하고, 그 값은 공개된다고 간주한다
 4. `README.md` — 「기술 구성」 등 관련 절에 설명

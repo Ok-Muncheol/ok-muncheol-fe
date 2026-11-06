@@ -12,7 +12,7 @@ ship은 코드 수정을 끝낸 변경을 검증하고 이슈 → 브랜치 → 
 | --- | --- | --- |
 | git | 대부분 기본 설치 | `winget install Git.Git` |
 | GitHub CLI | `brew install gh` · [Linux 설치 안내](https://github.com/cli/cli/blob/trunk/docs/install_linux.md) | `winget install GitHub.cli` |
-| Node.js 24 | nvm·fnm 같은 버전 관리자로 24.x 설치 (22 이상이면 스크립트 테스트는 돈다) | fnm(`winget install Schniz.fnm`) 또는 [nodejs.org](https://nodejs.org)의 24.x 설치 파일 |
+| Node.js 24 | nvm·fnm 같은 버전 관리자로 `.nvmrc`의 버전 설치 | fnm(`winget install Schniz.fnm`) 또는 [nodejs.org](https://nodejs.org)의 24.x 설치 파일 |
 | jq (훅용) | `jq --version`으로 확인, 없으면 `brew install jq` · `sudo apt install jq` | Codex는 필요 없음 · Claude Code는 `winget install jqlang.jq` |
 
 WSL에서는 WSL 안에 설치한 git·gh·Node를 쓴다. Windows 쪽 설치·로그인과는 별개다. Python은 필요
@@ -23,12 +23,15 @@ WSL에서는 WSL 안에 설치한 git·gh·Node를 쓴다. Windows 쪽 설치·�
 2. **커밋 작성자**: `git config --global user.name "이름"`, `git config --global user.email "GitHub 계정 이메일"`
 3. **레포 권한**: ship이 브랜치 push·이슈 생성·PR 머지를 하고, 타입 라벨이 없으면 만들기도 하므로 이 레포에
    write 권한이 있어야 한다.
-4. **검증**: 레포 루트에서 아래를 실행한다(PowerShell도 같다). 여기서 통과해야 ship의 검증 단계도 통과한다.
-   앱 부트스트랩으로 package.json이 생기면 `npm ci`·`npm run lint`·`npm run typecheck`·`npm test`·
-   `npm run build`가 이 자리에 들어온다(CI `check`와 같은 순서).
+4. **의존성과 검증**: 레포 루트에서 아래를 한 줄씩 실행한다(PowerShell도 같다). 여기서 통과해야 ship의
+   검증 단계도 통과한다. CI `check`와 같은 순서다.
 
    ```bash
-   node --test "automation/test/*.test.mjs"
+   npm ci
+   npm run lint
+   npm run typecheck
+   npm test
+   npm run build
    ```
 
 ## 2. Claude Code로 쓸 때
@@ -95,7 +98,8 @@ Codex 데스크톱 앱에서 에이전트를 WSL로 돌리면(앱 설정에서 �
 | 커밋·브랜치 전환에서 `.git` 쓰기 거부 (Codex) | 3-2의 `writable_roots`가 없거나 경로가 다르다 |
 | CI·배포 대기가 바로 `result=API_ERROR`로 끝남 | Codex는 3-1의 `network_access`를, 그 밖에는 gh 인증·네트워크를 확인한다 |
 | `result=ERROR`와 "gh를 실행할 수 없다" | gh가 설치되지 않았거나 PATH에 없다 |
-| `node --test`가 테스트 파일을 못 찾음 | Node 21 이하는 `--test`의 글롭을 풀지 못한다 → Node 24로 올린다 |
+| `npm test`가 테스트 파일을 못 찾음 | Node 21 이하는 `--test`의 글롭을 풀지 못한다 → `.nvmrc`의 Node 24로 올린다 |
+| `npm run typecheck`가 지운 라우트의 타입으로 실패 | 로컬 `.next`에 남은 이전 라우트 타입이다 → `rm -rf .next` 후 다시 돈다 |
 | 배포 확인이 `result=NOT_CONNECTED`로 끝남 | Vercel이 아직 연결되지 않았다(README 「기술 구성」). 실패가 아니다 — `main` 반영까지 끝난 것이다 |
 | `$` 목록에 `ship`이 없음 (Codex) | 레포 밖에서 띄웠거나 프로젝트를 신뢰하지 않았다 |
 | 훅이 `bash\r: No such file or directory`로 실패 (WSL·Git Bash) | Windows git으로 받아 CRLF가 된 사본이다 → 파일을 지우고 `git checkout -- <파일>`로 다시 받는다 |
