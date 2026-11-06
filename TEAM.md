@@ -101,10 +101,12 @@ BE와 같은 [날짜별 작업 계획](https://github.com/Ok-Muncheol/ok-muncheo
 ## 검증·PR 규칙
 
 현재 FE 단독 설치/실행/빌드 명령은 없다. Next.js 부트스트랩에서 `dev`·`lint`·`typecheck`·`build`를 만들고 기록한다.
+지금 CI `check`는 ship 스크립트 테스트(`node --test "automation/test/*.test.mjs"`)만 돌며, 부트스트랩에서 같은 명령들로 늘린다.
 각 화면은 정상·불명·불일치·질문·보류·작업 실패·버전 충돌 견본으로 확인한다.
 접수→확정→판단→근거→보고서/승인·산정/구상, 키보드·라벨·포커스·상태의 글자 표현을 검수한다.
 데스크톱 업무 배치를 먼저 확인하고 좁은 화면에서도 확인/저장을 유지한다.
 
 이슈에 담당/계약/완료 기준/대응 BE 작업을 적는다. `<타입>/#<번호>` 브랜치 → main PR → 검사/검토 → squash merge.
-PR에 `close #번호`, 검증 결과·대응 BE PR을 적는다. CI·브랜치 보호·ship 자동화는 아직 없다.
+PR에 `close #번호`, 검증 결과·대응 BE PR을 적는다. `main`은 PR 필수·필수 체크 `check`·`gitleaks`로 보호되고,
+변경은 ship 하네스(Claude Code `/ship`, Codex `$ship`)로 올린다 — README 「브랜치·PR 규칙」.
 공통 계약을 바꾸면 소비 담당과 타입·견본·화면을 함께 수정한다. 비밀키·실제 사건·서명 URL은 커밋하지 않는다.

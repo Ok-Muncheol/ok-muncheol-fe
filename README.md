@@ -12,7 +12,8 @@
 
 현재는 **A–D 담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약/클라이언트
 인터페이스, `src/fixtures/`에 BE 생성 합성 양식이 있다. 일부 컴포넌트는 값을 표시하지만 완성 업무 화면은 아니다.
-Next.js 앱·라우터·인증·실제 요청·상태 저장·실행 가능한 목업·CI·배포는 아직 없다.
+Next.js 앱·라우터·인증·실제 요청·상태 저장·실행 가능한 목업·배포는 아직 없다. CI와 ship 하네스는 있다
+([브랜치·PR 규칙](#브랜치pr-규칙)) — 앱이 없어 CI는 ship 스크립트 테스트만 돈다.
 
 **개발 마감: 2026-11-13(금).** 11/12 기능 통합·11/13 최종 검수 목표다.
 날짜별 합류 기준은 [TEAM.md](TEAM.md)와 [공통 일정](https://github.com/Ok-Muncheol/ok-muncheol-be/blob/main/docs/development-plan.md)을 따른다.
@@ -174,15 +175,42 @@ Node.js 버전·의존성·패키지 관리자·`.env.example`과 개발/검증 
 `npm run dev`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`는 lumi를 참고한
 도입 제안이며 **현재 package.json이 없어 실행할 수 없다**.
 
+지금 돌릴 수 있는 검증은 ship 게이트·폴링 스크립트 테스트뿐이고, CI `check`도 이것만 돈다(Node.js 22 이상, CI는 24).
+
+```bash
+node --test "automation/test/*.test.mjs"
+```
+
+부트스트랩에서 package.json을 만들 때 `test` 스크립트에 이 명령을 넣고, CI `check`를 lumi처럼
+`npm ci` → lint → typecheck → test → build로 늘린다(`.github/workflows/ci.yml` 주석, `automation/ship.md` Phase 2).
+
 앱 구축 후에는 BE·GPU·모델 키 없이 비식별 견본으로 정상·불명·불일치·질문·보류·실패·버전 충돌을
 검토할 수 있게 한다. 실제 연동에서는 로그인부터 영상/수동 접수·카드 확정·판단·근거 확인·승인·복원까지 검증한다.
 세부 담당·검증 사례는 [TEAM.md](TEAM.md)에 있다.
 
+## 브랜치·PR 규칙
+
+BE 레포와 같은 규칙이다. feature → `main`으로 올린다 (`dev` 없음).
+
+1. 이슈를 템플릿(기능 구현 · 기능 수정 · 오류 수정 · 리팩토링 · 문서 작업 · 기타 수정)으로 만든다.
+2. `main`에서 `<타입>/#<이슈 번호>` 브랜치를 만든다. 예: `feat/#12`, `chore/#13`
+3. `main`으로 PR을 올린다. 제목은 `[타입/#이슈 번호] 설명`(예: `[feat/#12] 사실 카드 편집 화면을 추가한다`)이고
+   본문에 `close #이슈 번호`, 검증 결과, 연결 BE PR을 적는다. CI(`check`, `gitleaks`)를 통과해야 머지할 수 있고,
+   squash merge한다.
+
+`main`은 PR 필수(승인 0명), 필수 체크 `check`·`gitleaks`, 강제 푸시·삭제 금지로 보호한다.
+
+위 1~3을 자동화한 것이 **ship 하네스**다. 코드 수정을 끝낸 뒤 Claude Code에서는 `/ship`, Codex에서는
+`$ship`(또는 "ship"·"배포해줘")으로 부르면 검증(CI `check`와 같은 명령) → 이슈·브랜치 생성 → PR → CI 게이트 →
+squash 머지 → main CI 확인 → (Vercel 연결 시) 프로덕션 배포 확인까지 진행한다. 절차 원본은 하네스 중립 명세
+`automation/ship.md`·`automation/pipeline.md`이고, `.claude/commands/ship.md`와 `.agents/skills/ship/SKILL.md`는
+각 하네스의 진입 어댑터다. 폴링·게이트 스크립트(`automation/bin/*.mjs`)는 Node 표준 라이브러리만 써서 bash·jq가
+필요 없고, `automation/test/`가 회귀 검증한다. 처음 쓰는 PC에서 할 준비(도구 설치·로그인, Codex 설정,
+Windows)는 [`automation/README.md`](automation/README.md)에 있다.
+
 ## 협업
 
-이슈 → `main`에서 `<타입>/#<번호>` 브랜치 → `main` PR → 검증 → squash merge를 기본 규칙으로 제안한다.
-PR 제목은 `[feat/#12] 사실 카드 편집 화면`, 본문에는 `close #12`와 검증 결과·연결 BE PR을 적는다.
-CI·브랜치 보호·ship 자동화는 아직 없다. BE 계약 변경 시 타입·견본·화면을 함께 맞춘다.
+BE 계약 변경 시 타입·견본·화면을 함께 맞추고, 양쪽 PR을 서로 연결한다.
 
 AI Hub 원본 영상·실제 사건·얼굴·번호판·위치정보·키를 저장소나 공개 미리보기에 넣지 않는다.
 시연에는 권리를 확인한 안전한 영상을 사용한다. 데이터 처리 정책과 라이선스 확인 과제는 설계 원본 및 BE TEAM.md를 따른다.
