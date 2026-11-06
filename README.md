@@ -10,7 +10,7 @@
 - 백엔드·계약 제안: [ok-muncheol-be](https://github.com/Ok-Muncheol/ok-muncheol-be)
 - 역할별 작업·완료 기준: [TEAM.md](TEAM.md)
 
-현재는 **A–D 담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약/클라이언트
+현재는 **담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약/클라이언트
 인터페이스, `src/fixtures/`에 BE 생성 합성 양식이 있다. 일부 컴포넌트는 값을 표시하지만 완성 업무 화면은 아니다.
 Next.js 앱은 라우트 골격(빈 페이지)까지 있다. 인증·실제 요청·상태 저장·실행 가능한 목업·배포는 아직 없다.
 CI(lint·typecheck·test·build)와 ship 하네스는 있다([브랜치·PR 규칙](#브랜치pr-규칙)).
@@ -105,18 +105,18 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 
 ```text
 src/
-  app/                  D 통합: 루트 레이아웃·라우트 골격 (화면은 담당자가 채운다)
-  features/cases/       A: 접수·영상/수동 입력
-  features/facts/       A: 영상·사실 카드·담당자 확인
-  features/judgment/    B: 판단·검증 3겹·구분 질문
-  features/qa/          B: 근거 질의응답·what-if
-  features/evidence/    C: 인정기준·결정례·약관/원문
-  features/knowledge/   C: 개발용 코퍼스 검수 미리보기
-  features/calculation/ D: 손해액·보험금
-  features/claims/      D: 구상 청구 패키지
-  features/reports/     D: 검토 초안·승인·버전
-  lib/api/              D 통합·전원: 수동 계약 타입·클라이언트 인터페이스
-  lib/supabase/         A 구현·D 통합: 인증/업로드/Realtime 계획
+  app/                  옥석현 통합: 루트 레이아웃·라우트 골격 (화면은 담당자가 채운다)
+  features/cases/       정지원: 접수·영상/수동 입력
+  features/facts/       정지원: 영상·사실 카드·담당자 확인
+  features/judgment/    구준휘: 판단·검증 3겹·구분 질문
+  features/qa/          구준휘: 근거 질의응답·what-if
+  features/evidence/    김지은: 인정기준·결정례·약관/원문
+  features/knowledge/   김지은: 개발용 코퍼스 검수 미리보기
+  features/calculation/ 옥석현: 손해액·보험금
+  features/claims/      옥석현: 구상 청구 패키지
+  features/reports/     옥석현: 검토 초안·승인·버전
+  lib/api/              옥석현 통합·전원: 수동 계약 타입·클라이언트 인터페이스
+  lib/supabase/         정지원 구현·옥석현 통합: 인증/업로드/Realtime 계획
   fixtures/             BE 생성 합성 양식 (시연/평가 정답 아님)
   components/           공통 상태 표시 초안
 ```
