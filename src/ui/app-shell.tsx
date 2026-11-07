@@ -41,7 +41,7 @@ export function AppShell({ children, showDev }: { children: ReactNode; showDev: 
                   href={item.href}
                   aria-current={current ? "page" : undefined}
                   className={`flex items-center border-b-2 px-3 text-body font-semibold ${
-                    current ? "border-primary text-ink" : "border-transparent text-ink-muted hover:text-ink"
+                    current ? "border-primary-strong text-ink" : "border-transparent text-ink-muted hover:text-ink"
                   }`}
                 >
                   {item.label}

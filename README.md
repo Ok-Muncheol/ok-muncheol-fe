@@ -89,8 +89,8 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 
 ## 디자인 시스템: 청람
 
-보상 담당자가 데스크톱에서 하루 종일 쓰는 업무 화면이라 **푸른색 한 가지를 주요 색**으로 두고, 나머지는 회색 면·선·글자로만
-구성한다(삼성화재 약관을 근거로 쓰는 솔루션의 인상에 맞춘다). 상태는 색 이름이 아니라 뜻으로 고르는 여섯 톤으로 표시한다.
+보상 담당자가 데스크톱에서 하루 종일 쓰는 업무 화면이라 **밝은 옥색 한 가지를 주요 색**으로 두고, 나머지는 회색 면·선·글자로만
+구성한다. 상태는 색 이름이 아니라 뜻으로 고르는 여섯 톤으로 표시한다.
 색 세트는 라이트·다크 둘이고 다크는 OS 설정(`prefers-color-scheme`)을 따른다. 글꼴은 본문 Noto Sans KR, 숫자·ID는 IBM Plex Mono다.
 `/dev`에서 토큰과 컨트롤을 한 화면으로 본다.
 
@@ -102,7 +102,8 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 | 글자 · 보조 글자 · placeholder/빈 값 | `text-ink` · `text-ink-muted` · `text-ink-faint` |
 | 구분선 · 입력과 보조 버튼 테두리 | `border-line` · `border-line-strong` |
 | 입력 바탕 | `bg-control` |
-| 주요 버튼 · 현재 메뉴 · 링크 | `bg-primary` · `text-on-primary` · `hover:bg-primary-hover` · `text-primary` |
+| 주요 버튼 · 로고(밝은 옥색 면) | `bg-primary` · `text-on-primary` · `hover:bg-primary-hover` |
+| 링크 · quiet 버튼 글자 · 현재 메뉴 밑줄(바탕 위 옥색 글자·선) | `text-primary-strong` · `border-primary-strong` |
 | 선택 · quiet 버튼 hover | `bg-primary-soft` · `text-on-primary-soft` |
 | 상태 톤(배지·안내 상자) | `bg-{info,success,warning,danger,model}-soft` + `text-on-{톤}-soft`, 점·테두리는 `bg-{톤}` · `border-{톤}` |
 | 그림자 | `shadow-card`(카드) · `shadow-raised`(팝오버·드롭다운) |
@@ -123,6 +124,8 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 `PageHeader`·`Card`·`DescriptionList`/`DescriptionRow`, `Field`·`Input`·`Select`·`Textarea`, `Table`·`Th`·`Td`, `Spinner`·`Empty`.
 앱 틀(머리글·주 메뉴)은 `src/ui/app-shell.tsx`이고 `/login`은 머리글 없이 그린다. 작업 진행·판정 상태는 `src/components/status-label.tsx`가 톤을 정한다.
 
+- 밝은 옥색(`primary`)은 흰 바탕과 대비가 1.9:1뿐이라 면으로만 칠하고, 그 위 글자는 `on-primary`(짙은 옥색)다. 바탕 위 옥색 글자·선은 `primary-strong`을 쓴다 — `text-primary`·`border-primary`를 바탕 위에 쓰면 읽히지 않는다.
+- info 톤은 주요 색과 따로 둔 파랑이다. 옥색은 success 초록과 색상이 가까워 info까지 옥색이면 ‘처리 중’과 ‘작업 완료’가 섞여 보인다.
 - Tailwind 기본 팔레트(`bg-gray-100` 등)는 지웠다. 고정 색은 다크 모드에서 그대로 남기 때문이다. 영상 프레임 위 오버레이용 `white`·`black`만 남겼다.
 - 두 세트 모두 WCAG AA 대비(글자 4.5:1, 표시선·컨트롤 테두리·상태 점 3:1)를 넘긴다. 새 토큰은 두 세트에 모두 넣고 같은 기준으로 확인한다.
 - 키보드 초점은 `globals.css`가 모든 컨트롤에 2px 고리로 둔다(`:focus-visible`). 마우스 클릭에는 보이지 않는다.

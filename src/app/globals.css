@@ -2,8 +2,11 @@
 
 /*
  * 디자인 시스템 「청람(靑藍)」: 보상 담당자가 하루 종일 보는 업무 화면이다.
- * 삼성화재 약관을 근거로 쓰므로 주요 색은 푸른색 한 가지로 두고, 상태(진행·확인 필요·보류·실패)는
+ * 주요 색은 밝은 옥색 한 가지로 두고, 상태(진행·확인 필요·보류·실패)는
  * 색이 아니라 뜻으로 구분되는 네 가지 톤(info · success · warning · danger)으로만 표시한다.
+ * 밝은 옥색(primary)은 흰 바탕과 대비가 1.9:1뿐이라 면으로만 칠하고, 그 위 글자는 짙은 옥색(on-primary)이다.
+ * 바탕 위에 옥색으로 그리는 글자·선(링크 · quiet 버튼 · 현재 메뉴 · 초점 고리)은 primary-strong을 쓴다.
+ * info는 주요 색과 따로 둔 파랑이다. 옥색은 success 초록과 색상이 가까워 info까지 옥색이면 ‘처리 중’과 ‘완료’가 섞여 보인다.
  * 색 세트는 라이트 · 다크 둘이고, 다크는 OS 설정(prefers-color-scheme)을 따른다. 시간대별 변화는 없다.
  * 두 세트 모두 WCAG AA(글자 4.5:1, 표시선과 컨트롤 테두리 3:1)를 넘긴다. 새 토큰은 두 세트에 모두 넣는다.
  */
@@ -19,12 +22,13 @@
   --ok-line: #d9e0ea;
   --ok-line-strong: #7b8aa1;
   --ok-control: #ffffff;
-  --ok-primary: #1a4fc4;
-  --ok-primary-hover: #163f9e;
-  --ok-on-primary: #ffffff;
-  --ok-primary-soft: #e3ebfb;
-  --ok-on-primary-soft: #143a92;
-  --ok-focus: #1a4fc4;
+  --ok-primary: #4dcfbb;
+  --ok-primary-hover: #3dc0ab;
+  --ok-on-primary: #04332d;
+  --ok-primary-soft: #ddf5f1;
+  --ok-on-primary-soft: #0a524a;
+  --ok-primary-strong: #0b7468;
+  --ok-focus: #0b7468;
   --ok-info: #1a4fc4;
   --ok-info-soft: #e3ebfb;
   --ok-on-info-soft: #143a92;
@@ -57,12 +61,13 @@
     --ok-line: #2a3649;
     --ok-line-strong: #6f8099;
     --ok-control: #161e2c;
-    --ok-primary: #8fb3f5;
-    --ok-primary-hover: #a9c4f8;
-    --ok-on-primary: #0d1b3a;
-    --ok-primary-soft: #1f3458;
-    --ok-on-primary-soft: #cfe0ff;
-    --ok-focus: #8fb3f5;
+    --ok-primary: #52d6c2;
+    --ok-primary-hover: #76e0d0;
+    --ok-on-primary: #032b26;
+    --ok-primary-soft: #143a36;
+    --ok-on-primary-soft: #b8efe6;
+    --ok-primary-strong: #5edac7;
+    --ok-focus: #5edac7;
     --ok-info: #8fb3f5;
     --ok-info-soft: #1f3458;
     --ok-on-info-soft: #cfe0ff;
@@ -123,6 +128,7 @@
   --color-on-primary: var(--ok-on-primary);
   --color-primary-soft: var(--ok-primary-soft);
   --color-on-primary-soft: var(--ok-on-primary-soft);
+  --color-primary-strong: var(--ok-primary-strong);
   --color-focus: var(--ok-focus);
   --color-info: var(--ok-info);
   --color-info-soft: var(--ok-info-soft);
