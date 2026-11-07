@@ -17,7 +17,7 @@ export default function Home() {
         <ul className="flex flex-col gap-2">
           {routes.map((route) => (
             <li key={route.href}>
-              <Link className="text-primary underline underline-offset-4" href={route.href}>
+              <Link className="text-primary-strong underline underline-offset-4" href={route.href}>
                 {route.label}
               </Link>
             </li>

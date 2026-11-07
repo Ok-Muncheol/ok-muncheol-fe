@@ -27,7 +27,7 @@ const BUTTON_BASE =
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-primary text-on-primary hover:bg-primary-hover",
   secondary: "border border-line-strong bg-control text-ink hover:bg-surface-muted",
-  quiet: "text-primary hover:bg-primary-soft",
+  quiet: "text-primary-strong hover:bg-primary-soft",
   danger: "border border-danger bg-control text-danger hover:bg-danger-soft",
 };
 const BUTTON_SIZES: Record<ButtonSize, string> = {
@@ -241,7 +241,7 @@ export function Spinner({ className = "" }: { className?: string }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 40 40" fill="none" className={`h-5 w-5 shrink-0 animate-spin motion-reduce:[animation-duration:3s] ${className}`}>
       <circle cx="20" cy="20" r="17" strokeWidth="4" className="stroke-line" />
-      <circle cx="20" cy="20" r="17" strokeWidth="4" strokeLinecap="round" strokeDasharray="27 80" className="stroke-primary" />
+      <circle cx="20" cy="20" r="17" strokeWidth="4" strokeLinecap="round" strokeDasharray="27 80" className="stroke-primary-strong" />
     </svg>
   );
 }
