@@ -62,8 +62,11 @@ export type ConfirmationQuestion = {
 export type QuestionAnswer = {
   question_id: string; expected_card_version: number; value: string | null; unknown: boolean;
 };
+export type RebuttalKind = "wrong_chart" | "missing_fact" | "contradiction";
 export type ValidationCheck = {
   layer: "evidence" | "rebuttal" | "numerical"; passed: boolean; reasons: string[];
+  /** layer가 rebuttal이고 실패한 경우에만 온다. wrong_chart만 차순위 도표 재실행 대상 */
+  rebuttal_kind?: RebuttalKind | null;
 };
 export type JudgmentResult = {
   versions: VersionRef; status: JudgmentStatus; chart_id: string | null; edition: string | null;
