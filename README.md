@@ -5,8 +5,7 @@
 보상 담당자가 사고 영상·사실 카드를 확인하고, 도표·수정요소·계산 근거가 연결된 **과실비율 검토 초안**을
 검토·승인하는 업무 화면이다. 신입 담당자는 같은 근거를 따라가며 학습하고, 심사 책임자는 판정 상태와 수정·승인 이력을 확인한다.
 
-- 설계 원본: [AI 기반 자동차보험 보상 의사결정 지원 솔루션 설계 초안](https://app.notion.com/p/40eada0d3ad7816d91b0c73930ba2455) — 2026-11-05 확인
-- 아키텍처 이미지: [v7 원본·최신 텍스트와의 대조](https://github.com/Ok-Muncheol/ok-muncheol-be#아키텍처-원본과-적용-기준)
+- 아키텍처 이미지: [v7 원본과 적용 기준](https://github.com/Ok-Muncheol/ok-muncheol-be#아키텍처-원본과-적용-기준)
 - 백엔드·계약 제안: [ok-muncheol-be](https://github.com/Ok-Muncheol/ok-muncheol-be)
 - 역할별 작업·완료 기준: [TEAM.md](TEAM.md)
 
@@ -24,12 +23,12 @@ CI(lint·typecheck·test·build)와 ship 하네스는 있다([브랜치·PR 규�
 
 로컬 `ok-muncheol/서비스아키텍처/accident-review-architecture-v7.png`를 2026-11-05 직접 확인했다.
 그림은 확장 기능까지 포함한다. 선행 MVP에서는 사실 카드 확인→판단·검증→과실비율 보고서까지 구현하며,
-손해액·보험금·약관·구상·질의응답은 후속 단계다. 범위와 상세 규칙은 최신 Notion 텍스트를 적용한다.
+손해액·보험금·약관·구상·질의응답은 후속 단계다.
 
 그림의 ‘확신도 0.7 미만’은 제안값이다. FE는 임계값을 박아 확인 필드를 자체 결정하지 않고 BE가 반환한
 필드별 확인 상태·질문을 표시한다. ‘9항목 보고서’도 MVP에서는 1~7번만 제공하며, 8~9번은 자차 확장에서 추가한다.
 서류 추가에 따른 공식 새 버전 생성과, 점선으로 표시된 what-if 가정 실행을 화면에서도 구분한다.
-그림과 최신 텍스트의 나머지 차이는 [BE 적용 기준](https://github.com/Ok-Muncheol/ok-muncheol-be#아키텍처-원본과-적용-기준)에 정리했다.
+그림과 다르게 적용하는 나머지 기준은 [BE 적용 기준](https://github.com/Ok-Muncheol/ok-muncheol-be#아키텍처-원본과-적용-기준)에 정리했다.
 
 ## 범위와 사용자 흐름
 
@@ -72,18 +71,17 @@ flowchart TD
 
 | 구성 | 설계 또는 초기 제안 |
 | --- | --- |
-| 앱 | Next.js 16 App Router · React 19 · TypeScript · Tailwind CSS v4, Node 24 · npm (설계 원본은 Next.js · React, 나머지 구성과 버전은 lumi를 따랐다) |
+| 앱 | Next.js 16 App Router · React 19 · TypeScript · Tailwind CSS v4, Node 24 · npm (세부 구성과 버전은 lumi를 따랐다) |
 | 인증 | Supabase Auth, BE에서 토큰·담당 사건 권한 검증, DB·Storage RLS |
 | 영상·파일 | Supabase Storage의 서명 URL로 직접 업로드·권한 있는 조회 |
 | 진행 상태 | Supabase Realtime 변경 알림 + BE 상태 조회·복원 |
 | 연동 계약 | BE 스키마·OpenAPI를 원천으로 FE 타입·비식별 견본 동기화 |
-| 배포 | Vercel 프로젝트 `ok-muncheol-fe`에 연결(2026-11-06). `main` push마다 프로덕션 배포, PR 브랜치는 Preview 배포. FE·API를 한 프로젝트로 묶는 설계 목표의 연결 방식은 미정 |
+| 배포 | Vercel 프로젝트 `ok-muncheol-fe`에 연결(2026-11-06). `main` push마다 프로덕션 배포, PR 브랜치는 Preview 배포. BE는 별도 Vercel 프로젝트 `ok-muncheol-be` |
 
-공개 저장소 두 개와 배포 단위는 별개다. 지금은 저장소마다 Vercel 프로젝트를 따로 둔다 — 운영 주소는
+저장소마다 Vercel 프로젝트를 따로 둔다 — 운영 주소는
 FE `https://ok-muncheol-fe.vercel.app`, BE `https://ok-muncheol-be.vercel.app`이다(2026-11-09 확인).
 오리진이 달라 FE는 `NEXT_PUBLIC_BACKEND_URL`(끝에 `/` 없이)로 BE를 부르고, BE는 `CORS_ALLOW_ORIGINS`에
 FE 운영 주소를 둔다. BE CORS는 정확한 주소 목록만 허용해서, 매번 바뀌는 Preview 주소에서는 BE 호출이 막힌다.
-한 프로젝트로 묶는 방식은 아직 미정이다.
 
 FE에는 공개용 Supabase URL·키 등 브라우저 노출을 전제로 한 값만 둔다. DB·LLM·VLM·Modal·Supabase 서버 비밀키는
 BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEND_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
@@ -259,4 +257,4 @@ Windows)는 [`automation/README.md`](automation/README.md)에 있다.
 BE 계약 변경 시 타입·견본·화면을 함께 맞추고, 양쪽 PR을 서로 연결한다.
 
 AI Hub 원본 영상·실제 사건·얼굴·번호판·위치정보·키를 저장소나 공개 미리보기에 넣지 않는다.
-시연에는 권리를 확인한 안전한 영상을 사용한다. 데이터 처리 정책과 라이선스 확인 과제는 설계 원본 및 BE TEAM.md를 따른다.
+시연에는 권리를 확인한 안전한 영상을 사용한다. 데이터 처리 정책과 라이선스 확인 과제는 [BE README 「협업·데이터 관리」](https://github.com/Ok-Muncheol/ok-muncheol-be#협업데이터-관리)와 BE TEAM.md를 따른다.
