@@ -79,13 +79,16 @@ flowchart TD
 | 연동 계약 | BE 스키마·OpenAPI를 원천으로 FE 타입·비식별 견본 동기화 |
 | 배포 | Vercel 프로젝트 `ok-muncheol-fe`에 연결(2026-11-06). `main` push마다 프로덕션 배포, PR 브랜치는 Preview 배포. FE·API를 한 프로젝트로 묶는 설계 목표의 연결 방식은 미정 |
 
-공개 저장소 두 개와 배포 단위는 별개다. 두 저장소를 빌드 때 결합할지 통합 배포 저장소를 사용할지
-인프라 작업에서 정하고, API 경로·인증·CORS·환경 변수와 함께 기록한다. 운영 URL은 아직 없다.
+공개 저장소 두 개와 배포 단위는 별개다. 지금은 저장소마다 Vercel 프로젝트를 따로 둔다 — 운영 주소는
+FE `https://ok-muncheol-fe.vercel.app`, BE `https://ok-muncheol-be.vercel.app`이다(2026-11-09 확인).
+오리진이 달라 FE는 `NEXT_PUBLIC_BACKEND_URL`(끝에 `/` 없이)로 BE를 부르고, BE는 `CORS_ALLOW_ORIGINS`에
+FE 운영 주소를 둔다. BE CORS는 정확한 주소 목록만 허용해서, 매번 바뀌는 Preview 주소에서는 BE 호출이 막힌다.
+한 프로젝트로 묶는 방식은 아직 미정이다.
 
 FE에는 공개용 Supabase URL·키 등 브라우저 노출을 전제로 한 값만 둔다. DB·LLM·VLM·Modal·Supabase 서버 비밀키는
 BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEND_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — 아직 읽는 코드는 없다). 비공개 사건 데이터나
-서명 URL을 문서·견본·추적 로그에 넣지 않는다.
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — 아직 읽는 코드는 없다). Vercel에는 세 값을 Config 유형으로
+등록했다(바꾸면 다음 배포부터 반영). 비공개 사건 데이터나 서명 URL을 문서·견본·추적 로그에 넣지 않는다.
 
 ## 디자인 시스템: 청람
 
