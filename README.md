@@ -121,7 +121,7 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 | model | 모델이 낸 값(담당자 값과 구분) | 모델 원값 · 확신도 |
 
 공통 컨트롤은 `src/ui/controls.tsx`에 있다 — `Button`·`ButtonLink`(primary·secondary·quiet·danger, md·sm), `Badge`·`Notice`(톤),
-`PageHeader`·`Card`·`DescriptionList`/`DescriptionRow`, `Field`·`Input`·`Select`·`Textarea`, `Table`·`Th`·`Td`, `Spinner`·`Empty`.
+`PageHeader`·`Card`·`DescriptionList`/`DescriptionRow`, `Field`·`Input`·`Select`·`Textarea`, `Table`·`Th`·`Td`, `StatStrip`/`Stat`·`Board`/`BoardColumn`(요약 수치 줄·단계 보드), `Spinner`·`Empty`.
 앱 틀(머리글·주 메뉴)은 `src/ui/app-shell.tsx`이고 `/login`은 머리글 없이 그린다. 작업 진행·판정 상태는 `src/components/status-label.tsx`가 톤을 정한다.
 
 - 밝은 옥색(`primary`)은 흰 바탕과 대비가 1.9:1뿐이라 면으로만 칠하고, 그 위 글자는 `on-primary`(짙은 옥색)다. 바탕 위 옥색 글자·선은 `primary-strong`을 쓴다 — `text-primary`·`border-primary`를 바탕 위에 쓰면 읽히지 않는다.

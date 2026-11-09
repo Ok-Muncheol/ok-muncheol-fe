@@ -1,0 +1,66 @@
+{
+  "synthetic": true,
+  "note": "담당 사건 보드(CaseSummary) FE 합성 견본. 단계마다 상태가 하나씩 보이도록 만들었고 실제 사건이 아니다. BE GET /cases 계약이 생기면 지운다.",
+  "cases": [
+    {
+      "case_id": "SYN-2026-0101", "accident_date": "2026-11-08T08:40:00+09:00", "input_path": "video", "stage": "intake",
+      "task_status": "queued", "judgment_status": null, "approval_status": null, "open_questions": 0,
+      "versions": { "case_id": "SYN-2026-0101", "fact_card_version": 0, "judgment_version": null, "report_version": null },
+      "updated_at": "2026-11-09T09:12:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0102", "accident_date": "2026-11-07T18:05:00+09:00", "input_path": "video", "stage": "analysis",
+      "task_status": "running", "judgment_status": null, "approval_status": null, "open_questions": 0,
+      "versions": { "case_id": "SYN-2026-0102", "fact_card_version": 0, "judgment_version": null, "report_version": null },
+      "updated_at": "2026-11-09T09:05:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0103", "accident_date": "2026-11-06T14:20:00+09:00", "input_path": "video", "stage": "analysis",
+      "task_status": "failed", "judgment_status": null, "approval_status": null, "open_questions": 0,
+      "versions": { "case_id": "SYN-2026-0103", "fact_card_version": 0, "judgment_version": null, "report_version": null },
+      "updated_at": "2026-11-08T17:48:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0104", "accident_date": "2026-11-05T09:30:00+09:00", "input_path": "video", "stage": "facts",
+      "task_status": "waiting_for_confirmation", "judgment_status": null, "approval_status": null, "open_questions": 0,
+      "versions": { "case_id": "SYN-2026-0104", "fact_card_version": 1, "judgment_version": null, "report_version": null },
+      "updated_at": "2026-11-09T08:30:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0105", "accident_date": "2026-11-04T21:10:00+09:00", "input_path": "manual", "stage": "facts",
+      "task_status": null, "judgment_status": null, "approval_status": null, "open_questions": 0,
+      "versions": { "case_id": "SYN-2026-0105", "fact_card_version": 1, "judgment_version": null, "report_version": null },
+      "updated_at": "2026-11-08T11:00:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0106", "accident_date": "2026-11-03T07:55:00+09:00", "input_path": "video", "stage": "judgment",
+      "task_status": "running", "judgment_status": null, "approval_status": null, "open_questions": 0,
+      "versions": { "case_id": "SYN-2026-0106", "fact_card_version": 2, "judgment_version": null, "report_version": null },
+      "updated_at": "2026-11-09T09:20:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0107", "accident_date": "2026-11-02T16:45:00+09:00", "input_path": "video", "stage": "judgment",
+      "task_status": "completed", "judgment_status": "needs_confirmation", "approval_status": null, "open_questions": 2,
+      "versions": { "case_id": "SYN-2026-0107", "fact_card_version": 2, "judgment_version": 1, "report_version": null },
+      "updated_at": "2026-11-08T15:10:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0108", "accident_date": "2026-11-01T12:00:00+09:00", "input_path": "manual", "stage": "judgment",
+      "task_status": "completed", "judgment_status": "deferred", "approval_status": null, "open_questions": 0,
+      "versions": { "case_id": "SYN-2026-0108", "fact_card_version": 3, "judgment_version": 2, "report_version": null },
+      "updated_at": "2026-11-07T10:25:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0109", "accident_date": "2026-10-30T19:30:00+09:00", "input_path": "video", "stage": "report",
+      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "draft", "open_questions": 0,
+      "versions": { "case_id": "SYN-2026-0109", "fact_card_version": 2, "judgment_version": 1, "report_version": 1 },
+      "updated_at": "2026-11-08T09:40:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0110", "accident_date": "2026-10-28T08:15:00+09:00", "input_path": "video", "stage": "report",
+      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "approved", "open_questions": 0,
+      "versions": { "case_id": "SYN-2026-0110", "fact_card_version": 3, "judgment_version": 2, "report_version": 2 },
+      "updated_at": "2026-11-06T16:00:00+09:00"
+    }
+  ]
+}

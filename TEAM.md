@@ -22,7 +22,7 @@ BE와 같은 담당(정지원(A)·구준휘(B)·김지은(C)·옥석현(D), 코�
 | 담당 | BE 책임 | FE 책임 / 경로 |
 | --- | --- | --- |
 | 정지원 | 영상 접수·비전 워커·사실 카드·담당자 확인 | `src/features/cases/`, `facts/`: 사건 접수·영상/수동 선택·업로드·진행·카드 편집/확정·매핑 |
-| 구준휘 | 판단 워크플로우·검증 3겹·질의응답 | `src/features/judgment/`, `qa/`: 판단 진행·구분 질문·검증·근거 답변/what-if |
+| 구준휘 | 판단 워크플로우·검증 3겹·질의응답 | `src/features/judgment/`, `qa/`: 판단 진행·구분 질문·검증·근거 답변/what-if. `src/features/cases/case-board.tsx`·`case-stepper.tsx`: 담당 사건 보드·사건 상세(`/cases`, `/cases/[id]`) |
 | 김지은 | 검색툴 3개·PDF 파싱/청킹/문서 임베딩·평가셋 | `src/features/evidence/`, `knowledge/`: 도표/결정례/약관·원문/페이지·개발용 품질 확인 |
 | 옥석현 | 공통 RAG·손해액/보험금·구상·검토 초안 보고서 | `src/features/calculation/`, `claims/`, `reports/`: 산정·구상 패키지·보고서·버전/승인 |
 

@@ -5,7 +5,9 @@
  */
 import { notFound } from "next/navigation";
 import { StatusLabel } from "@/components/status-label";
-import type { JudgmentStatus, TaskStatus } from "@/lib/api/types";
+import { CaseBoard } from "@/features/cases/case-board";
+import sample from "@/fixtures/case-board.json";
+import type { CaseSummary, JudgmentStatus, TaskStatus } from "@/lib/api/types";
 import {
   Badge,
   Button,
@@ -252,6 +254,14 @@ export default function DevPage() {
               </tr>
             </tbody>
           </Table>
+        </div>
+
+        <div className="lg:col-span-2">
+          <h2 className="mb-1 text-heading font-semibold">담당 사건 보드</h2>
+          <p className="mb-3 text-caption text-ink-muted">
+            열은 아키텍처 단계, 배지는 그 단계 안의 상태다(src/lib/cases/stages.ts). 손댈 사건은 왼쪽 선이 warning이고 열 안에서 앞에 선다. 견본은 src/fixtures/case-board.json.
+          </p>
+          <CaseBoard cases={sample.cases as CaseSummary[]} />
         </div>
       </div>
     </>
