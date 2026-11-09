@@ -76,12 +76,14 @@ flowchart TD
 | 영상·파일 | Supabase Storage의 서명 URL로 직접 업로드·권한 있는 조회 |
 | 진행 상태 | Supabase Realtime 변경 알림 + BE 상태 조회·복원 |
 | 연동 계약 | BE 스키마·OpenAPI를 원천으로 FE 타입·비식별 견본 동기화 |
-| 배포 | Vercel 프로젝트 `ok-muncheol-fe`에 연결(2026-11-06). `main` push마다 프로덕션 배포, PR 브랜치는 Preview 배포. BE는 별도 Vercel 프로젝트 `ok-muncheol-be` |
+| 배포 | Vercel 프로젝트 `ok-muncheol-fe`에 연결(2026-11-06). `main` push마다 프로덕션 배포, PR 브랜치는 배포하지 않음(`vercel.json` `git.deploymentEnabled`). BE는 별도 Vercel 프로젝트 `ok-muncheol-be` |
 
 저장소마다 Vercel 프로젝트를 따로 둔다 — 운영 주소는
 FE `https://ok-muncheol-fe.vercel.app`, BE `https://ok-muncheol-be.vercel.app`이다(2026-11-09 확인).
 오리진이 달라 FE는 `NEXT_PUBLIC_BACKEND_URL`(끝에 `/` 없이)로 BE를 부르고, BE는 `CORS_ALLOW_ORIGINS`에
-FE 운영 주소를 둔다. BE CORS는 정확한 주소 목록만 허용해서, 매번 바뀌는 Preview 주소에서는 BE 호출이 막힌다.
+FE 운영 주소를 둔다. BE CORS는 정확한 주소 목록만 허용한다.
+PR 브랜치는 배포하지 않는다 — Hobby는 배포를 하루(24시간) 100번까지만 만들어, PR push마다 Preview를 만들면 한도가 차서
+`main` 배포까지 막힌다. 머지 전 확인은 CI `check`(build 포함)와 로컬 `npm run dev`(`/dev` 미리보기)로 한다.
 
 FE에는 공개용 Supabase URL·키 등 브라우저 노출을 전제로 한 값만 둔다. DB·LLM·VLM·Modal·Supabase 서버 비밀키는
 BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEND_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
