@@ -263,11 +263,13 @@ export function Stat({ label, value, tone = "neutral", title }: { label: ReactNo
 /**
  * 단계 보드 — 열이 단계, 열 안이 그 단계에 있는 항목이다(가로축이 시간인 간트와 다르다).
  * 데스크톱(lg)에서는 열을 한 줄에 모두 펴고, 좁은 화면에서는 가로로 밀며 열마다 스냅한다.
+ * 좁은 화면의 스크롤 영역은 본문 여백(-mx-6)을 넘어 화면 끝까지 닿고, 스냅 기준선(scroll-px-6)은 안쪽 여백과 같은 24px 안에 둔다.
+ * 기준선이 없으면 스냅이 첫 열을 화면 왼쪽 끝에 붙여, 위 요약 줄과 열의 시작선이 어긋난다.
  */
 export function Board({ columns, className = "", children }: { columns: number; className?: string; children: ReactNode }) {
   return (
     <div
-      className={`-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 lg:mx-0 lg:grid lg:overflow-visible lg:px-0 ${className}`}
+      className={`-mx-6 flex snap-x snap-mandatory scroll-px-6 gap-4 overflow-x-auto px-6 pb-2 lg:mx-0 lg:grid lg:overflow-visible lg:px-0 ${className}`}
       style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
     >
       {children}
