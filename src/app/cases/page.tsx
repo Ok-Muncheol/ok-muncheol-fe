@@ -1,14 +1,15 @@
 /** B: 담당 사건 보드 — 요약 수치 + 아키텍처 단계별 열. TODO: GET /cases 연결(src/features/cases/case-source.ts). */
 import { CaseBoard } from "@/features/cases/case-board";
 import { isSampleSource, listCases } from "@/features/cases/case-source";
-import { ButtonLink, Notice, PageHeader } from "@/ui/controls";
+import { Notice } from "@/ui/controls";
 
 export default async function CasesPage() {
   const cases = await listCases();
   // 머리글 56px + 본문 여백 64px을 뺀 높이를 채워 보드 열이 화면 아래까지 닿게 한다.
   return (
     <div className="flex min-h-[calc(100dvh-7.5rem)] flex-col">
-      <PageHeader title="담당 사건" actions={<ButtonLink href="/cases/new">사건 접수</ButtonLink>} />
+      {/* 보이는 제목·접수 버튼은 두지 않는다 — 주 메뉴의 현재 탭과 「사건 접수」 탭이 대신한다. 화면 낭독기용 제목만 남긴다. */}
+      <h1 className="sr-only">담당 사건</h1>
       {isSampleSource() ? (
         <div className="mb-6">
           <Notice tone="info" title="비식별 견본">
