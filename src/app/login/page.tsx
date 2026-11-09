@@ -1,4 +1,4 @@
-/** B 통합·A 인증: 담당자 로그인. TODO: Supabase 로그인, 세션 토큰을 BE 공통 클라이언트에 전달(src/lib/supabase/README.md). */
+/** B 통합·A 인증: 보상 담당자 로그인. TODO: Supabase 로그인, 세션 토큰을 BE 공통 클라이언트에 전달(src/lib/supabase/README.md). */
 import { Button, Card, Field, Input } from "@/ui/controls";
 
 export default function LoginPage() {
@@ -11,7 +11,7 @@ export default function LoginPage() {
           </span>
           OK문철
         </div>
-        <h1 className="text-title font-bold">담당자 로그인</h1>
+        <h1 className="text-title font-bold">보상 담당자 로그인</h1>
         <p className="mt-1 text-body text-ink-muted">준비 중 — Supabase 로그인을 연결합니다.</p>
         <form className="mt-6 flex flex-col gap-4">
           <Field id="login-email" label="이메일">
