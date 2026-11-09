@@ -10,6 +10,21 @@ export type TaskView = {
   task_id: string; case_id: string; stage: string; status: TaskStatus; input_version: number;
 };
 export type ApiError = { code: string; message: string; retryable: boolean };
+/** 사건이 지금 어느 단계에 있는지 — README 「범위와 사용자 흐름」 순서. 영상 없는 사건은 analysis를 건너뛴다. */
+export type CaseStage = "intake" | "analysis" | "facts" | "judgment" | "report";
+/**
+ * 담당 사건 보드 한 칸(GET /cases 응답 초안). BE 계약 확정 전 FE 제안이라 같은 이름으로 BE에 맞춘다.
+ * 단계(stage)와 그 단계 안의 상태는 분리한다 — 같은 warning이라도 사실 카드의 확인 대기와 판단의 추가 확인은 할 일이 다르다.
+ */
+export type CaseSummary = {
+  case_id: string; accident_date: string; input_path: "video" | "manual";
+  stage: CaseStage;
+  task_status: TaskStatus | null;
+  judgment_status: JudgmentStatus | null;
+  approval_status: "draft" | "approved" | null;
+  open_questions: number;
+  versions: VersionRef; updated_at: string;
+};
 export type FactField = {
   value: string | number | boolean | null; model_value: string | number | boolean | null;
   source: "vision" | "manual" | "statement"; model_confidence: number | null;

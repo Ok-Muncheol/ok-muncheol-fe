@@ -231,6 +231,69 @@ export function Td({ className = "", ...props }: TdHTMLAttributes<HTMLTableCellE
   return <td className={`border-b border-line px-4 py-2.5 align-top last:border-b-0 ${className}`} {...props} />;
 }
 
+/* ---------- 요약 수치 · 단계 보드 ---------- */
+
+/**
+ * 요약 수치 줄 — 보드 위 "담당 10 · 손댈 차례 4 · 처리 중 3"처럼 수치 여러 개를 카드 하나에 한 줄로 둔다.
+ * 숫자는 ink·mono로만 적고 톤은 점과 라벨 글자로 보인다. 숫자 자체에 색을 입히면 색각 이상·다크에서 뜻이 사라진다.
+ */
+export function StatStrip({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <dl className={`flex flex-wrap items-center gap-x-6 gap-y-2 rounded-control border border-line bg-surface px-4 py-2 shadow-card ${className}`}>
+      {children}
+    </dl>
+  );
+}
+
+export function Stat({ label, value, tone = "neutral", title }: { label: ReactNode; value: ReactNode; tone?: Tone; title?: string }) {
+  return (
+    <div className="flex items-center gap-1.5 text-caption leading-none" title={title}>
+      <dt className="flex items-center gap-1.5 font-semibold text-ink-muted">
+        {tone !== "neutral" && <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${DOT_TONES[tone]}`} />}
+        {label}
+      </dt>
+      <dd className="font-mono font-semibold tabular-nums text-ink">{value}</dd>
+    </div>
+  );
+}
+
+/**
+ * 단계 보드 — 열이 단계, 열 안이 그 단계에 있는 항목이다(가로축이 시간인 간트와 다르다).
+ * 데스크톱(lg)에서는 열을 한 줄에 모두 펴고, 좁은 화면에서는 가로로 밀며 열마다 스냅한다.
+ */
+export function Board({ columns, className = "", children }: { columns: number; className?: string; children: ReactNode }) {
+  return (
+    <div
+      className={`-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 lg:mx-0 lg:grid lg:overflow-visible lg:px-0 ${className}`}
+      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** 보드의 열 — 머리에 단계 이름·설명·건수, 아래에 카드가 쌓인다. 비면 비었다고 적는다. */
+export function BoardColumn({ id, title, description, count, children }: { id: string; title: ReactNode; description?: ReactNode; count: number; children: ReactNode }) {
+  return (
+    <section aria-labelledby={`${id}-title`} className="flex w-[17rem] shrink-0 snap-start flex-col rounded-card border border-line bg-surface-muted lg:w-auto">
+      <header className="flex items-start justify-between gap-2 px-3 pt-3 pb-2">
+        <div className="min-w-0">
+          <h2 id={`${id}-title`} className="text-body font-semibold break-keep">
+            {title}
+          </h2>
+          {description && <p className="text-caption text-ink-muted">{description}</p>}
+        </div>
+        <span className="shrink-0 font-mono text-caption tabular-nums text-ink-muted" aria-label={`${count}건`}>
+          {count}
+        </span>
+      </header>
+      <div className="flex flex-1 flex-col gap-2 px-3 pb-3">
+        {count === 0 ? <p className="py-6 text-center text-caption text-ink-faint">없음</p> : children}
+      </div>
+    </section>
+  );
+}
+
 /* ---------- 기다림 ---------- */
 
 /**
