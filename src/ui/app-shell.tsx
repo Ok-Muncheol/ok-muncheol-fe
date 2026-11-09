@@ -49,7 +49,7 @@ export function AppShell({ children, showDev }: { children: ReactNode; showDev: 
               );
             })}
           </nav>
-          <div className="ml-auto text-caption text-ink-muted">담당자</div>
+          <div className="ml-auto text-caption text-ink-muted">보상 담당자</div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-6 py-8">{children}</main>
