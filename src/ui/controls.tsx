@@ -236,12 +236,15 @@ export function Td({ className = "", ...props }: TdHTMLAttributes<HTMLTableCellE
 /**
  * 요약 수치 줄 — 보드 위 "담당 10 · 손댈 차례 4 · 처리 중 3"처럼 수치 여러 개를 카드 하나에 한 줄로 둔다.
  * 숫자는 ink·mono로만 적고 톤은 점과 라벨 글자로 보인다. 숫자 자체에 색을 입히면 색각 이상·다크에서 뜻이 사라진다.
+ * aside는 수치가 아닌 표시(견본 배지 등)를 줄 오른쪽 끝에 둔다. dl 밖에 둬야 이름–값 목록 구조가 깨지지 않고,
+ * 위아래 여백을 겹쳐(-my-1) 배지 높이만큼 줄이 두꺼워지지 않게 한다.
  */
-export function StatStrip({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function StatStrip({ children, aside, className = "" }: { children: ReactNode; aside?: ReactNode; className?: string }) {
   return (
-    <dl className={`flex flex-wrap items-center gap-x-6 gap-y-2 rounded-control border border-line bg-surface px-4 py-2 shadow-card ${className}`}>
-      {children}
-    </dl>
+    <div className={`flex flex-wrap items-center gap-x-6 gap-y-2 rounded-control border border-line bg-surface px-4 py-2 shadow-card ${className}`}>
+      <dl className="flex flex-wrap items-center gap-x-6 gap-y-2">{children}</dl>
+      {aside && <div className="-my-1 ml-auto flex shrink-0 items-center gap-2">{aside}</div>}
+    </div>
   );
 }
 

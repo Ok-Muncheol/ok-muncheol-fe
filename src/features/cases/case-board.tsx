@@ -3,6 +3,7 @@
  * 서버 컴포넌트다 — 상태가 없고 링크만 있다. 새로고침 복구는 페이지의 조회가 맡는다.
  */
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { StatusLabel } from "@/components/status-label";
 import type { CaseSummary } from "@/lib/api/types";
 import { STAGES, currentStatus, groupByStage, needsAttention, stageHref, summarizeBoard } from "@/lib/cases/stages";
@@ -10,13 +11,16 @@ import { Badge, Board, BoardColumn, Stat, StatStrip } from "@/ui/controls";
 
 const dateFormat = new Intl.DateTimeFormat("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Seoul" });
 
-/** 부모가 flex 세로 컨테이너면 보드가 남은 높이를 모두 차지한다(/cases). 아니면 내용 높이만큼만 그린다(/dev). */
-export function CaseBoard({ cases, className = "" }: { cases: readonly CaseSummary[]; className?: string }) {
+/**
+ * 부모가 flex 세로 컨테이너면 보드가 남은 높이를 모두 차지한다(/cases). 아니면 내용 높이만큼만 그린다(/dev).
+ * summaryAside는 요약 줄 오른쪽 끝에 둔다(/cases의 견본 배지).
+ */
+export function CaseBoard({ cases, summaryAside, className = "" }: { cases: readonly CaseSummary[]; summaryAside?: ReactNode; className?: string }) {
   const summary = summarizeBoard(cases);
   const groups = groupByStage(cases);
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
-      <StatStrip>
+      <StatStrip aside={summaryAside}>
         <Stat label="담당 사건" value={summary.total} title="진행 중인 전체" />
         <Stat label="손댈 차례" value={summary.attention} tone="warning" title="확인·답변·승인 대기" />
         <Stat label="처리 중" value={summary.running} tone="info" title="분석·판단 진행" />
