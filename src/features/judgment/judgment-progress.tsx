@@ -2,7 +2,7 @@
  * B: 판단 그래프 단계 표시 — 대기·진행 중·확인 대기·실패한 실행이 9단계 중 어디에 있는지.
  * 끝난 실행에는 쓰지 않는다(판정이 나면 판정과 그 사유가 보여 준다). 상태는 점 색과 함께 글자로도 적는다.
  */
-import type { JudgmentRun } from "@/lib/api/types";
+import type { JudgmentRunView } from "@/lib/api/types";
 import { stageSteps, type StepState } from "@/lib/judgment/view";
 import { Spinner } from "@/ui/controls";
 
@@ -22,7 +22,7 @@ const NOW: Partial<Record<StepState, { text: string; className: string }>> = {
   failed: { text: "여기서 멈춤", className: "text-on-danger-soft" },
 };
 
-export function JudgmentProgress({ run }: { run: Pick<JudgmentRun, "status" | "stage"> }) {
+export function JudgmentProgress({ run }: { run: Pick<JudgmentRunView, "status" | "stage"> }) {
   return (
     <ol aria-label="판단 단계" className="flex flex-col gap-1">
       {stageSteps(run).map((step, i) => {

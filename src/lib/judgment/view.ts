@@ -5,11 +5,12 @@
  */
 import type {
   ConfirmationQuestion,
-  JudgmentRun,
+  JudgmentRunView,
   JudgmentStage,
   JudgmentStatus,
   PartyMapping,
   QuestionAnswer,
+  QuestionView,
   RebuttalKind,
   TaskStatus,
   ValidationCheck,
@@ -49,18 +50,18 @@ const HERE: Record<TaskStatus, StepState> = {
  * 실행 중인 판단의 단계별 상태 — stage 앞은 끝남, stage는 지금(대기·처리 중·확인 대기·실패), 뒤는 아직이다.
  * 끝난(completed) 실행은 판정이 어느 단계에서 났는지 stage만으로 알 수 없어 화면에 그리지 않는다. 판정과 그 사유가 대신한다.
  */
-export function stageSteps(run: Pick<JudgmentRun, "status" | "stage">): Step[] {
+export function stageSteps(run: Pick<JudgmentRunView, "status" | "stage">): Step[] {
   const at = JUDGMENT_STAGES.findIndex((s) => s.key === run.stage);
   return JUDGMENT_STAGES.map((s, i) => ({ ...s, state: i < at ? "done" : i === at ? HERE[run.status] : "next" }));
 }
 
 /** 머리글 배지 하나 — 끝난 실행은 판정, 그 전은 작업 진행이다. ‘작업 완료’와 판정을 섞지 않는다. */
-export function runBadgeStatus(run: Pick<JudgmentRun, "status" | "result">): JudgmentStatus | TaskStatus {
+export function runBadgeStatus(run: Pick<JudgmentRunView, "status" | "result">): JudgmentStatus | TaskStatus {
   return run.status === "completed" && run.result ? run.result.status : run.status;
 }
 
 /** 판단에 쓴 카드보다 새 카드가 있는지 — 구분 질문에 답하면 새 카드가 생기고, 그 카드를 확정한 뒤 다시 판단한다. */
-export function isStaleInput(run: Pick<JudgmentRun, "fact_card_version">, latestCardVersion: number): boolean {
+export function isStaleInput(run: Pick<JudgmentRunView, "fact_card_version">, latestCardVersion: number): boolean {
   return latestCardVersion > run.fact_card_version;
 }
 
@@ -123,6 +124,39 @@ export const UNKNOWN_CHOICE = "__unknown__";
 export function answerFor(question: Pick<ConfirmationQuestion, "question_id">, choice: string, expectedCardVersion: number): QuestionAnswer {
   const unknown = choice === UNKNOWN_CHOICE;
   return { question_id: question.question_id, expected_card_version: expectedCardVersion, value: unknown ? null : choice, unknown };
+}
+
+/**
+ * 답할 구분 질문 — 확인 대기(waiting_for_confirmation) 실행의 questions. 끝났거나 실패한 실행의 질문은
+ * BE가 question_closed로 거절하므로 답변 폼을 열지 않는다.
+ */
+export function answerableQuestions(run: Pick<JudgmentRunView, "status" | "questions">): QuestionView[] {
+  return run.status === "waiting_for_confirmation" ? run.questions : [];
+}
+
+/**
+ * 확인할 칸 — 완료 + 추가 확인 필요(needs_confirmation) 판정이 묻는 칸. 판단 그래프가 다 끝난 뒤 낸 것이라 답변 경로로
+ * 답하지 않는다(BE에 질문 행이 없다). 사실 카드에서 고쳐 다시 확정한 뒤 판단을 다시 요청한다.
+ */
+export function fieldsToCheck(run: Pick<JudgmentRunView, "result">): ConfirmationQuestion[] {
+  return run.result?.status === "needs_confirmation" ? run.result.questions : [];
+}
+
+/**
+ * 확인 대기 실행이 기다리는 것. 안 답한 질문이 있으면 "answers", 다 답했고 값 답변이 있으면 "card_update"
+ * (값을 사실 카드에 반영·재확정해 새 카드 버전으로 판단을 다시 요청한다 — BE next_action update_fact_card),
+ * 모두 ‘확인 불가’면 BE가 같은 실행을 재개하므로 null이다.
+ */
+export function waitingFor(questions: readonly QuestionView[]): "answers" | "card_update" | null {
+  if (questions.some((q) => q.answer === null)) return "answers";
+  return questions.some((q) => q.answer !== null && !q.answer.unknown) ? "card_update" : null;
+}
+
+/** 값으로 답한 칸과 값 — 사실 카드에 반영할 것(BE field_values와 같은 모양). ‘확인 불가’ 답은 넣지 않는다. */
+export function answeredValues(questions: readonly QuestionView[]): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const q of questions) if (q.answer?.value != null && !q.answer.unknown) values[q.field_key] = q.answer.value;
+  return values;
 }
 
 /* ---------- 당사자 ---------- */

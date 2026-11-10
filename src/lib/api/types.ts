@@ -87,15 +87,27 @@ export type JudgmentStage =
   | "require_confirmed_card" | "check_chart_scope" | "retrieve_chart_candidates" | "ask_or_resume"
   | "select_chart_and_modifiers" | "check_evidence" | "review_rebuttal"
   | "calculate_and_validate_fault" | "build_judgment_result";
+/** 구분 질문에 단 답(BE AnswerView). 값 답변은 사실 카드 수정·재확정으로 새 카드 버전이 생겨야 판단에 쓰인다. */
+export type AnswerView = {
+  value: string | null; unknown: boolean; expected_card_version: number;
+  /** 답을 반영해 생긴 카드 버전. 그 버전의 판단 접수가 이 실행을 대체할 때 채운다 */
+  resulting_card_version: number | null; answered_at: string;
+};
+/** 판단 조회의 구분 질문과 답(BE QuestionView). 아직 안 답했으면 answer가 null이다. */
+export type QuestionView = ConfirmationQuestion & { answer: AnswerView | null };
 /**
- * 판단 실행 1건 — 판단 화면이 읽는 모양(BE judgment_runs 행, supabase/migrations/20261109163901_judgment_runs.sql).
- * BE 조회 계약 확정 전 FE 제안이라 같은 이름으로 BE에 맞춘다. 작업 진행(status)과 판정(result.status)을 분리한다.
- * stage는 지금 단계(대기·처리 중·확인 대기·실패면 멈춘 곳)다. result는 completed일 때만, error는 failed일 때만 온다.
+ * 판단 조회(GET /cases/{id}/judgment) — 사건의 최신 판단 실행(BE JudgmentRunView, judgment_runs 행 + 질문). 판단 전이면 null.
+ * 작업 진행(status)과 판정(result.status)을 분리한다. stage는 지금 단계(대기·처리 중·확인 대기·실패면 멈춘 곳)다.
+ * result는 completed일 때만, error는 failed일 때만 온다. 확인 대기(waiting_for_confirmation)면 result가 비고
+ * 답할 질문은 questions에 있다 — 완료 + 추가 확인 필요의 result.questions는 답변 경로로 답하지 않는 확인할 칸이다.
  */
-export type JudgmentRun = {
-  case_id: string; fact_card_version: number; criteria_version: string; rule_version: string;
-  status: TaskStatus; stage: JudgmentStage; rebuttal_retry_count: number;
-  result: JudgmentResult | null; error: ApiError | null; updated_at: string;
+export type JudgmentRunView = {
+  task_id: string; case_id: string; judgment_version: number; fact_card_version: number;
+  criteria_version: string; rule_version: string; status: TaskStatus; stage: JudgmentStage;
+  rebuttal_retry_count: number; result: JudgmentResult | null; error: ApiError | null;
+  /** 판정이 났으면 그 판단으로 만든 보고서의 최신 버전. 못 만들었으면 null */
+  report_version: number | null;
+  questions: QuestionView[]; updated_at: string;
 };
 /**
  * 판단 접수(POST …/judgments) 응답. BE docs/contracts/README.md 「판단 접수·질문 응답」.

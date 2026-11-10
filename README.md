@@ -11,7 +11,7 @@
 
 현재는 **담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약과 BE 요청
 클라이언트, `src/fixtures/`에 BE 생성 합성 양식이 있다. 일부 컴포넌트는 값을 표시하지만 완성 업무 화면은 아니다.
-Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안·내 정보(합성 견본 표시)까지 있고 Vercel 프로젝트 `ok-muncheol-fe`로 배포된다. 접수·보고서 화면과 인증·상태 저장은 아직 없고, 화면은 BE 요청 대신 합성 견본을 읽는다.
+Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안·내 정보(합성 견본 표시)까지 있고 Vercel 프로젝트 `ok-muncheol-fe`로 배포된다. 접수·보고서 화면과 인증·상태 저장은 아직 없다. 화면은 견본 모드면 합성 견본을, API 모드면 BE를 읽는다(운영은 늘 API 모드, 로컬은 `OKM_DATA_SOURCE=api`일 때) — 지금 BE를 읽는 화면은 판단 화면뿐이다.
 CI(lint·typecheck·test·build)와 ship 하네스는 있다([브랜치·PR 규칙](#브랜치pr-규칙)).
 
 **개발 마감: 2026-11-13(금).** 11/12 기능 통합·11/13 최종 검수 목표다.
@@ -77,7 +77,7 @@ API 경로·판단 그래프 단계와 판정 상태 3종이 어느 분기에서
 | 구성 | 기술 | 지금 상태 (2026-11-10) |
 | --- | --- | --- |
 | 앱 | Next.js 16 App Router · React 19 · TypeScript 5 · Tailwind CSS v4, Node 24 · npm (세부 구성과 버전은 lumi를 따랐다) | 사건 보드·상세, 사실 카드·판단 화면 초안·내 정보(합성 견본), 개발용 코퍼스 미리보기 |
-| BE 호출 | `ApiClient`(fetch, `src/lib/api/client.ts`) | BE 경로 16개와 1:1로 요청하고 오류·버전 충돌·중복 요청 키를 다룬다. 화면은 아직 견본을 읽고, 연결할 자리에 TODO를 남겼다 |
+| BE 호출 | `ApiClient`(fetch, `src/lib/api/client.ts`) | BE 경로 17개와 1:1로 요청하고 오류·버전 충돌·중복 요청 키를 다룬다. 판단 화면은 API 모드에서 판단 조회·답변·판단 접수를 보내고, 나머지 화면은 견본을 읽으며 연결할 자리에 TODO를 남겼다 |
 | 인증 | Supabase Auth, BE에서 토큰·담당 사건 권한 검증, DB·Storage RLS | 미구현. Supabase SDK가 없어 토큰 없이 보내므로 로컬 BE 개발 인증에서만 통한다 |
 | 영상·파일 | Supabase Storage의 서명 URL로 직접 업로드·권한 있는 조회 | 미구현 |
 | 진행 상태 | Supabase Realtime 변경 알림 + BE 상태 조회·복원 | 미구현 |
@@ -95,6 +95,8 @@ FE에는 공개용 Supabase URL·키 등 브라우저 노출을 전제로 한 �
 BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEND_URL`은 `src/lib/api/client.ts`가 읽고,
 `NEXT_PUBLIC_SUPABASE_URL`·`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`는 아직 읽는 코드가 없다). Vercel에는 세 값을 Config 유형으로
 등록했다(바꾸면 다음 배포부터 반영). 비공개 사건 데이터나 서명 URL을 문서·견본·추적 로그에 넣지 않는다.
+`OKM_DATA_SOURCE`(`api`면 BE, 그 밖은 합성 견본)는 서버에서만 읽는 화면 데이터 출처 전환이고 비밀이 아니다.
+운영 배포는 이 값과 상관없이 늘 BE를 읽으므로 Vercel에 등록하지 않는다(`src/features/cases/case-source.ts`의 `isSampleSource`).
 
 ## 디자인 시스템: 청람
 
@@ -143,8 +145,8 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 ## 화면·경로 제안
 
 **아래 라우트는 아직 대부분 골격이다.** `/cases`(담당 사건 보드)와 `/cases/[id]`(사건 상세)는 합성 견본(`src/fixtures/case-board.json`)을,
-`/cases/[id]/judgment`(판단 초안)는 판단 단계 사건의 합성 견본(`src/fixtures/judgment.json`)을, `/cases/[id]/facts`(사실 카드 초안)는 사실 카드·판단 단계 사건의 합성 카드(`src/fixtures/fact-cards.json`·`judgment.json`)를, `/profile`(내 정보)은 합성 담당자(`src/fixtures/profile.json`)를 그리고 운영 배포에서는 비어 있다.
-사실 카드의 저장·확정과 판단 화면의 답변·다시 시작은 API 연결 전이라 보내지 않는다. 내 정보의 로그아웃은 끝낼 세션이 없어 로그인 화면으로만 보낸다. 근거 프레임은 시각만 있고 이미지는 없다. 접수·보고서 화면은 제목만 있다. 컴포넌트 연결 계획은 `src/app/README.md`에 있다.
+`/cases/[id]/judgment`(판단 초안)는 판단 단계 사건의 합성 견본(`src/fixtures/judgment.json`)을, `/cases/[id]/facts`(사실 카드 초안)는 사실 카드·판단 단계 사건의 합성 카드(`src/fixtures/fact-cards.json`·`judgment.json`)를, `/profile`(내 정보)은 합성 담당자(`src/fixtures/profile.json`)를 그리고 운영 배포에서는 비어 있다(판단 화면만 운영에서 BE를 읽는다).
+판단 화면은 API 모드에서 BE 판단 조회(`GET /cases/{id}/judgment`)를 읽고 구분 질문 답변·판단 시작·다시 시작을 보낸다(견본 모드는 보내지 않는다). 사실 카드의 저장·확정은 API 연결 전이라 보내지 않는다. 내 정보의 로그아웃은 끝낼 세션이 없어 로그인 화면으로만 보낸다. 근거 프레임은 시각만 있고 이미지는 없다. 접수·보고서 화면은 제목만 있다. 컴포넌트 연결 계획은 `src/app/README.md`에 있다.
 보상 담당자용 데스크톱 업무 화면을 우선 설계하고 좁은 화면에서도
 핵심 정보·확인·저장이 가능하도록 한다. lumi의 모바일 웰니스 화면 구성을 그대로 가져오지 않는다.
 
@@ -227,9 +229,9 @@ Realtime 연결이 끊겨도 업로드·분석·판단을 자동 중복 생성�
 ## 개발 시작과 검증
 
 현재 가능한 작업은 역할별 타입·컴포넌트 본문 작성, 계약 검토, 화면의 BE 연결이다. `src/lib/api/client.ts`는 BE 경로
-16개에 요청을 보내지만(오류 `ApiRequestError`, 버전 충돌 `isVersionConflict`, 접수 중복 키 `newIdempotencyKey`) 화면은
-아직 합성 견본을 읽는다. 로그인 연결 전이라 토큰 없이 보내므로 로컬 BE 개발 인증(`APP_ENV=local`·`DEV_ACTOR_ID`)에서만
-통한다. `src/fixtures/contracts.json`은 BE 생성 양식이며 실행 가능한 목업 시나리오가 아니다.
+17개에 요청을 보낸다(오류 `ApiRequestError`, 버전 충돌 `isVersionConflict`, 접수 중복 키 `newIdempotencyKey`). 지금 BE를 읽는
+화면은 판단 화면뿐이고 나머지는 합성 견본을 읽는다. 로그인 연결 전이라 토큰 없이 보내므로 로컬 BE 개발 인증
+(`APP_ENV=local`·`DEV_ACTOR_ID`)에서만 통한다. `src/fixtures/contracts.json`은 BE 생성 양식이며 실행 가능한 목업 시나리오가 아니다.
 
 Node.js 24(`.nvmrc`)와 npm을 쓴다.
 
@@ -242,7 +244,9 @@ npm run dev   # http://localhost:3000
 
 변경을 마치면 `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`를 통과시킨다. CI `check`도 같은 명령을
 같은 순서로 돌린다. `npm test`는 ship 게이트·폴링 스크립트 테스트(`automation/test/`)와 `src/**/*.test.mjs`를 함께 돈다.
-`.env.example`을 `.env`로 복사해 둔다 — 지금은 `NEXT_PUBLIC_BACKEND_URL`만 읽는다(비우면 로컬 BE `http://127.0.0.1:8000`).
+`.env.example`을 `.env`로 복사해 둔다 — 지금은 `NEXT_PUBLIC_BACKEND_URL`(비우면 로컬 BE `http://127.0.0.1:8000`)과
+`OKM_DATA_SOURCE`를 읽는다. 로컬 BE를 붙여 보려면 `OKM_DATA_SOURCE=api`로 두고 BE를 `APP_ENV=local`·`DEV_ACTOR_ID`(담당 사건이 있는
+사용자)·`CORS_ALLOW_ORIGINS=http://localhost:3000`으로 띄운다. 비워 두면 합성 견본을 읽는다.
 
 Next.js 16은 API와 파일 규칙이 학습 데이터와 다를 수 있다. AI 에이전트 안에서 `npm run dev`를 돌리면 Next가
 `AGENTS.md`에 설치된 버전의 문서(`node_modules/next/dist/docs/`) 안내 블록을 유지한다 — 그 블록은 고치지 않는다.

@@ -1,5 +1,5 @@
 /**
- * B 통합: BE HTTP 클라이언트. 메서드는 BE app/api/routes.py 경로와 1:1(16개)이다. BE tests/api/test_app.py가 경로 수를 대조한다.
+ * B 통합: BE HTTP 클라이언트. 메서드는 BE app/api/routes.py 경로와 1:1(17개)이다. BE tests/api/test_app.py가 경로 수를 대조한다.
  *
  * - 주소: NEXT_PUBLIC_BACKEND_URL(끝에 / 없이). 비우면 로컬 BE(LOCAL_BACKEND_URL)를 쓴다(.env.example).
  * - 인증: getAccessToken이 준 Supabase 세션 토큰을 Authorization: Bearer로 보낸다. 담당자(actor_id)는 BE가 토큰에서만 정한다.
@@ -13,7 +13,7 @@
  */
 import type {
   AgreedFaultInput, AnswerResult, ApiError, CaseFacts, ClaimResult, ConfirmResult, CounterpartyInfo,
-  FactCard, FactPatch, JudgmentTaskView, QuestionAnswer, ReviewReport,
+  FactCard, FactPatch, JudgmentRunView, JudgmentTaskView, QuestionAnswer, ReviewReport,
 } from "./types";
 
 export interface ApiClient {
@@ -27,6 +27,8 @@ export interface ApiClient {
   confirmFactCard(caseId: string, expectedVersion: number): Promise<FactCard>;
   /** POST /cases/{id}/judgments — 202. 판단을 끝까지 실행한 뒤의 상태(완료·질문 대기·실패). idempotencyKey는 startAnalysis와 같다 */
   startJudgment(caseId: string, cardVersion: number, idempotencyKey: string): Promise<JudgmentTaskView>;
+  /** GET /cases/{id}/judgment — 최신 판단 실행·판정·구분 질문과 답. 판단 전이면 null(404가 아니다) */
+  getJudgment(caseId: string): Promise<JudgmentRunView | null>;
   answerQuestion(caseId: string, answer: QuestionAnswer): Promise<AnswerResult>;
   askQuestion(caseId: string, text: string): Promise<Record<string, unknown>>;
   getReport(caseId: string, version: number): Promise<ReviewReport>;
@@ -72,6 +74,16 @@ export class ApiRequestError extends Error {
 /** 다른 버전이 먼저 저장됐다(409 version_conflict). 덮어쓰지 말고 최신 값을 다시 조회해 담당자에게 보여 준다. */
 export function isVersionConflict(error: unknown): error is ApiRequestError {
   return error instanceof ApiRequestError && error.code === "version_conflict";
+}
+
+/** 화면에 보일 오류 하나로(ApiError 모양). ApiRequestError가 아닌 예외는 내부 메시지를 싣지 않는다. */
+export function asApiError(error: unknown): ApiError {
+  if (error instanceof ApiRequestError) return { code: error.code, message: error.message, retryable: error.retryable };
+  return {
+    code: "client_error",
+    message: "요청을 처리하지 못했습니다. 화면을 새로 고친 뒤 다시 시도하세요.",
+    retryable: true,
+  };
 }
 
 /** 판단·영상 분석 접수의 Idempotency-Key(BE는 8~128자). 담당자 동작 한 번에 하나를 만들고 그 동작을 다시 보낼 때 그대로 쓴다. */
@@ -139,6 +151,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
       request("POST", `${caseUrl(caseId)}/fact-card/confirm`, { body: { expected_version: expectedVersion } }),
     startJudgment: (caseId, cardVersion, idempotencyKey) =>
       request("POST", `${caseUrl(caseId)}/judgments`, { body: { card_version: cardVersion }, idempotencyKey }),
+    getJudgment: (caseId) => request("GET", `${caseUrl(caseId)}/judgment`),
     // BE는 경로의 질문 ID를 기준으로 본문 question_id와 다르면 거절한다 — 둘을 같은 값에서 만든다
     answerQuestion: (caseId, answer) =>
       request("POST", `${caseUrl(caseId)}/questions/${seg(answer.question_id)}/answer`, { body: answer }),
