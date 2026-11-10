@@ -74,14 +74,15 @@ API 경로·판단 그래프 단계와 판정 상태 3종이 어느 분기에서
 
 ## 기술 구성
 
-| 구성 | 설계 또는 초기 제안 |
-| --- | --- |
-| 앱 | Next.js 16 App Router · React 19 · TypeScript · Tailwind CSS v4, Node 24 · npm (세부 구성과 버전은 lumi를 따랐다) |
-| 인증 | Supabase Auth, BE에서 토큰·담당 사건 권한 검증, DB·Storage RLS |
-| 영상·파일 | Supabase Storage의 서명 URL로 직접 업로드·권한 있는 조회 |
-| 진행 상태 | Supabase Realtime 변경 알림 + BE 상태 조회·복원 |
-| 연동 계약 | BE 스키마·OpenAPI를 원천으로 FE 타입·비식별 견본 동기화 |
-| 배포 | Vercel 프로젝트 `ok-muncheol-fe`에 연결(2026-11-06). `main` push마다 프로덕션 배포, PR 브랜치는 배포하지 않음(`vercel.json` `git.deploymentEnabled`). BE는 별도 Vercel 프로젝트 `ok-muncheol-be` |
+| 구성 | 기술 | 지금 상태 (2026-11-10) |
+| --- | --- | --- |
+| 앱 | Next.js 16 App Router · React 19 · TypeScript 5 · Tailwind CSS v4, Node 24 · npm (세부 구성과 버전은 lumi를 따랐다) | 사건 보드·상세, 사실 카드·판단 화면 초안(합성 견본), 개발용 코퍼스 미리보기 |
+| BE 호출 | `ApiClient`(fetch, `src/lib/api/client.ts`) | BE 경로 16개와 1:1로 요청하고 오류·버전 충돌·중복 요청 키를 다룬다. 화면은 아직 견본을 읽고, 연결할 자리에 TODO를 남겼다 |
+| 인증 | Supabase Auth, BE에서 토큰·담당 사건 권한 검증, DB·Storage RLS | 미구현. Supabase SDK가 없어 토큰 없이 보내므로 로컬 BE 개발 인증에서만 통한다 |
+| 영상·파일 | Supabase Storage의 서명 URL로 직접 업로드·권한 있는 조회 | 미구현 |
+| 진행 상태 | Supabase Realtime 변경 알림 + BE 상태 조회·복원 | 미구현 |
+| 연동 계약 | BE 스키마·OpenAPI를 원천으로 FE 타입·비식별 견본 동기화 | 판단 결과 타입과 계약 견본을 BE 생성본에 맞췄다 |
+| 배포 | Vercel 프로젝트 `ok-muncheol-fe`에 연결(2026-11-06). `main` push마다 프로덕션 배포, PR 브랜치는 배포하지 않음(`vercel.json` `git.deploymentEnabled`). BE는 별도 Vercel 프로젝트 `ok-muncheol-be` | 운영 중. CI(GitHub Actions)는 lint·typecheck·test·build와 `gitleaks`만 돌리고, 배포는 Vercel Git 연동이 한다 |
 
 저장소마다 Vercel 프로젝트를 따로 둔다 — 운영 주소는
 FE `https://ok-muncheol-fe.vercel.app`, BE `https://ok-muncheol-be.vercel.app`이다(2026-11-09 확인).
