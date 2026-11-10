@@ -1,35 +1,38 @@
 {
   "synthetic": true,
-  "note": "판단 화면(JudgmentRun · FactCard) FE 합성 견본. case-board.json의 판단 단계 사건마다 하나씩 두었고 실제 사건이 아니다. 임의 도표·과실비율을 만들지 않으려고 도표가 정해진 ‘초안 작성 가능’ 견본은 두지 않았다. 오류 코드·버전 문자열은 예시다. BE 판단 조회 계약이 생기면 contracts.json으로 옮긴다.",
+  "note": "판단 화면(JudgmentRunView · FactCard) FE 합성 견본. runs는 BE 판단 조회(GET /cases/{id}/judgment) 응답 모양이고, case-board.json의 판단 단계 사건마다 하나씩 두었으며 실제 사건이 아니다. SYN-2026-0107은 구분 질문으로 멈춘 확인 대기 실행이라 result가 비고 질문·답이 questions에 있다. SYN-2026-0119는 완료 + 추가 확인 필요라 result.questions가 답하지 않는 확인할 칸이다. 임의 도표·과실비율을 만들지 않으려고 도표가 정해진 ‘초안 작성 가능’ 견본은 두지 않았다. 오류 코드·버전 문자열은 예시다.",
   "runs": [
     {
-      "case_id": "SYN-2026-0106", "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "task_id": "SYN-RUN-0106", "case_id": "SYN-2026-0106", "judgment_version": 1, "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
       "status": "running", "stage": "retrieve_chart_candidates", "rebuttal_retry_count": 0, "result": null, "error": null,
+      "report_version": null, "questions": [],
       "updated_at": "2026-11-09T09:20:00+09:00"
     },
     {
-      "case_id": "SYN-2026-0107", "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
-      "status": "completed", "stage": "build_judgment_result", "rebuttal_retry_count": 0, "error": null,
-      "result": {
-        "versions": { "case_id": "SYN-2026-0107", "fact_card_version": 2, "judgment_version": 1, "report_version": null },
-        "status": "needs_confirmation", "chart_id": null, "edition": null, "fault_A": null, "fault_B": null,
-        "calculation_log": [], "evidence": [], "checks": [],
-        "questions": [
-          { "question_id": "SYN-2026-0107-q1", "field_key": "movement_B", "text": "B 차량의 진행 방향을 확인해 주세요.", "options": ["straight", "left_turn", "right_turn", "u_turn"], "allow_unknown": true },
-          { "question_id": "SYN-2026-0107-q2", "field_key": "signal_B", "text": "B 차량이 교차로에 들어갈 때의 신호를 확인해 주세요.", "options": ["green", "yellow", "red", "green_left_arrow", "no_signal"], "allow_unknown": true }
-        ],
-        "reasons": ["도표 선택 칸 미확인: movement_B", "도표 선택 칸 미확인: signal_B"]
-      },
+      "task_id": "SYN-RUN-0107", "case_id": "SYN-2026-0107", "judgment_version": 1, "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "waiting_for_confirmation", "stage": "ask_or_resume", "rebuttal_retry_count": 0, "result": null, "error": null,
+      "report_version": null,
+      "questions": [
+        {
+          "question_id": "SYN-2026-0107-q1", "field_key": "movement_B", "text": "B 차량의 진행 방향을 확인해 주세요.", "options": ["straight", "left_turn", "right_turn", "u_turn"], "allow_unknown": true,
+          "answer": { "value": null, "unknown": true, "expected_card_version": 2, "resulting_card_version": null, "answered_at": "2026-11-08T15:08:00+09:00" }
+        },
+        {
+          "question_id": "SYN-2026-0107-q2", "field_key": "signal_B", "text": "B 차량이 교차로에 들어갈 때의 신호를 확인해 주세요.", "options": ["green", "yellow", "red", "green_left_arrow", "no_signal"], "allow_unknown": true,
+          "answer": null
+        }
+      ],
       "updated_at": "2026-11-08T15:10:00+09:00"
     },
     {
-      "case_id": "SYN-2026-0118", "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "task_id": "SYN-RUN-0118", "case_id": "SYN-2026-0118", "judgment_version": 1, "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
       "status": "failed", "stage": "retrieve_chart_candidates", "rebuttal_retry_count": 0, "result": null,
       "error": { "code": "search_timeout", "message": "도표 후보 검색이 제때 응답하지 않았습니다.", "retryable": true },
+      "report_version": null, "questions": [],
       "updated_at": "2026-11-09T11:30:00+09:00"
     },
     {
-      "case_id": "SYN-2026-0119", "fact_card_version": 1, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "task_id": "SYN-RUN-0119", "case_id": "SYN-2026-0119", "judgment_version": 1, "fact_card_version": 1, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
       "status": "completed", "stage": "build_judgment_result", "rebuttal_retry_count": 0, "error": null,
       "result": {
         "versions": { "case_id": "SYN-2026-0119", "fact_card_version": 1, "judgment_version": 1, "report_version": null },
@@ -44,10 +47,11 @@
         ],
         "reasons": ["도표를 가르는 사실이 카드에 없음", "카드의 야간 여부가 담당자 확인 전이라 수정요소(야간) 적용을 가를 수 없음"]
       },
+      "report_version": null, "questions": [],
       "updated_at": "2026-11-09T09:50:00+09:00"
     },
     {
-      "case_id": "SYN-2026-0142", "fact_card_version": 3, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "task_id": "SYN-RUN-0142", "case_id": "SYN-2026-0142", "judgment_version": 2, "fact_card_version": 3, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
       "status": "completed", "stage": "build_judgment_result", "rebuttal_retry_count": 0, "error": null,
       "result": {
         "versions": { "case_id": "SYN-2026-0142", "fact_card_version": 3, "judgment_version": 2, "report_version": null },
@@ -57,6 +61,7 @@
         "questions": [],
         "reasons": ["검수한 도표 근거 없음", "선택한 도표의 레코드 ID·적용판이 후보와 다르다"]
       },
+      "report_version": null, "questions": [],
       "updated_at": "2026-11-08T10:30:00+09:00"
     }
   ],

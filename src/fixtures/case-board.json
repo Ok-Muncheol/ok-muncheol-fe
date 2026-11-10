@@ -28,8 +28,8 @@
     },
     {
       "case_id": "SYN-2026-0107", "accident_date": "2026-11-02T16:45:00+09:00", "input_path": "video", "stage": "judgment",
-      "task_status": "completed", "judgment_status": "needs_confirmation", "approval_status": null, "open_questions": 2,
-      "versions": { "case_id": "SYN-2026-0107", "fact_card_version": 2, "judgment_version": 1, "report_version": null },
+      "task_status": "waiting_for_confirmation", "judgment_status": null, "approval_status": null, "open_questions": 1,
+      "versions": { "case_id": "SYN-2026-0107", "fact_card_version": 2, "judgment_version": null, "report_version": null },
       "updated_at": "2026-11-08T15:10:00+09:00"
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "case_id": "SYN-2026-0119", "accident_date": "2026-11-03T18:20:00+09:00", "input_path": "video", "stage": "judgment",
-      "task_status": "completed", "judgment_status": "needs_confirmation", "approval_status": null, "open_questions": 1,
+      "task_status": "completed", "judgment_status": "needs_confirmation", "approval_status": null, "open_questions": 0,
       "versions": { "case_id": "SYN-2026-0119", "fact_card_version": 1, "judgment_version": 1, "report_version": null },
       "updated_at": "2026-11-09T09:50:00+09:00"
     },

@@ -6,12 +6,16 @@ import {
   JUDGMENT_STAGES,
   UNKNOWN_CHOICE,
   answerFor,
+  answerableQuestions,
+  answeredValues,
+  fieldsToCheck,
   isStaleInput,
   partyRoles,
   runBadgeStatus,
   stageLabel,
   stageSteps,
   validationLayers,
+  waitingFor,
 } from "./view.ts";
 
 const states = (run) => stageSteps(run).map((s) => s.state);
@@ -100,4 +104,37 @@ test("도표 칸 표기는 BE 값을 글자로 바꾸고 모르는 값은 그대
   assert.equal(optionLabel("night", "true"), "야간");
   assert.equal(optionLabel("signal_A", "flashing"), "flashing");
   assert.equal(optionLabel("signal_A", null), null);
+});
+
+const question = (field_key, answer = null) => ({
+  question_id: `q-${field_key}`, field_key, text: `${field_key}?`, options: ["a", "b"], allow_unknown: true, answer,
+});
+const answered = (value) => ({
+  value, unknown: value === null, expected_card_version: 2, resulting_card_version: null, answered_at: "2026-11-10T10:00:00+09:00",
+});
+
+test("답할 질문은 확인 대기 실행의 questions뿐이다 — 끝났거나 실패한 실행의 질문은 BE가 거절한다", () => {
+  const questions = [question("movement_B")];
+  assert.deepEqual(answerableQuestions({ status: "waiting_for_confirmation", questions }), questions);
+  for (const status of ["queued", "running", "completed", "failed"]) {
+    assert.deepEqual(answerableQuestions({ status, questions }), [], status);
+  }
+});
+
+test("확인할 칸은 완료 + 추가 확인 필요 판정의 result.questions다", () => {
+  const asked = [{ question_id: "q1", field_key: "night", text: "야간?", options: ["true", "false"], allow_unknown: true }];
+  assert.deepEqual(fieldsToCheck({ result: { status: "needs_confirmation", questions: asked } }), asked);
+  assert.deepEqual(fieldsToCheck({ result: { status: "deferred", questions: asked } }), []);
+  assert.deepEqual(fieldsToCheck({ result: null }), []);
+});
+
+test("확인 대기 실행은 남은 답 → 카드 반영 순으로 기다리고, 모두 ‘확인 불가’면 기다리지 않는다", () => {
+  assert.equal(waitingFor([question("movement_B", answered(null)), question("signal_B")]), "answers");
+  assert.equal(waitingFor([question("movement_B", answered(null)), question("signal_B", answered("a"))]), "card_update");
+  assert.equal(waitingFor([question("movement_B", answered(null))]), null, "BE가 같은 실행을 재개한다");
+});
+
+test("카드에 반영할 값은 값으로 답한 칸만 — ‘확인 불가’와 안 답한 질문은 넣지 않는다", () => {
+  const questions = [question("movement_B", answered(null)), question("signal_B", answered("a")), question("night")];
+  assert.deepEqual(answeredValues(questions), { signal_B: "a" });
 });

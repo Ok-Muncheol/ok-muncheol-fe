@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
   ApiRequestError,
   LOCAL_BACKEND_URL,
+  asApiError,
   createApiClient,
   isVersionConflict,
   newIdempotencyKey,
@@ -31,6 +32,7 @@ const ROUTES = [
   ["patchFactCard", [CASE, PATCH], "PATCH", `/cases/${CASE}/fact-card`, PATCH],
   ["confirmFactCard", [CASE, 3], "POST", `/cases/${CASE}/fact-card/confirm`, { expected_version: 3 }],
   ["startJudgment", [CASE, 3, "judgment-key-1"], "POST", `/cases/${CASE}/judgments`, { card_version: 3 }],
+  ["getJudgment", [CASE], "GET", `/cases/${CASE}/judgment`, undefined],
   ["answerQuestion", [CASE, ANSWER], "POST", `/cases/${CASE}/questions/${QUESTION}/answer`, ANSWER],
   ["askQuestion", [CASE, "왜 이 도표인가요?"], "POST", `/cases/${CASE}/qa`, { text: "왜 이 도표인가요?" }],
   ["getReport", [CASE, 2], "GET", `/cases/${CASE}/reports/2`, undefined],
@@ -60,9 +62,9 @@ function fakeClient({ respond = () => json(200, {}), ...options } = {}) {
 
 const failure = (promise) => promise.then(() => assert.fail("오류가 나야 한다"), (error) => error);
 
-test("메서드 16개가 BE 경로 16개와 1:1이다", () => {
+test("메서드 17개가 BE 경로 17개와 1:1이다", () => {
   const { client } = fakeClient();
-  assert.equal(ROUTES.length, 16);
+  assert.equal(ROUTES.length, 17);
   assert.deepEqual(Object.keys(client).sort(), ROUTES.map(([name]) => name).sort());
 });
 
@@ -179,4 +181,12 @@ test("중복 요청 키는 BE가 받는 8~128자이고 매번 다르다", () => 
   const keys = new Set(Array.from({ length: 20 }, () => newIdempotencyKey()));
   assert.equal(keys.size, 20);
   for (const key of keys) assert.ok(key.length >= 8 && key.length <= 128, key);
+});
+
+test("화면에 보일 오류는 ApiError 모양이고, 모르는 예외는 내부 메시지를 싣지 않는다", () => {
+  const known = new ApiRequestError(409, { code: "already_answered", message: "이미 답한 질문입니다.", retryable: false });
+  assert.deepEqual(asApiError(known), { code: "already_answered", message: "이미 답한 질문입니다.", retryable: false });
+  const unknown = asApiError(new TypeError("secret internals"));
+  assert.equal(unknown.code, "client_error");
+  assert.ok(!unknown.message.includes("secret"));
 });
