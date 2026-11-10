@@ -5,7 +5,7 @@ BE와 같은 담당(정지원(A)·구준휘(B)·김지은(C)·옥석현(D), 코�
 서비스 범위는 [README.md](README.md), 판단·검색·계산 계약은
 [BE TEAM.md](https://github.com/Ok-Muncheol/ok-muncheol-be/blob/main/TEAM.md)를 따른다.
 
-아래 파일은 **타입·화면 컴포넌트 초안**이다. Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안(합성 견본)까지 있고 인증·요청·업로드·상태 저장은 아직 연결하지 않았다.
+아래 파일은 **타입·화면 컴포넌트 초안**이다. Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안·내 정보(합성 견본)까지 있고 인증·요청·업로드·상태 저장은 아직 연결하지 않았다.
 컴포넌트 일부는 전달받은 값을 표시하지만 완성 화면/업무 동작을 뜻하지 않는다. 타입은 수동 초안이며 OpenAPI 생성물이 아니다.
 설치·개발 서버·검증 명령은 README 「개발 시작과 검증」에 있다. lumi의 런타임·모바일 화면·배포 완료 상태를 복제하지 않는다.
 
@@ -22,7 +22,7 @@ BE와 같은 담당(정지원(A)·구준휘(B)·김지은(C)·옥석현(D), 코�
 | 담당 | BE 책임 | FE 책임 / 경로 |
 | --- | --- | --- |
 | 정지원 | 영상 접수·비전 워커·사실 카드·담당자 확인 | `src/features/cases/`, `facts/`: 사건 접수·영상/수동 선택·업로드·진행·카드 편집/확정·매핑 |
-| 구준휘 | 판단 워크플로우·검증 3겹·질의응답 | `src/features/judgment/`, `qa/`: 판단 진행·구분 질문·검증·근거 답변/what-if. `src/features/cases/case-board.tsx`·`case-stepper.tsx`: 담당 사건 보드·사건 상세(`/cases`, `/cases/[id]`) |
+| 구준휘 | 판단 워크플로우·검증 3겹·질의응답 | `src/features/judgment/`, `qa/`: 판단 진행·구분 질문·검증·근거 답변/what-if. `src/features/cases/case-board.tsx`·`case-stepper.tsx`: 담당 사건 보드·사건 상세(`/cases`, `/cases/[id]`). `src/features/profile/`: 내 정보(`/profile`) |
 | 김지은 | 검색툴 3개·PDF 파싱/청킹/문서 임베딩·평가셋 | `src/features/evidence/`, `knowledge/`: 도표/결정례/약관·원문/페이지·개발용 품질 확인 |
 | 옥석현 | 공통 RAG·손해액/보험금·구상·검토 초안 보고서 | `src/features/calculation/`, `claims/`, `reports/`: 산정·구상 패키지·보고서·버전/승인 |
 
@@ -52,6 +52,7 @@ PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책�
 | `src/app/cases/[id]/judgment/page.tsx`, `src/features/judgment/judgment-source.ts` | 판단 화면 초안(진행 단계·실패·구분 질문·판정). 판단 조회·답변·다시 시작 API 연결 |
 | `src/lib/judgment/view.ts`, `src/lib/api/chart-scope.ts` | 판단 화면 규칙(단계·검증 층·답변 모양)과 도표 선택 칸 표기. BE `graph.py`·`chart_scope.py`와 맞춘다 |
 | `src/features/qa/qa-panel.tsx` | 근거 답변·추가 질문·가정 조건/결과. 공식 결과와 나란히 구분 |
+| `src/app/profile/page.tsx`, `src/features/profile/profile-source.ts` | 내 정보 초안(소속·계정·담당 사건 수·로그아웃). 로그인한 담당자는 지금 합성 견본(`src/fixtures/profile.json`)이다. 세션 사용자 조회·로그아웃의 세션 종료를 정지원 인증과 연결 |
 | `src/lib/api/types.ts`, `client.ts` | BE 계약 대응·요청 클라이언트·인증/오류·버전 충돌·복원 |
 | `src/components/status-label.tsx`, `src/app/README.md` | 공통 상태 표현·앱/라우트 통합 |
 

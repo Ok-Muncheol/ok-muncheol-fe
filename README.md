@@ -11,7 +11,7 @@
 
 현재는 **담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약과 BE 요청
 클라이언트, `src/fixtures/`에 BE 생성 합성 양식이 있다. 일부 컴포넌트는 값을 표시하지만 완성 업무 화면은 아니다.
-Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안(합성 견본 표시)까지 있고 Vercel 프로젝트 `ok-muncheol-fe`로 배포된다. 접수·보고서 화면과 인증·상태 저장은 아직 없고, 화면은 BE 요청 대신 합성 견본을 읽는다.
+Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안·내 정보(합성 견본 표시)까지 있고 Vercel 프로젝트 `ok-muncheol-fe`로 배포된다. 접수·보고서 화면과 인증·상태 저장은 아직 없고, 화면은 BE 요청 대신 합성 견본을 읽는다.
 CI(lint·typecheck·test·build)와 ship 하네스는 있다([브랜치·PR 규칙](#브랜치pr-규칙)).
 
 **개발 마감: 2026-11-13(금).** 11/12 기능 통합·11/13 최종 검수 목표다.
@@ -76,7 +76,7 @@ API 경로·판단 그래프 단계와 판정 상태 3종이 어느 분기에서
 
 | 구성 | 기술 | 지금 상태 (2026-11-10) |
 | --- | --- | --- |
-| 앱 | Next.js 16 App Router · React 19 · TypeScript 5 · Tailwind CSS v4, Node 24 · npm (세부 구성과 버전은 lumi를 따랐다) | 사건 보드·상세, 사실 카드·판단 화면 초안(합성 견본), 개발용 코퍼스 미리보기 |
+| 앱 | Next.js 16 App Router · React 19 · TypeScript 5 · Tailwind CSS v4, Node 24 · npm (세부 구성과 버전은 lumi를 따랐다) | 사건 보드·상세, 사실 카드·판단 화면 초안·내 정보(합성 견본), 개발용 코퍼스 미리보기 |
 | BE 호출 | `ApiClient`(fetch, `src/lib/api/client.ts`) | BE 경로 16개와 1:1로 요청하고 오류·버전 충돌·중복 요청 키를 다룬다. 화면은 아직 견본을 읽고, 연결할 자리에 TODO를 남겼다 |
 | 인증 | Supabase Auth, BE에서 토큰·담당 사건 권한 검증, DB·Storage RLS | 미구현. Supabase SDK가 없어 토큰 없이 보내므로 로컬 BE 개발 인증에서만 통한다 |
 | 영상·파일 | Supabase Storage의 서명 URL로 직접 업로드·권한 있는 조회 | 미구현 |
@@ -143,8 +143,8 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 ## 화면·경로 제안
 
 **아래 라우트는 아직 대부분 골격이다.** `/cases`(담당 사건 보드)와 `/cases/[id]`(사건 상세)는 합성 견본(`src/fixtures/case-board.json`)을,
-`/cases/[id]/judgment`(판단 초안)는 판단 단계 사건의 합성 견본(`src/fixtures/judgment.json`)을, `/cases/[id]/facts`(사실 카드 초안)는 사실 카드·판단 단계 사건의 합성 카드(`src/fixtures/fact-cards.json`·`judgment.json`)를 그리고 운영 배포에서는 비어 있다.
-사실 카드의 저장·확정과 판단 화면의 답변·다시 시작은 API 연결 전이라 보내지 않는다. 근거 프레임은 시각만 있고 이미지는 없다. 접수·보고서 화면은 제목만 있다. 컴포넌트 연결 계획은 `src/app/README.md`에 있다.
+`/cases/[id]/judgment`(판단 초안)는 판단 단계 사건의 합성 견본(`src/fixtures/judgment.json`)을, `/cases/[id]/facts`(사실 카드 초안)는 사실 카드·판단 단계 사건의 합성 카드(`src/fixtures/fact-cards.json`·`judgment.json`)를, `/profile`(내 정보)은 합성 담당자(`src/fixtures/profile.json`)를 그리고 운영 배포에서는 비어 있다.
+사실 카드의 저장·확정과 판단 화면의 답변·다시 시작은 API 연결 전이라 보내지 않는다. 내 정보의 로그아웃은 끝낼 세션이 없어 로그인 화면으로만 보낸다. 근거 프레임은 시각만 있고 이미지는 없다. 접수·보고서 화면은 제목만 있다. 컴포넌트 연결 계획은 `src/app/README.md`에 있다.
 보상 담당자용 데스크톱 업무 화면을 우선 설계하고 좁은 화면에서도
 핵심 정보·확인·저장이 가능하도록 한다. lumi의 모바일 웰니스 화면 구성을 그대로 가져오지 않는다.
 
@@ -157,6 +157,7 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 | `/cases/[id]/facts` | 영상/키프레임 + 사실 카드, 수동 입력·근거·수정 이력·확정 |
 | `/cases/[id]/judgment` | 도표 검색·판단 진행, 구분 질문 답변, 판정과 사유(걸린 검증의 이유) |
 | `/cases/[id]/reports/[version]` | 판정·검증 3겹·근거·비율 검토 초안, 버전 비교·담당자 승인 |
+| `/profile` | 내 정보 — 담당자 소속·이메일·담당자 ID, 담당 사건 수, 로그아웃. 머리글 오른쪽 이름을 누르면 온다 |
 | `/dev` | 개발 전용 비식별 견본·상태별 화면 미리보기 (Vercel 운영 배포에서는 404 — `VERCEL_ENV=production`) |
 
 ```text
@@ -166,6 +167,7 @@ src/
   features/facts/       정지원: 영상·사실 카드·담당자 확인
   features/judgment/    구준휘: 판단·검증 3겹·구분 질문
   features/qa/          구준휘: 근거 질의응답·what-if
+  features/profile/     구준휘 통합: 내 정보 — 로그인한 담당자 조회(로그인 전에는 합성 견본)
   features/evidence/    김지은: 인정기준·결정례·약관/원문
   features/knowledge/   김지은: 개발용 코퍼스 검수 미리보기
   features/calculation/ 옥석현: 손해액·보험금
