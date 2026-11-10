@@ -11,9 +11,12 @@ import type { ReactNode } from "react";
  * "보상 담당자"를 보인다(src/features/profile/profile-source.ts). 로그아웃 버튼은 내 정보에 있다.
  */
 
+/**
+ * 주 메뉴. 「사건 접수」 탭은 두지 않는다 — 현업에서는 사건이 담당자에게 배정된 뒤 워크플로우가 시작되므로
+ * 보상 담당자가 사건을 만들지 않는다. 접수 화면(/cases/new, 정지원)은 경로로만 남는다.
+ */
 const NAV: { href: string; label: string; devOnly?: boolean }[] = [
   { href: "/cases", label: "담당 사건" },
-  { href: "/cases/new", label: "사건 접수" },
   { href: "/dev", label: "개발 미리보기", devOnly: true },
 ];
 
@@ -36,7 +39,8 @@ export function AppShell({ children, showDev, accountName }: { children: ReactNo
           </Link>
           <nav aria-label="주 메뉴" className="flex h-full items-stretch gap-1">
             {NAV.filter((item) => !item.devOnly || showDev).map((item) => {
-              const current = item.href === "/cases" ? pathname === "/cases" || /^\/cases\/(?!new)/.test(pathname) : pathname.startsWith(item.href);
+              // 하위 경로도 그 탭이다 — /cases/[id]/… 는 담당 사건, /dev/corpora는 개발 미리보기.
+              const current = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
