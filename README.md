@@ -11,7 +11,7 @@
 
 현재는 **담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약/클라이언트
 인터페이스, `src/fixtures/`에 BE 생성 합성 양식이 있다. 일부 컴포넌트는 값을 표시하지만 완성 업무 화면은 아니다.
-Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·판단 화면 초안(합성 견본 표시)까지 있고 Vercel 프로젝트 `ok-muncheol-fe`로 배포된다. 사실 카드·보고서 화면과 인증·실제 요청·상태 저장은 아직 없다.
+Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안(합성 견본 표시)까지 있고 Vercel 프로젝트 `ok-muncheol-fe`로 배포된다. 접수·보고서 화면과 인증·실제 요청·상태 저장은 아직 없다.
 CI(lint·typecheck·test·build)와 ship 하네스는 있다([브랜치·PR 규칙](#브랜치pr-규칙)).
 
 **개발 마감: 2026-11-13(금).** 11/12 기능 통합·11/13 최종 검수 목표다.
@@ -129,7 +129,7 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 | model | 모델이 낸 값(담당자 값과 구분) | 모델 원값 · 확신도 |
 
 공통 컨트롤은 `src/ui/controls.tsx`에 있다 — `Button`·`ButtonLink`(primary·secondary·quiet·danger, md·sm), `Badge`·`Notice`(톤),
-`PageHeader`·`Card`·`DescriptionList`/`DescriptionRow`, `Field`·`Input`·`Select`·`Textarea`, `ChoiceGroup`(보기 하나 고르기 — 구분 질문), `Table`·`Th`·`Td`, `StatStrip`/`Stat`·`Board`/`BoardColumn`(요약 수치 줄·단계 보드), `Spinner`·`Empty`.
+`PageHeader`·`Card`·`DescriptionList`/`DescriptionRow`, `Field`·`Input`·`Select`·`Textarea`, `ChoiceGroup`(보기 하나 고르기 — 구분 질문)·`Checkbox`(켜고 끄기 — 담당자 확인), `Table`·`Th`·`Td`, `StatStrip`/`Stat`·`Board`/`BoardColumn`(요약 수치 줄·단계 보드), `Spinner`·`Empty`.
 앱 틀(머리글·주 메뉴)은 `src/ui/app-shell.tsx`이고 `/login`은 머리글 없이 그린다. 작업 진행·판정 상태는 `src/components/status-label.tsx`가 톤을 정한다.
 
 - 밝은 옥색(`primary`)은 흰 바탕과 대비가 1.9:1뿐이라 면으로만 칠하고, 그 위 글자는 `on-primary`(짙은 옥색)다. 바탕 위 옥색 글자·선은 `primary-strong`을 쓴다 — `text-primary`·`border-primary`를 바탕 위에 쓰면 읽히지 않는다.
@@ -142,8 +142,8 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 ## 화면·경로 제안
 
 **아래 라우트는 아직 대부분 골격이다.** `/cases`(담당 사건 보드)와 `/cases/[id]`(사건 상세)는 합성 견본(`src/fixtures/case-board.json`)을,
-`/cases/[id]/judgment`(판단 초안)는 판단 단계 사건의 합성 견본(`src/fixtures/judgment.json`)을 그리고 운영 배포에서는 비어 있다.
-판단 화면의 답변·다시 시작은 API 연결 전이라 보내지 않는다. 사실 카드·보고서 화면은 제목만 있다. 컴포넌트 연결 계획은 `src/app/README.md`에 있다.
+`/cases/[id]/judgment`(판단 초안)는 판단 단계 사건의 합성 견본(`src/fixtures/judgment.json`)을, `/cases/[id]/facts`(사실 카드 초안)는 사실 카드·판단 단계 사건의 합성 카드(`src/fixtures/fact-cards.json`·`judgment.json`)를 그리고 운영 배포에서는 비어 있다.
+사실 카드의 저장·확정과 판단 화면의 답변·다시 시작은 API 연결 전이라 보내지 않는다. 근거 프레임은 시각만 있고 이미지는 없다. 접수·보고서 화면은 제목만 있다. 컴포넌트 연결 계획은 `src/app/README.md`에 있다.
 보상 담당자용 데스크톱 업무 화면을 우선 설계하고 좁은 화면에서도
 핵심 정보·확인·저장이 가능하도록 한다. lumi의 모바일 웰니스 화면 구성을 그대로 가져오지 않는다.
 

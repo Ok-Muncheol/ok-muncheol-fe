@@ -8,11 +8,12 @@
  * 지금은 견본이라 보내지 않고, 보낼 값을 화면에 보여 준다.
  */
 import { useState, type FormEvent } from "react";
+import { ModelValue } from "@/components/model-value";
 import { VerificationLabel } from "@/components/status-label";
 import { fieldLabel, optionLabel } from "@/lib/api/chart-scope";
 import type { ConfirmationQuestion, FactField, QuestionAnswer } from "@/lib/api/types";
 import { UNKNOWN_CHOICE, answerFor } from "@/lib/judgment/view";
-import { Badge, Button, ChoiceGroup, Empty, Notice } from "@/ui/controls";
+import { Button, ChoiceGroup, Empty, Notice } from "@/ui/controls";
 
 type Props = {
   questions: readonly ConfirmationQuestion[];
@@ -109,26 +110,6 @@ function FieldNow({ fieldKey, field }: { fieldKey: string; field: FactField }) {
       </span>
       <VerificationLabel status={field.verification_status} />
       <ModelValue fieldKey={fieldKey} field={field} />
-    </>
-  );
-}
-
-/**
- * 모델 원값·확신도 배지(model 톤). 원값은 담당자가 값을 고쳤을 때만 따로 적는다 — 같으면 지금 값이 곧 모델 값이다.
- * 배지 둘로 나눠 좁은 화면에서는 줄을 바꾼다. 모델 값이 없는 칸(직접 입력)은 그리지 않는다.
- */
-function ModelValue({ fieldKey, field }: { fieldKey: string; field: FactField }) {
-  if (field.model_value === null) return null;
-  return (
-    <>
-      {field.model_value !== field.value && <Badge tone="model">모델 원값 {optionLabel(fieldKey, field.model_value)}</Badge>}
-      {field.model_confidence !== null && (
-        <Badge tone="model">
-          <span>
-            모델 확신도 <span className="font-mono tabular-nums">{field.model_confidence.toFixed(2)}</span>
-          </span>
-        </Badge>
-      )}
     </>
   );
 }

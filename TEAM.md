@@ -5,7 +5,7 @@ BE와 같은 담당(정지원(A)·구준휘(B)·김지은(C)·옥석현(D), 코�
 서비스 범위는 [README.md](README.md), 판단·검색·계산 계약은
 [BE TEAM.md](https://github.com/Ok-Muncheol/ok-muncheol-be/blob/main/TEAM.md)를 따른다.
 
-아래 파일은 **타입·화면 컴포넌트 초안**이다. Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·판단 화면 초안(합성 견본)까지 있고 인증·요청·업로드·상태 저장은 아직 연결하지 않았다.
+아래 파일은 **타입·화면 컴포넌트 초안**이다. Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안(합성 견본)까지 있고 인증·요청·업로드·상태 저장은 아직 연결하지 않았다.
 컴포넌트 일부는 전달받은 값을 표시하지만 완성 화면/업무 동작을 뜻하지 않는다. 타입은 수동 초안이며 OpenAPI 생성물이 아니다.
 설치·개발 서버·검증 명령은 README 「개발 시작과 검증」에 있다. lumi의 런타임·모바일 화면·배포 완료 상태를 복제하지 않는다.
 
@@ -35,7 +35,8 @@ PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책�
 | 파일 | 채울 본문 / 연결 |
 | --- | --- |
 | `src/features/cases/case-intake.tsx` | 사건 범위/당사자 수·영상/수동 입력, BE cases API, 업로드/실패/재시도 |
-| `src/features/facts/fact-card-panel.tsx` | 값·모델 원값·출처·확신도·증거, 편집/저장/확정, 수정 이력·매핑·버전 충돌 |
+| `src/features/facts/fact-card-panel.tsx` | 값·모델 원값·출처·확신도·증거, 편집/저장/확정, 수정 이력·매핑·버전 충돌. 초안(구준휘, 2026-11-10): 칸 수정·담당자 확인·저장/확정 요청 모양까지 있고 요청·이력·매핑 편집은 없다 |
+| `src/app/cases/[id]/facts/page.tsx`, `src/features/facts/evidence-frames.tsx`·`fact-source.ts`, `src/lib/facts/view.ts` | 사실 카드 화면 초안(카드·당사자·근거 프레임 목록)과 카드 조회·화면 규칙. 카드 조회 API·권한 있는 프레임 URL·영상 연결 |
 | `src/lib/supabase/README.md` | 인증·직접 업로드·권한 있는 프레임 조회·Realtime 알림/조회 복원 구현 |
 
 완료 기준: 영상 없이도 입력/확정, 카드 칸→근거 프레임 이동, 불명·불일치·매핑 확인,

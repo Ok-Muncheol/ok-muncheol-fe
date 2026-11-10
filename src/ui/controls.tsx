@@ -262,6 +262,16 @@ export function ChoiceGroup({
   );
 }
 
+/** 켜고 끄는 값 하나 — 사실 카드 칸의 담당자 확인. 네이티브 checkbox라 Space 키·초점 고리가 그대로다. 상태는 부모가 쥔다. */
+export function Checkbox({ className = "", children, ...props }: Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & { children: ReactNode }) {
+  return (
+    <label className={`inline-flex cursor-pointer items-center gap-2 text-body text-ink has-disabled:cursor-not-allowed has-disabled:opacity-60 ${className}`}>
+      <input type="checkbox" className="size-4 shrink-0 accent-primary-strong" {...props} />
+      {children}
+    </label>
+  );
+}
+
 /* ---------- 표 ---------- */
 
 /** 표 — 사건 목록 · 수정요소 · 이력. 가로가 좁으면 바깥에서 overflow-x-auto로 민다. */
