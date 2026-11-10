@@ -88,6 +88,15 @@ export type JudgmentRun = {
   status: TaskStatus; stage: JudgmentStage; rebuttal_retry_count: number;
   result: JudgmentResult | null; error: ApiError | null; updated_at: string;
 };
+/**
+ * 질문 응답(POST …/questions/{question_id}/answer) 결과. 판단 접수(POST …/judgments)는 TaskView만 돌려준다.
+ * BE docs/contracts/README.md 「판단 접수·질문 응답」. next_action이 update_fact_card면 값 답변을 카드에
+ * 반영·재확정한 뒤 새 카드 버전으로 판단을 다시 요청한다(field_values가 칸별 답). null이면 같은 실행이 끝났다.
+ */
+export type JudgmentNextAction = "answer_remaining" | "update_fact_card" | null;
+export type AnswerResult = TaskView & {
+  pending_question_ids: string[]; next_action: JudgmentNextAction; field_values: Record<string, string>;
+};
 export type CalculationResult = {
   versions: VersionRef; status: "estimated" | "needs_documents" | "confirmed"; currency: "KRW";
   recognized_damage: number | null; insurance_payment: number | null; deductible: number | null;
@@ -101,4 +110,34 @@ export type ReviewReport = {
   versions: VersionRef; judgment: JudgmentResult; sections: Record<string, unknown>[];
   calculation: CalculationResult | null; recovery: RecoveryAmounts | null;
   approval_status: "draft" | "approved"; approved_by: string | null; approved_at: string | null;
+};
+/** D 보고서 경로(BE docs/d-claims-reports.md 「HTTP 경로」)의 요청·응답. BE app/schemas/reports.py 대응. */
+export type CounterpartyInfo = { vehicle_no: string; insurer: string; claim_no: string | null };
+export type ClaimRow = {
+  claim_no: string; insured_party_id: string | null; coverage: string; insurance_payment: number;
+  counterparty_fault: number; planned_share: number; evidence_count: number;
+};
+export type ClaimAmounts = {
+  planned: number | null; claimed: number | null; recovered: number | null;
+  agreed_counterparty_fault?: number | null; fault_change_reason?: string | null;
+};
+export type ClaimPackage = {
+  case_id: string; package_version: number; created_at: string; report_version: number;
+  counterparty: CounterpartyInfo | null; counterparty_fault: number; fault_change_reason: string | null;
+  rows: ClaimRow[]; amounts: ClaimAmounts; basis: Record<string, unknown>;
+  evidence: Record<string, unknown>[]; missing_evidence: string[];
+  confirmed_by: string; confirmed_at: string; idempotency_key: string;
+  rule_version: string; rule_notice: string | null; assumptions: string[];
+};
+/** 확인 완료 응답. 청구서를 못 만들면 package·html은 null이고, 사유는 claim_blocked_reasons를 목록으로 보여 준다. */
+export type ConfirmResult = {
+  report: ReviewReport; package: ClaimPackage | null; html: string | null;
+  claim_blocked_reason: string | null; claim_blocked_reasons: string[];
+};
+export type ClaimResult = { package: ClaimPackage; html: string };
+/** 면책 체크. 키는 무면허·음주·고의만, null은 미입력으로 되돌림. 아무것도 고르지 않으면 보내지 않는다. */
+export type CaseFacts = Partial<Record<"무면허" | "음주" | "고의", boolean | null>>;
+/** 협의 과실 입력·해제. 이유는 필수다(clear=true면 판단 과실로 되돌림). */
+export type AgreedFaultInput = {
+  agreed_counterparty_fault?: number | null; fault_change_reason?: string | null; clear?: boolean;
 };

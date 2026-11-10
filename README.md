@@ -193,7 +193,11 @@ src/
 | `POST /cases/{id}/questions/{question_id}/answer` | 구분 질문 답변, 변경 카드 확인·확정 경로 연결 |
 | `POST /cases/{id}/judgments` | 확정 카드로 판단 접수·재개 |
 | `GET /cases/{id}/reports/{version}` | 버전별 보고서·근거 조회 |
-| `POST /cases/{id}/reports/{version}/approve` | 표시 중인 버전에 대한 검토·승인 |
+| `POST /cases/{id}/reports/{version}/confirm` | 표시 중인 버전 확인 완료 1회, 청구서 생성·못 만든 사유 목록 표시 |
+| `GET /cases/{id}/reports/{version}/claim` | 그 버전으로 만든 구상 청구서 다시 보기 |
+| `POST /cases/{id}/documents` | 계약·견적·증빙 서류와 면책 체크 추가, 재산정한 새 버전 표시 |
+| `POST /cases/{id}/estimates` | 서명 URL로 Storage에 올린 견적서 PDF 경로 전달, 재산정한 새 버전 표시 |
+| `PATCH /cases/{id}/agreed-fault` | 협의 과실 입력·해제(이유 필수), 새 버전 표시 |
 
 필드의 `value`, `source`, `model_confidence`, `verification_status`, `evidence_frame_ids`를 구분해 표시한다.
 `needs_review`를 확인 대상으로 제시하고, 담당자 수정 후 `human_confirmed`가 돼도 모델 확신도를 100%로 바꾸지 않는다.
