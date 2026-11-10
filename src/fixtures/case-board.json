@@ -1,6 +1,6 @@
 {
   "synthetic": true,
-  "note": "담당 사건 보드(CaseSummary) FE 합성 견본. 단계마다 여러 상태가 보이고 열마다 카드가 여러 장 쌓이도록 만들었고 실제 사건이 아니다. BE GET /cases 계약이 생기면 지운다.",
+  "note": "담당 사건 보드(CaseSummary) FE 합성 견본. 단계마다 대표 상태만 남긴 12건이고 실제 사건이 아니다. BE GET /cases 계약이 생기면 지운다.",
   "cases": [
     {
       "case_id": "SYN-2026-0101", "accident_date": "2026-11-08T08:40:00+09:00", "input_path": "video", "stage": "intake",
@@ -13,18 +13,6 @@
       "task_status": "running", "judgment_status": null, "approval_status": null, "open_questions": 0,
       "versions": { "case_id": "SYN-2026-0102", "fact_card_version": 0, "judgment_version": null, "report_version": null },
       "updated_at": "2026-11-09T09:05:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0103", "accident_date": "2026-11-06T14:20:00+09:00", "input_path": "video", "stage": "analysis",
-      "task_status": "failed", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0103", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-08T17:48:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0104", "accident_date": "2026-11-05T09:30:00+09:00", "input_path": "video", "stage": "facts",
-      "task_status": "waiting_for_confirmation", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0104", "fact_card_version": 1, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T08:30:00+09:00"
     },
     {
       "case_id": "SYN-2026-0105", "accident_date": "2026-11-04T21:10:00+09:00", "input_path": "manual", "stage": "facts",
@@ -45,12 +33,6 @@
       "updated_at": "2026-11-08T15:10:00+09:00"
     },
     {
-      "case_id": "SYN-2026-0108", "accident_date": "2026-11-01T12:00:00+09:00", "input_path": "manual", "stage": "judgment",
-      "task_status": "completed", "judgment_status": "deferred", "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0108", "fact_card_version": 3, "judgment_version": 2, "report_version": null },
-      "updated_at": "2026-11-07T10:25:00+09:00"
-    },
-    {
       "case_id": "SYN-2026-0109", "accident_date": "2026-10-30T19:30:00+09:00", "input_path": "video", "stage": "report",
       "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "draft", "open_questions": 0,
       "versions": { "case_id": "SYN-2026-0109", "fact_card_version": 2, "judgment_version": 1, "report_version": 1 },
@@ -61,48 +43,6 @@
       "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "approved", "open_questions": 0,
       "versions": { "case_id": "SYN-2026-0110", "fact_card_version": 3, "judgment_version": 2, "report_version": 2 },
       "updated_at": "2026-11-06T16:00:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0111", "accident_date": "2026-11-09T07:50:00+09:00", "input_path": "video", "stage": "intake",
-      "task_status": null, "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0111", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T13:40:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0112", "accident_date": "2026-11-08T22:15:00+09:00", "input_path": "manual", "stage": "intake",
-      "task_status": null, "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0112", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T11:05:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0113", "accident_date": "2026-11-08T13:25:00+09:00", "input_path": "video", "stage": "analysis",
-      "task_status": "queued", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0113", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T13:55:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0114", "accident_date": "2026-11-08T07:40:00+09:00", "input_path": "video", "stage": "analysis",
-      "task_status": "running", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0114", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T13:30:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0115", "accident_date": "2026-11-07T08:10:00+09:00", "input_path": "video", "stage": "facts",
-      "task_status": "waiting_for_confirmation", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0115", "fact_card_version": 1, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T12:20:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0116", "accident_date": "2026-11-05T17:35:00+09:00", "input_path": "video", "stage": "facts",
-      "task_status": "waiting_for_confirmation", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0116", "fact_card_version": 2, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T10:45:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0117", "accident_date": "2026-11-06T10:05:00+09:00", "input_path": "video", "stage": "judgment",
-      "task_status": "queued", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0117", "fact_card_version": 1, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T14:02:00+09:00"
     },
     {
       "case_id": "SYN-2026-0118", "accident_date": "2026-11-04T15:40:00+09:00", "input_path": "manual", "stage": "judgment",
@@ -117,82 +57,10 @@
       "updated_at": "2026-11-09T09:50:00+09:00"
     },
     {
-      "case_id": "SYN-2026-0120", "accident_date": "2026-10-31T11:15:00+09:00", "input_path": "video", "stage": "report",
-      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0120", "fact_card_version": 2, "judgment_version": 1, "report_version": null },
-      "updated_at": "2026-11-09T13:10:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0121", "accident_date": "2026-10-29T20:40:00+09:00", "input_path": "video", "stage": "report",
-      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "draft", "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0121", "fact_card_version": 3, "judgment_version": 2, "report_version": 2 },
-      "updated_at": "2026-11-09T10:15:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0122", "accident_date": "2026-10-27T09:05:00+09:00", "input_path": "manual", "stage": "report",
-      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "approved", "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0122", "fact_card_version": 1, "judgment_version": 1, "report_version": 1 },
-      "updated_at": "2026-11-07T14:20:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0123", "accident_date": "2026-11-09T10:20:00+09:00", "input_path": "video", "stage": "intake",
-      "task_status": null, "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0123", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T14:08:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0124", "accident_date": "2026-11-09T06:35:00+09:00", "input_path": "video", "stage": "intake",
-      "task_status": "queued", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0124", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T13:20:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0125", "accident_date": "2026-11-08T17:50:00+09:00", "input_path": "manual", "stage": "intake",
-      "task_status": null, "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0125", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T09:35:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0126", "accident_date": "2026-11-08T19:10:00+09:00", "input_path": "video", "stage": "analysis",
-      "task_status": "queued", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0126", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T14:05:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0127", "accident_date": "2026-11-08T11:45:00+09:00", "input_path": "video", "stage": "analysis",
-      "task_status": "running", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0127", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T13:48:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0128", "accident_date": "2026-11-07T23:30:00+09:00", "input_path": "video", "stage": "analysis",
-      "task_status": "running", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0128", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T12:55:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0129", "accident_date": "2026-11-07T15:15:00+09:00", "input_path": "video", "stage": "analysis",
-      "task_status": "failed", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0129", "fact_card_version": 0, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T10:20:00+09:00"
-    },
-    {
       "case_id": "SYN-2026-0130", "accident_date": "2026-11-07T12:40:00+09:00", "input_path": "video", "stage": "facts",
       "task_status": "waiting_for_confirmation", "judgment_status": null, "approval_status": null, "open_questions": 0,
       "versions": { "case_id": "SYN-2026-0130", "fact_card_version": 1, "judgment_version": null, "report_version": null },
       "updated_at": "2026-11-09T13:15:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0131", "accident_date": "2026-11-06T20:25:00+09:00", "input_path": "video", "stage": "facts",
-      "task_status": "waiting_for_confirmation", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0131", "fact_card_version": 1, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T11:50:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0132", "accident_date": "2026-11-06T08:55:00+09:00", "input_path": "video", "stage": "facts",
-      "task_status": "waiting_for_confirmation", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0132", "fact_card_version": 2, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T09:05:00+09:00"
     },
     {
       "case_id": "SYN-2026-0133", "accident_date": "2026-11-05T13:10:00+09:00", "input_path": "video", "stage": "facts",
@@ -201,106 +69,10 @@
       "updated_at": "2026-11-08T18:40:00+09:00"
     },
     {
-      "case_id": "SYN-2026-0134", "accident_date": "2026-11-06T16:30:00+09:00", "input_path": "manual", "stage": "facts",
-      "task_status": null, "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0134", "fact_card_version": 1, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T10:55:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0135", "accident_date": "2026-11-04T09:45:00+09:00", "input_path": "manual", "stage": "facts",
-      "task_status": null, "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0135", "fact_card_version": 2, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-08T14:15:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0136", "accident_date": "2026-11-07T07:20:00+09:00", "input_path": "video", "stage": "facts",
-      "task_status": "waiting_for_confirmation", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0136", "fact_card_version": 1, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T08:10:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0137", "accident_date": "2026-11-05T19:05:00+09:00", "input_path": "video", "stage": "judgment",
-      "task_status": "running", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0137", "fact_card_version": 1, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T14:12:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0138", "accident_date": "2026-11-04T08:30:00+09:00", "input_path": "video", "stage": "judgment",
-      "task_status": "running", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0138", "fact_card_version": 2, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T13:35:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0139", "accident_date": "2026-11-05T11:50:00+09:00", "input_path": "video", "stage": "judgment",
-      "task_status": "queued", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0139", "fact_card_version": 1, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T13:58:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0140", "accident_date": "2026-11-03T07:25:00+09:00", "input_path": "video", "stage": "judgment",
-      "task_status": "completed", "judgment_status": "needs_confirmation", "approval_status": null, "open_questions": 3,
-      "versions": { "case_id": "SYN-2026-0140", "fact_card_version": 2, "judgment_version": 1, "report_version": null },
-      "updated_at": "2026-11-09T11:10:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0141", "accident_date": "2026-11-02T22:40:00+09:00", "input_path": "manual", "stage": "judgment",
-      "task_status": "completed", "judgment_status": "needs_confirmation", "approval_status": null, "open_questions": 1,
-      "versions": { "case_id": "SYN-2026-0141", "fact_card_version": 1, "judgment_version": 1, "report_version": null },
-      "updated_at": "2026-11-08T16:55:00+09:00"
-    },
-    {
       "case_id": "SYN-2026-0142", "accident_date": "2026-10-31T18:10:00+09:00", "input_path": "video", "stage": "judgment",
       "task_status": "completed", "judgment_status": "deferred", "approval_status": null, "open_questions": 0,
       "versions": { "case_id": "SYN-2026-0142", "fact_card_version": 3, "judgment_version": 2, "report_version": null },
       "updated_at": "2026-11-08T10:30:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0143", "accident_date": "2026-11-03T13:35:00+09:00", "input_path": "video", "stage": "judgment",
-      "task_status": "failed", "judgment_status": null, "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0143", "fact_card_version": 1, "judgment_version": null, "report_version": null },
-      "updated_at": "2026-11-09T12:40:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0144", "accident_date": "2026-11-01T08:50:00+09:00", "input_path": "video", "stage": "report",
-      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0144", "fact_card_version": 2, "judgment_version": 1, "report_version": null },
-      "updated_at": "2026-11-09T12:05:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0145", "accident_date": "2026-10-30T15:20:00+09:00", "input_path": "video", "stage": "report",
-      "task_status": "running", "judgment_status": "draft_ready", "approval_status": null, "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0145", "fact_card_version": 2, "judgment_version": 1, "report_version": null },
-      "updated_at": "2026-11-09T14:10:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0146", "accident_date": "2026-10-29T09:40:00+09:00", "input_path": "video", "stage": "report",
-      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "draft", "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0146", "fact_card_version": 2, "judgment_version": 1, "report_version": 1 },
-      "updated_at": "2026-11-09T08:25:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0147", "accident_date": "2026-10-28T17:05:00+09:00", "input_path": "manual", "stage": "report",
-      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "draft", "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0147", "fact_card_version": 1, "judgment_version": 1, "report_version": 1 },
-      "updated_at": "2026-11-08T17:30:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0148", "accident_date": "2026-10-24T12:30:00+09:00", "input_path": "video", "stage": "report",
-      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "approved", "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0148", "fact_card_version": 3, "judgment_version": 2, "report_version": 2 },
-      "updated_at": "2026-11-06T11:15:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0149", "accident_date": "2026-10-22T21:50:00+09:00", "input_path": "video", "stage": "report",
-      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "approved", "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0149", "fact_card_version": 2, "judgment_version": 1, "report_version": 1 },
-      "updated_at": "2026-11-05T15:40:00+09:00"
-    },
-    {
-      "case_id": "SYN-2026-0150", "accident_date": "2026-10-20T08:05:00+09:00", "input_path": "video", "stage": "report",
-      "task_status": "completed", "judgment_status": "draft_ready", "approval_status": "approved", "open_questions": 0,
-      "versions": { "case_id": "SYN-2026-0150", "fact_card_version": 4, "judgment_version": 3, "report_version": 3 },
-      "updated_at": "2026-11-04T10:00:00+09:00"
     }
   ]
 }

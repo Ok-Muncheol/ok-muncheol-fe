@@ -11,11 +11,11 @@ export default async function CasesPage() {
   // 머리글 56px + 본문 여백 64px을 뺀 높이를 채워 보드 열이 화면 아래까지 닿게 한다.
   return (
     <div className="flex min-h-[calc(100dvh-7.5rem)] flex-col">
-      {/* 보이는 제목·접수 버튼은 두지 않는다 — 주 메뉴의 현재 탭과 「사건 접수」 탭이 대신한다. 화면 낭독기용 제목만 남긴다. */}
+      {/* 보이는 제목은 두지 않는다 — 주 메뉴의 현재 탭이 대신한다. 사건은 담당자에게 배정돼 들어오므로 접수 버튼도 두지 않는다. 화면 낭독기용 제목만 남긴다. */}
       <h1 className="sr-only">담당 사건</h1>
       {!sample && cases.length === 0 && (
         <div className="mb-6">
-          <Notice tone="info">담당 사건이 없다. 사건 접수에서 새 사건을 만든다.</Notice>
+          <Notice tone="info">담당 사건이 없다. 사건이 배정되면 여기에 보인다.</Notice>
         </div>
       )}
       {/* 견본은 큰 안내 대신 요약 줄 끝의 배지로만 알린다. 출처 설명은 배지에 마우스를 올리면 보인다. */}

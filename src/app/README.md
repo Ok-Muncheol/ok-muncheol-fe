@@ -7,7 +7,7 @@
 | --- | --- | --- |
 | `/login` | 구준휘 통합·정지원 인증 | Supabase 로그인 |
 | `/cases` | 구준휘 | 담당 사건 보드 — 요약 수치·단계별 열(`src/features/cases/case-board.tsx`, 규칙은 `src/lib/cases/stages.ts`) |
-| `/cases/new` | 정지원 | 접수·영상/수동 입력 |
+| `/cases/new` | 정지원 | 접수·영상/수동 입력. 주 메뉴에는 두지 않는다 — 사건은 담당자에게 배정돼 들어온다 |
 | `/cases/[id]` | 구준휘 | 단계 표시·현재 상태·요약, 현재 단계 화면으로 이동 |
 | `/cases/[id]/facts` | 정지원·구준휘 | 영상/카드·확인 질문·확정 |
 | `/cases/[id]/judgment` | 구준휘 | 판단 진행(그래프 9단계)·실패·구분 질문·판정(`src/features/judgment/`, 규칙은 `src/lib/judgment/view.ts`) |
