@@ -1,0 +1,306 @@
+{
+  "synthetic": true,
+  "note": "판단 화면(JudgmentRun · FactCard) FE 합성 견본. case-board.json의 판단 단계 사건마다 하나씩 두었고 실제 사건이 아니다. 임의 도표·과실비율을 만들지 않으려고 도표가 정해진 ‘초안 작성 가능’ 견본은 두지 않았다. 오류 코드·버전 문자열은 예시다. BE 판단 조회 계약이 생기면 contracts.json으로 옮긴다.",
+  "runs": [
+    {
+      "case_id": "SYN-2026-0106", "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "running", "stage": "retrieve_chart_candidates", "rebuttal_retry_count": 0, "result": null, "error": null,
+      "updated_at": "2026-11-09T09:20:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0107", "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "completed", "stage": "build_judgment_result", "rebuttal_retry_count": 0, "error": null,
+      "result": {
+        "versions": { "case_id": "SYN-2026-0107", "fact_card_version": 2, "judgment_version": 1, "report_version": null },
+        "status": "needs_confirmation", "chart_id": null, "edition": null, "fault_A": null, "fault_B": null,
+        "calculation_log": [], "evidence": [], "checks": [],
+        "questions": [
+          { "question_id": "SYN-2026-0107-q1", "field_key": "movement_B", "text": "B 차량의 진행 방향을 확인해 주세요.", "options": ["straight", "left_turn", "right_turn", "u_turn"], "allow_unknown": true },
+          { "question_id": "SYN-2026-0107-q2", "field_key": "signal_B", "text": "B 차량이 교차로에 들어갈 때의 신호를 확인해 주세요.", "options": ["green", "yellow", "red", "green_left_arrow", "no_signal"], "allow_unknown": true }
+        ],
+        "reasons": ["도표 선택 칸 미확인: movement_B", "도표 선택 칸 미확인: signal_B"]
+      },
+      "updated_at": "2026-11-08T15:10:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0108", "fact_card_version": 3, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "completed", "stage": "build_judgment_result", "rebuttal_retry_count": 0, "error": null,
+      "result": {
+        "versions": { "case_id": "SYN-2026-0108", "fact_card_version": 3, "judgment_version": 2, "report_version": null },
+        "status": "deferred", "chart_id": null, "edition": null, "fault_A": null, "fault_B": null,
+        "calculation_log": [], "evidence": [], "checks": [], "questions": [],
+        "reasons": ["MVP 포함 여부 미결정(회전교차로)"]
+      },
+      "updated_at": "2026-11-07T10:25:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0117", "fact_card_version": 1, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "queued", "stage": "require_confirmed_card", "rebuttal_retry_count": 0, "result": null, "error": null,
+      "updated_at": "2026-11-09T14:02:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0118", "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "failed", "stage": "retrieve_chart_candidates", "rebuttal_retry_count": 0, "result": null,
+      "error": { "code": "search_timeout", "message": "도표 후보 검색이 제때 응답하지 않았습니다.", "retryable": true },
+      "updated_at": "2026-11-09T11:30:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0119", "fact_card_version": 1, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "completed", "stage": "build_judgment_result", "rebuttal_retry_count": 0, "error": null,
+      "result": {
+        "versions": { "case_id": "SYN-2026-0119", "fact_card_version": 1, "judgment_version": 1, "report_version": null },
+        "status": "needs_confirmation", "chart_id": null, "edition": null, "fault_A": null, "fault_B": null,
+        "calculation_log": [], "evidence": [],
+        "checks": [
+          { "layer": "evidence", "passed": true, "reasons": [] },
+          { "layer": "rebuttal", "passed": false, "reasons": ["카드의 야간 여부가 담당자 확인 전이라 수정요소(야간) 적용을 가를 수 없음"], "rebuttal_kind": "missing_fact" }
+        ],
+        "questions": [
+          { "question_id": "SYN-2026-0119-q1", "field_key": "night", "text": "사고가 야간에 났는지 확인해 주세요.", "options": ["true", "false"], "allow_unknown": true }
+        ],
+        "reasons": ["도표를 가르는 사실이 카드에 없음", "카드의 야간 여부가 담당자 확인 전이라 수정요소(야간) 적용을 가를 수 없음"]
+      },
+      "updated_at": "2026-11-09T09:50:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0137", "fact_card_version": 1, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "running", "stage": "review_rebuttal", "rebuttal_retry_count": 0, "result": null, "error": null,
+      "updated_at": "2026-11-09T14:12:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0138", "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "running", "stage": "check_evidence", "rebuttal_retry_count": 0, "result": null, "error": null,
+      "updated_at": "2026-11-09T13:35:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0139", "fact_card_version": 1, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "queued", "stage": "require_confirmed_card", "rebuttal_retry_count": 0, "result": null, "error": null,
+      "updated_at": "2026-11-09T13:58:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0140", "fact_card_version": 2, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "completed", "stage": "build_judgment_result", "rebuttal_retry_count": 0, "error": null,
+      "result": {
+        "versions": { "case_id": "SYN-2026-0140", "fact_card_version": 2, "judgment_version": 1, "report_version": null },
+        "status": "needs_confirmation", "chart_id": null, "edition": null, "fault_A": null, "fault_B": null,
+        "calculation_log": [], "evidence": [], "checks": [],
+        "questions": [
+          { "question_id": "SYN-2026-0140-q1", "field_key": "road_priority", "text": "두 도로의 관계(폭·일시정지 표지)를 확인해 주세요.", "options": ["same_width", "major_minor", "stop_sign"], "allow_unknown": true },
+          { "question_id": "SYN-2026-0140-q2", "field_key": "movement_A", "text": "A 차량의 진행 방향을 확인해 주세요.", "options": ["straight", "left_turn", "right_turn", "u_turn"], "allow_unknown": true },
+          { "question_id": "SYN-2026-0140-q3", "field_key": "movement_B", "text": "B 차량의 진행 방향을 확인해 주세요.", "options": ["straight", "left_turn", "right_turn", "u_turn"], "allow_unknown": true }
+        ],
+        "reasons": ["도표 선택 칸 미확인: road_priority", "도표 선택 칸 미확인: movement_A", "도표 선택 칸 미확인: movement_B"]
+      },
+      "updated_at": "2026-11-09T11:10:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0141", "fact_card_version": 1, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "completed", "stage": "build_judgment_result", "rebuttal_retry_count": 1, "error": null,
+      "result": {
+        "versions": { "case_id": "SYN-2026-0141", "fact_card_version": 1, "judgment_version": 1, "report_version": null },
+        "status": "needs_confirmation", "chart_id": null, "edition": null, "fault_A": null, "fault_B": null,
+        "calculation_log": [], "evidence": [],
+        "checks": [
+          { "layer": "evidence", "passed": true, "reasons": [] },
+          { "layer": "rebuttal", "passed": false, "reasons": ["첫 후보 도표의 진입 조건이 카드의 진입 순서(동시)와 맞지 않음"], "rebuttal_kind": "wrong_chart" },
+          { "layer": "evidence", "passed": true, "reasons": [] },
+          { "layer": "rebuttal", "passed": false, "reasons": ["차순위 도표도 카드의 도로 관계(동일 폭)와 맞지 않음"], "rebuttal_kind": "wrong_chart" }
+        ],
+        "questions": [
+          { "question_id": "SYN-2026-0141-q1", "field_key": "road_priority", "text": "두 도로의 관계를 다시 확인해 주세요. 차순위 도표도 카드의 도로 관계와 맞지 않습니다.", "options": ["same_width", "major_minor", "stop_sign"], "allow_unknown": true }
+        ],
+        "reasons": ["두 번째 도표 오선택 반박: 담당자 확인 필요", "차순위 도표도 카드의 도로 관계(동일 폭)와 맞지 않음"]
+      },
+      "updated_at": "2026-11-08T16:55:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0142", "fact_card_version": 3, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "completed", "stage": "build_judgment_result", "rebuttal_retry_count": 0, "error": null,
+      "result": {
+        "versions": { "case_id": "SYN-2026-0142", "fact_card_version": 3, "judgment_version": 2, "report_version": null },
+        "status": "deferred", "chart_id": null, "edition": null, "fault_A": null, "fault_B": null,
+        "calculation_log": [], "evidence": [],
+        "checks": [{ "layer": "evidence", "passed": false, "reasons": ["선택한 도표의 레코드 ID·적용판이 후보와 다르다"] }],
+        "questions": [],
+        "reasons": ["검수한 도표 근거 없음", "선택한 도표의 레코드 ID·적용판이 후보와 다르다"]
+      },
+      "updated_at": "2026-11-08T10:30:00+09:00"
+    },
+    {
+      "case_id": "SYN-2026-0143", "fact_card_version": 1, "criteria_version": "synthetic-criteria-1", "rule_version": "synthetic-rule-1",
+      "status": "failed", "stage": "review_rebuttal", "rebuttal_retry_count": 0, "result": null,
+      "error": { "code": "internal_error", "message": "판단 중 내부 오류가 났습니다.", "retryable": false },
+      "updated_at": "2026-11-09T12:40:00+09:00"
+    }
+  ],
+  "fact_cards": [
+    {
+      "case_id": "SYN-2026-0106", "version": 2, "accident_date": "2026-11-03T07:55:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-09T09:12:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": "synthetic-party-2", "insured_party_id": "synthetic-party-2", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.96, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "location_type": { "value": "signalized_intersection", "model_value": "signalized_intersection", "source": "vision", "model_confidence": 0.64, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_A": { "value": "left_turn", "model_value": "right_turn", "source": "vision", "model_confidence": 0.36, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_B": { "value": "straight", "model_value": "straight", "source": "vision", "model_confidence": 0.47, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_A": { "value": "green", "model_value": "red", "source": "vision", "model_confidence": 0.31, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_B": { "value": "green", "model_value": "green", "source": "vision", "model_confidence": 0.72, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0107", "version": 2, "accident_date": "2026-11-02T16:45:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-08T14:40:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": "synthetic-party-2", "insured_party_id": "synthetic-party-2", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.95, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "location_type": { "value": "signalized_intersection", "model_value": "signalized_intersection", "source": "vision", "model_confidence": 0.61, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_A": { "value": "straight", "model_value": "straight", "source": "vision", "model_confidence": 0.52, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_B": { "value": "left_turn", "model_value": "left_turn", "source": "vision", "model_confidence": 0.41, "verification_status": "needs_review", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_A": { "value": "green", "model_value": "green", "source": "vision", "model_confidence": 0.7, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_B": { "value": "green", "model_value": "green", "source": "vision", "model_confidence": 0.33, "verification_status": "needs_review", "evidence_frame_ids": [], "source_document_ids": [] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0108", "version": 3, "accident_date": "2026-11-01T12:00:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-07T10:05:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": null, "insured_party_id": "synthetic-party-1", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "location_type": { "value": "roundabout", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "movement_A": { "value": "straight", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "movement_B": { "value": "left_turn", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0117", "version": 1, "accident_date": "2026-11-06T10:05:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-09T13:58:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": "synthetic-party-2", "insured_party_id": "synthetic-party-2", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.94, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "location_type": { "value": "unsignalized_intersection", "model_value": "unsignalized_intersection", "source": "vision", "model_confidence": 0.66, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "road_priority": { "value": "same_width", "model_value": "same_width", "source": "vision", "model_confidence": 0.57, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_A": { "value": "left_turn", "model_value": "left_turn", "source": "vision", "model_confidence": 0.44, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_B": { "value": "straight", "model_value": "straight", "source": "vision", "model_confidence": 0.53, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "entry_order": { "value": "first", "model_value": "second", "source": "vision", "model_confidence": 0.39, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0118", "version": 2, "accident_date": "2026-11-04T15:40:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-09T11:02:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": null, "insured_party_id": "synthetic-party-1", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "location_type": { "value": "signalized_intersection", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "movement_A": { "value": "right_turn", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "movement_B": { "value": "straight", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "signal_A": { "value": "red", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "signal_B": { "value": "green", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0119", "version": 1, "accident_date": "2026-11-03T18:20:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-09T09:21:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": "synthetic-party-2", "insured_party_id": "synthetic-party-2", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.97, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "location_type": { "value": "signalized_intersection", "model_value": "signalized_intersection", "source": "vision", "model_confidence": 0.68, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_A": { "value": "left_turn", "model_value": "left_turn", "source": "vision", "model_confidence": 0.43, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_B": { "value": "straight", "model_value": "straight", "source": "vision", "model_confidence": 0.55, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_A": { "value": "green_left_arrow", "model_value": "green", "source": "vision", "model_confidence": 0.3, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_B": { "value": "red", "model_value": "red", "source": "vision", "model_confidence": 0.74, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "night": { "value": "true", "model_value": "true", "source": "vision", "model_confidence": 0.52, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0137", "version": 1, "accident_date": "2026-11-05T19:05:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-09T13:51:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": "synthetic-party-2", "insured_party_id": "synthetic-party-2", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.95, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "location_type": { "value": "signalized_intersection", "model_value": "signalized_intersection", "source": "vision", "model_confidence": 0.71, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_A": { "value": "left_turn", "model_value": "left_turn", "source": "vision", "model_confidence": 0.49, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_B": { "value": "straight", "model_value": "straight", "source": "vision", "model_confidence": 0.58, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_A": { "value": "green_left_arrow", "model_value": "green_left_arrow", "source": "vision", "model_confidence": 0.46, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_B": { "value": "red", "model_value": "red", "source": "vision", "model_confidence": 0.62, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0138", "version": 2, "accident_date": "2026-11-04T08:30:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-09T13:20:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": "synthetic-party-2", "insured_party_id": "synthetic-party-2", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.96, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "location_type": { "value": "unsignalized_intersection", "model_value": "unsignalized_intersection", "source": "vision", "model_confidence": 0.63, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "road_priority": { "value": "stop_sign", "model_value": "same_width", "source": "vision", "model_confidence": 0.41, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_A": { "value": "straight", "model_value": "straight", "source": "vision", "model_confidence": 0.5, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_B": { "value": "right_turn", "model_value": "right_turn", "source": "vision", "model_confidence": 0.45, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "entry_order": { "value": "second", "model_value": "second", "source": "vision", "model_confidence": 0.55, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0139", "version": 1, "accident_date": "2026-11-05T11:50:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-09T13:55:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": "synthetic-party-2", "insured_party_id": "synthetic-party-2", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.93, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "location_type": { "value": "signalized_intersection", "model_value": "signalized_intersection", "source": "vision", "model_confidence": 0.69, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_A": { "value": "u_turn", "model_value": "left_turn", "source": "vision", "model_confidence": 0.34, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_B": { "value": "straight", "model_value": "straight", "source": "vision", "model_confidence": 0.57, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_A": { "value": "green", "model_value": "green", "source": "vision", "model_confidence": 0.4, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_B": { "value": "green", "model_value": "green", "source": "vision", "model_confidence": 0.66, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0140", "version": 2, "accident_date": "2026-11-03T07:25:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-09T10:48:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": "synthetic-party-2", "insured_party_id": "synthetic-party-1", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.95, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "location_type": { "value": "unsignalized_intersection", "model_value": "unsignalized_intersection", "source": "vision", "model_confidence": 0.6, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "road_priority": { "value": "major_minor", "model_value": "major_minor", "source": "vision", "model_confidence": 0.38, "verification_status": "needs_review", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_A": { "value": "straight", "model_value": "straight", "source": "vision", "model_confidence": 0.35, "verification_status": "needs_review", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_B": { "value": "left_turn", "model_value": "left_turn", "source": "vision", "model_confidence": 0.27, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] },
+        "entry_order": { "value": "simultaneous", "model_value": "simultaneous", "source": "vision", "model_confidence": 0.48, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0141", "version": 1, "accident_date": "2026-11-02T22:40:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-08T16:20:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": null, "insured_party_id": "synthetic-party-1", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "location_type": { "value": "unsignalized_intersection", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "road_priority": { "value": "same_width", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "movement_A": { "value": "straight", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "movement_B": { "value": "straight", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] },
+        "entry_order": { "value": "simultaneous", "model_value": null, "source": "statement", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": ["synthetic-statement"] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0142", "version": 3, "accident_date": "2026-10-31T18:10:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-08T10:02:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": "synthetic-party-2", "insured_party_id": "synthetic-party-2", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.96, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "location_type": { "value": "unsignalized_intersection", "model_value": "unsignalized_intersection", "source": "vision", "model_confidence": 0.58, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "road_priority": { "value": "major_minor", "model_value": "major_minor", "source": "vision", "model_confidence": 0.52, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_A": { "value": "u_turn", "model_value": "left_turn", "source": "vision", "model_confidence": 0.29, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_B": { "value": "right_turn", "model_value": "right_turn", "source": "vision", "model_confidence": 0.43, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "entry_order": { "value": "first", "model_value": "first", "source": "vision", "model_confidence": 0.51, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] }
+      }
+    },
+    {
+      "case_id": "SYN-2026-0143", "version": 1, "accident_date": "2026-11-03T13:35:00+09:00", "status": "confirmed",
+      "confirmed_by": "synthetic-reviewer", "confirmed_at": "2026-11-09T12:18:00+09:00", "evidence_frames": [],
+      "party_mapping": { "video_ego_party_id": "synthetic-party-2", "insured_party_id": "synthetic-party-2", "chart_party_A_id": "synthetic-party-1", "chart_party_B_id": "synthetic-party-2" },
+      "fields": {
+        "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.94, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "location_type": { "value": "signalized_intersection", "model_value": "signalized_intersection", "source": "vision", "model_confidence": 0.65, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_A": { "value": "left_turn", "model_value": "left_turn", "source": "vision", "model_confidence": 0.46, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "movement_B": { "value": "straight", "model_value": "straight", "source": "vision", "model_confidence": 0.51, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_A": { "value": "yellow", "model_value": "yellow", "source": "vision", "model_confidence": 0.37, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "signal_B": { "value": "green", "model_value": "green", "source": "vision", "model_confidence": 0.59, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] }
+      }
+    }
+  ]
+}
