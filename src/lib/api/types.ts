@@ -98,12 +98,18 @@ export type JudgmentRun = {
   result: JudgmentResult | null; error: ApiError | null; updated_at: string;
 };
 /**
- * 질문 응답(POST …/questions/{question_id}/answer) 결과. 판단 접수(POST …/judgments)는 TaskView만 돌려준다.
- * BE docs/contracts/README.md 「판단 접수·질문 응답」. next_action이 update_fact_card면 값 답변을 카드에
- * 반영·재확정한 뒤 새 카드 버전으로 판단을 다시 요청한다(field_values가 칸별 답). null이면 같은 실행이 끝났다.
+ * 판단 접수(POST …/judgments) 응답. BE docs/contracts/README.md 「판단 접수·질문 응답」.
+ * 판정이 나면 BE가 보고서를 만들고 report_version을 준다(질문 대기·실패면 null). 보고서를 못 만들면 판단은
+ * completed로 남고 report_error가 온다 — 같은 카드 버전으로 판단 접수를 새 키로 다시 보내면 보고서만 다시 만든다.
+ */
+export type JudgmentTaskView = TaskView & { report_version?: number | null; report_error?: ApiError | null };
+/**
+ * 질문 응답(POST …/questions/{question_id}/answer) 결과 = 판단 접수 응답 + 아래 필드. next_action이
+ * update_fact_card면 값 답변을 카드에 반영·재확정한 뒤 새 카드 버전으로 판단을 다시 요청한다(field_values가
+ * 칸별 답). null이면 같은 실행이 끝났다.
  */
 export type JudgmentNextAction = "answer_remaining" | "update_fact_card" | null;
-export type AnswerResult = TaskView & {
+export type AnswerResult = JudgmentTaskView & {
   pending_question_ids: string[]; next_action: JudgmentNextAction; field_values: Record<string, string>;
 };
 export type CalculationResult = {
