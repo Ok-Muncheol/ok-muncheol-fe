@@ -13,7 +13,7 @@
  */
 import type {
   AgreedFaultInput, AnswerResult, ApiError, CaseFacts, ClaimResult, ConfirmResult, CounterpartyInfo,
-  FactCard, FactPatch, QuestionAnswer, ReviewReport, TaskView,
+  FactCard, FactPatch, JudgmentTaskView, QuestionAnswer, ReviewReport,
 } from "./types";
 
 export interface ApiClient {
@@ -26,7 +26,7 @@ export interface ApiClient {
   patchFactCard(caseId: string, patch: FactPatch): Promise<FactCard>;
   confirmFactCard(caseId: string, expectedVersion: number): Promise<FactCard>;
   /** POST /cases/{id}/judgments — 202. 판단을 끝까지 실행한 뒤의 상태(완료·질문 대기·실패). idempotencyKey는 startAnalysis와 같다 */
-  startJudgment(caseId: string, cardVersion: number, idempotencyKey: string): Promise<TaskView>;
+  startJudgment(caseId: string, cardVersion: number, idempotencyKey: string): Promise<JudgmentTaskView>;
   answerQuestion(caseId: string, answer: QuestionAnswer): Promise<AnswerResult>;
   askQuestion(caseId: string, text: string): Promise<Record<string, unknown>>;
   getReport(caseId: string, version: number): Promise<ReviewReport>;
