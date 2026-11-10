@@ -86,7 +86,8 @@ PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책�
 
 BE `app/schemas/` → `make contracts` → FE `types.ts`/`fixtures/contracts.json` → 각 화면을 함께 맞춘다.
 현재 JSON은 필드 모양 양식이고 실행 가능한 시나리오가 아니다. OpenAPI 확정 후 자동 생성 방식으로 교체한다.
-`client.ts`는 인터페이스와 미구현 팩토리이며 실제 요청을 보내지 않는다.
+`client.ts`는 BE 경로 16개에 요청을 보낸다(오류 `ApiRequestError`·버전 충돌 `isVersionConflict`·접수 중복 키 `newIdempotencyKey`).
+로그인 연결 전에는 토큰 없이 보내 로컬 BE 개발 인증에서만 통하고, 화면은 아직 합성 견본을 읽는다 — 화면 연결은 담당별 `*-source.ts`·패널의 TODO에서 한다.
 
 | 날짜 | 합류 목표 |
 | --- | --- |

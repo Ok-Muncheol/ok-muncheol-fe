@@ -9,9 +9,9 @@
 - 백엔드·계약 제안: [ok-muncheol-be](https://github.com/Ok-Muncheol/ok-muncheol-be)
 - 역할별 작업·완료 기준: [TEAM.md](TEAM.md)
 
-현재는 **담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약/클라이언트
-인터페이스, `src/fixtures/`에 BE 생성 합성 양식이 있다. 일부 컴포넌트는 값을 표시하지만 완성 업무 화면은 아니다.
-Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안(합성 견본 표시)까지 있고 Vercel 프로젝트 `ok-muncheol-fe`로 배포된다. 접수·보고서 화면과 인증·실제 요청·상태 저장은 아직 없다.
+현재는 **담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약과 BE 요청
+클라이언트, `src/fixtures/`에 BE 생성 합성 양식이 있다. 일부 컴포넌트는 값을 표시하지만 완성 업무 화면은 아니다.
+Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안(합성 견본 표시)까지 있고 Vercel 프로젝트 `ok-muncheol-fe`로 배포된다. 접수·보고서 화면과 인증·상태 저장은 아직 없고, 화면은 BE 요청 대신 합성 견본을 읽는다.
 CI(lint·typecheck·test·build)와 ship 하네스는 있다([브랜치·PR 규칙](#브랜치pr-규칙)).
 
 **개발 마감: 2026-11-13(금).** 11/12 기능 통합·11/13 최종 검수 목표다.
@@ -91,8 +91,8 @@ PR 브랜치는 배포하지 않는다 — Hobby는 배포를 하루(24시간) 1
 `main` 배포까지 막힌다. 머지 전 확인은 CI `check`(build 포함)와 로컬 `npm run dev`(`/dev` 미리보기)로 한다.
 
 FE에는 공개용 Supabase URL·키 등 브라우저 노출을 전제로 한 값만 둔다. DB·LLM·VLM·Modal·Supabase 서버 비밀키는
-BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEND_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — 아직 읽는 코드는 없다). Vercel에는 세 값을 Config 유형으로
+BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEND_URL`은 `src/lib/api/client.ts`가 읽고,
+`NEXT_PUBLIC_SUPABASE_URL`·`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`는 아직 읽는 코드가 없다). Vercel에는 세 값을 Config 유형으로
 등록했다(바꾸면 다음 배포부터 반영). 비공개 사건 데이터나 서명 URL을 문서·견본·추적 로그에 넣지 않는다.
 
 ## 디자인 시스템: 청람
@@ -223,8 +223,10 @@ Realtime 연결이 끊겨도 업로드·분석·판단을 자동 중복 생성�
 
 ## 개발 시작과 검증
 
-현재 가능한 작업은 역할별 타입·컴포넌트 본문 작성과 계약 검토다. `src/lib/api/client.ts`는 요청을 보내지 않는
-인터페이스 초안이다. `src/fixtures/contracts.json`은 BE 생성 양식이며 실행 가능한 목업 시나리오가 아니다.
+현재 가능한 작업은 역할별 타입·컴포넌트 본문 작성, 계약 검토, 화면의 BE 연결이다. `src/lib/api/client.ts`는 BE 경로
+16개에 요청을 보내지만(오류 `ApiRequestError`, 버전 충돌 `isVersionConflict`, 접수 중복 키 `newIdempotencyKey`) 화면은
+아직 합성 견본을 읽는다. 로그인 연결 전이라 토큰 없이 보내므로 로컬 BE 개발 인증(`APP_ENV=local`·`DEV_ACTOR_ID`)에서만
+통한다. `src/fixtures/contracts.json`은 BE 생성 양식이며 실행 가능한 목업 시나리오가 아니다.
 
 Node.js 24(`.nvmrc`)와 npm을 쓴다.
 
@@ -236,8 +238,8 @@ npm run dev   # http://localhost:3000
 ```
 
 변경을 마치면 `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`를 통과시킨다. CI `check`도 같은 명령을
-같은 순서로 돌린다. `npm test`는 지금 ship 게이트·폴링 스크립트 테스트(`automation/test/`)이고, `src/**/*.test.mjs`를
-만들면 함께 돈다. `.env.example`을 `.env`로 복사해 두지만 아직 읽는 코드는 없다.
+같은 순서로 돌린다. `npm test`는 ship 게이트·폴링 스크립트 테스트(`automation/test/`)와 `src/**/*.test.mjs`를 함께 돈다.
+`.env.example`을 `.env`로 복사해 둔다 — 지금은 `NEXT_PUBLIC_BACKEND_URL`만 읽는다(비우면 로컬 BE `http://127.0.0.1:8000`).
 
 Next.js 16은 API와 파일 규칙이 학습 데이터와 다를 수 있다. AI 에이전트 안에서 `npm run dev`를 돌리면 Next가
 `AGENTS.md`에 설치된 버전의 문서(`node_modules/next/dist/docs/`) 안내 블록을 유지한다 — 그 블록은 고치지 않는다.
