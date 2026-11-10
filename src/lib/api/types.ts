@@ -73,6 +73,21 @@ export type JudgmentResult = {
   fault_A: number | null; fault_B: number | null; calculation_log: string[];
   evidence: EvidenceHit[]; checks: ValidationCheck[]; questions: ConfirmationQuestion[]; reasons: string[];
 };
+/** 판단 그래프 단계 — BE app/workflow/graph.py STAGES와 같은 이름·순서(judgment_runs.stage 값). */
+export type JudgmentStage =
+  | "require_confirmed_card" | "check_chart_scope" | "retrieve_chart_candidates" | "ask_or_resume"
+  | "select_chart_and_modifiers" | "check_evidence" | "review_rebuttal"
+  | "calculate_and_validate_fault" | "build_judgment_result";
+/**
+ * 판단 실행 1건 — 판단 화면이 읽는 모양(BE judgment_runs 행, supabase/migrations/20261109163901_judgment_runs.sql).
+ * BE 조회 계약 확정 전 FE 제안이라 같은 이름으로 BE에 맞춘다. 작업 진행(status)과 판정(result.status)을 분리한다.
+ * stage는 지금 단계(대기·처리 중·확인 대기·실패면 멈춘 곳)다. result는 completed일 때만, error는 failed일 때만 온다.
+ */
+export type JudgmentRun = {
+  case_id: string; fact_card_version: number; criteria_version: string; rule_version: string;
+  status: TaskStatus; stage: JudgmentStage; rebuttal_retry_count: number;
+  result: JudgmentResult | null; error: ApiError | null; updated_at: string;
+};
 export type CalculationResult = {
   versions: VersionRef; status: "estimated" | "needs_documents" | "confirmed"; currency: "KRW";
   recognized_damage: number | null; insurance_payment: number | null; deductible: number | null;

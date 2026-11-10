@@ -212,6 +212,56 @@ export function Textarea({ className = "", ...props }: TextareaHTMLAttributes<HT
   return <textarea className={`min-h-24 py-2 ${CONTROL} ${className}`} {...props} />;
 }
 
+export type Choice = { value: string; label: ReactNode };
+
+/**
+ * 보기 하나 고르기 — 구분 질문의 보기처럼 몇 개 안 되는 값 중 하나. 네이티브 radio라 화살표 키·초점 고리가 그대로다.
+ * 고른 보기는 옥색 테두리·면에 radio 점까지 바뀐다(색만으로 구분하지 않는다). 상태는 부모가 쥔다(value·onChange).
+ * legend가 질문이고, children은 질문과 보기 사이의 설명 줄(지금 카드 값·모델 원값)이다.
+ */
+export function ChoiceGroup({
+  name,
+  legend,
+  choices,
+  value,
+  onChange,
+  disabled = false,
+  children,
+}: {
+  name: string;
+  legend: ReactNode;
+  choices: readonly Choice[];
+  value: string | null;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  children?: ReactNode;
+}) {
+  return (
+    <fieldset disabled={disabled} className="min-w-0">
+      <legend className="text-body font-semibold break-keep">{legend}</legend>
+      {children}
+      <div className="mt-2 flex flex-wrap gap-2">
+        {choices.map((choice) => (
+          <label
+            key={choice.value}
+            className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-control border border-line-strong bg-control px-3 text-body text-ink has-checked:border-primary-strong has-checked:bg-primary-soft has-checked:font-semibold has-checked:text-on-primary-soft has-disabled:cursor-not-allowed has-disabled:opacity-60"
+          >
+            <input
+              type="radio"
+              name={name}
+              value={choice.value}
+              checked={value === choice.value}
+              onChange={() => onChange(choice.value)}
+              className="size-4 shrink-0 accent-primary-strong"
+            />
+            {choice.label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 /* ---------- 표 ---------- */
 
 /** 표 — 사건 목록 · 수정요소 · 이력. 가로가 좁으면 바깥에서 overflow-x-auto로 민다. */
