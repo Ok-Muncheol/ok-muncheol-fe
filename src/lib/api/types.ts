@@ -68,10 +68,19 @@ export type ValidationCheck = {
   /** layer가 rebuttal이고 실패한 경우에만 온다. wrong_chart만 차순위 도표 재실행 대상 */
   rebuttal_kind?: RebuttalKind | null;
 };
+/** 보고서 5번 수정요소 판정. 가감치가 있는 요소만 온다. reason은 판정 이유다. */
+export type ModifierDecision = {
+  modifier_id: string; name: string; applies_to: "A" | "B"; delta: number;
+  decision: "적용" | "미적용" | "불명"; evidence_fields: string[]; reason?: string;
+};
+/** 보고서 3번 차순위 후보: 고르지 않은 도표와 이유 */
+export type ChartAlternative = { chart_id: string; reason: string };
 export type JudgmentResult = {
   versions: VersionRef; status: JudgmentStatus; chart_id: string | null; edition: string | null;
   fault_A: number | null; fault_B: number | null; calculation_log: string[];
   evidence: EvidenceHit[]; checks: ValidationCheck[]; questions: ConfirmationQuestion[]; reasons: string[];
+  /** 보고서 3·4·5번용. 판단 그래프가 채우고, 도표를 고르지 못한 보류면 null·빈 목록. 예전 결과에는 없을 수 있다 */
+  base_fault_A?: number | null; modifiers?: ModifierDecision[]; alternatives?: ChartAlternative[];
 };
 /** 판단 그래프 단계 — BE app/workflow/graph.py STAGES와 같은 이름·순서(judgment_runs.stage 값). */
 export type JudgmentStage =
