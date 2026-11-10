@@ -12,6 +12,7 @@
 | `/cases/[id]/facts` | 정지원·구준휘 | 영상/카드·확인 질문·확정 |
 | `/cases/[id]/judgment` | 구준휘 | 판단 진행(그래프 9단계)·실패·구분 질문·판정(`src/features/judgment/`, 규칙은 `src/lib/judgment/view.ts`) |
 | `/cases/[id]/reports/[version]` | 옥석현·구준휘·김지은 | 보고서·검증·근거·버전/승인 |
+| `/profile` | 구준휘 통합·정지원 인증 | 내 정보 — 담당자 소속·이메일·담당자 ID, 담당 사건 수, 로그아웃. 머리글 오른쪽 이름을 누르면 온다 |
 | 사건 내 QA/산정/구상 영역 | 구준휘·옥석현·김지은 | 1차 확장, 별도 라우트 여부 합의 |
 | `/dev` | 전원, 김지은 근거 미리보기 | 비식별 견본·개발 전용. Vercel 운영 배포(`VERCEL_ENV=production`)에서는 404 |
 
@@ -19,5 +20,7 @@
 사건 보드·상세는 `src/features/cases/case-source.ts`에서 읽는다 — 지금은 `src/fixtures/case-board.json` 합성 견본이고 운영 배포에서는 비어 있다. BE `GET /cases`가 생기면 여기만 바꾼다.
 판단 화면은 `src/features/judgment/judgment-source.ts`에서 판단 실행을 읽는다(`src/fixtures/judgment.json`, 판단 단계 사건만). 구분 질문 답변·다시 시작은 API 연결 전이라 보내지 않고 보낼 값만 보여 준다.
 사실 카드는 사실 카드·판단 화면 모두 `src/features/facts/fact-source.ts`에서 읽는다(`src/fixtures/fact-cards.json`의 확정 전 카드와 `judgment.json`의 확정 카드). 저장·확정도 보내지 않고 보낼 값만 보여 준다.
+내 정보와 머리글의 담당자 이름은 `src/features/profile/profile-source.ts`에서 읽는다 — 로그인 전이라 `src/fixtures/profile.json` 합성 견본이고 운영 배포에서는 비어 있다. 로그인이 붙으면 세션 사용자로 바꾼다.
+로그아웃은 내 정보의 폼 POST(Server Action `logout`)다. 아직 끝낼 세션이 없어 로그인 화면으로만 보낸다.
 프레임/원문은 권한 있는 URL로만 연다. 비공개 파일 경로를 임의 공개 URL로 바꾸지 않는다.
 `/dev/...` 아래에 미리보기 페이지를 더하면 같은 운영 차단(`notFound()`)을 페이지마다 둔다.
