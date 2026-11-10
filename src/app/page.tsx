@@ -6,6 +6,7 @@ const routes = [
   { href: "/login", label: "보상 담당자 로그인" },
   { href: "/cases", label: "담당 사건 목록" },
   { href: "/cases/new", label: "사건 접수" },
+  { href: "/profile", label: "내 정보(담당자 프로필)" },
   { href: "/dev", label: "개발 미리보기 · 디자인 시스템" },
 ];
 

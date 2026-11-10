@@ -1,0 +1,11 @@
+{
+  "synthetic": true,
+  "note": "내 정보(/profile)와 머리글이 읽는 로그인한 보상 담당자 FE 합성 견본. 실제 사람이 아니다. user_id는 다른 견본의 confirmed_by와 같은 값이다. 로그인이 붙으면 Supabase 세션 사용자로 바꾸고 이 파일은 지운다.",
+  "profile": {
+    "user_id": "synthetic-reviewer",
+    "name": "홍길동",
+    "email": "reviewer@example.com",
+    "team": "자동차보상 1팀",
+    "role": "보상 담당자"
+  }
+}
