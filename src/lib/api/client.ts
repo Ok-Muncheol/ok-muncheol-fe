@@ -13,7 +13,7 @@
  */
 import type {
   AgreedFaultInput, AnswerResult, ApiError, CaseFacts, ClaimResult, ConfirmResult, CounterpartyInfo,
-  FactCard, FactPatch, JudgmentRunView, JudgmentTaskView, QuestionAnswer, ReviewReport,
+  FactCard, FactPatch, JudgmentRunView, JudgmentTaskView, QaAnswer, QuestionAnswer, ReviewReport,
 } from "./types";
 
 export interface ApiClient {
@@ -30,7 +30,8 @@ export interface ApiClient {
   /** GET /cases/{id}/judgment — 최신 판단 실행·판정·구분 질문과 답. 판단 전이면 null(404가 아니다) */
   getJudgment(caseId: string): Promise<JudgmentRunView | null>;
   answerQuestion(caseId: string, answer: QuestionAnswer): Promise<AnswerResult>;
-  askQuestion(caseId: string, text: string): Promise<Record<string, unknown>>;
+  /** POST /cases/{id}/qa — 근거 질의응답·what-if(1~2000자). 판정이 난 판단이 없으면 409 judgment_required. 수십 초 걸릴 수 있다 */
+  askQuestion(caseId: string, text: string): Promise<QaAnswer>;
   getReport(caseId: string, version: number): Promise<ReviewReport>;
   /** POST …/reports/{version}/confirm — 담당자 확인 완료 1회, 조건이 맞으면 구상 청구서까지 만든다 */
   confirmReport(caseId: string, version: number, counterparty?: CounterpartyInfo | null): Promise<ConfirmResult>;
