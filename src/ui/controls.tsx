@@ -291,7 +291,7 @@ export function Td({ className = "", ...props }: TdHTMLAttributes<HTMLTableCellE
   return <td className={`border-b border-line px-4 py-2.5 align-top last:border-b-0 ${className}`} {...props} />;
 }
 
-/* ---------- 요약 수치 · 단계 보드 ---------- */
+/* ---------- 요약 수치 · 단계 줄 표 ---------- */
 
 /**
  * 요약 수치 줄 — 보드 위 "담당 10 · 손댈 차례 4 · 처리 중 3"처럼 수치 여러 개를 카드 하나에 한 줄로 둔다.
@@ -321,41 +321,92 @@ export function Stat({ label, value, tone = "neutral", title }: { label: ReactNo
 }
 
 /**
- * 단계 보드 — 열이 단계, 열 안이 그 단계에 있는 항목이다(가로축이 시간인 간트와 다르다).
- * 데스크톱(lg)에서는 열을 한 줄에 모두 펴고, 좁은 화면에서는 가로로 밀며 열마다 스냅한다.
- * 좁은 화면의 스크롤 영역은 본문 여백(-mx-6)을 넘어 화면 끝까지 닿고, 스냅 기준선(scroll-px-6)은 안쪽 여백과 같은 24px 안에 둔다.
- * 기준선이 없으면 스냅이 첫 열을 화면 왼쪽 끝에 붙여, 위 요약 줄과 열의 시작선이 어긋난다.
+ * 단계 줄 표(스윔레인) — 항목마다 한 줄이고 열이 단계다. 왼쪽 칸은 항목 이름(행 머리), 오른쪽 열(lanes)은 단계이고
+ * 항목 카드는 그 항목이 있는 단계 칸에만 놓는다(LaneRow). 표라서 한 줄의 칸은 높이가 같다.
+ * 데스크톱(lg)에서는 머리줄이 앱 머리글(56px) 아래에 붙는다. 그래서 감싼 상자를 lg에서 overflow: clip으로 둔다 —
+ * hidden·auto는 스크롤 상자가 돼 머리줄이 화면에 붙지 않는다. 좁은 화면에서는 표를 가로로 밀고 행 머리 칸이 왼쪽에 붙는다.
  */
-export function Board({ columns, className = "", children }: { columns: number; className?: string; children: ReactNode }) {
+/** tint는 단계 열 머리 바탕의 토큰 클래스다(예: bg-stage-intake). 없으면 bg-surface. 머리줄이 화면에 붙으므로 불투명해야 한다. */
+export type LaneHead = { key: string; title: ReactNode; description?: ReactNode; count: number; tint?: string };
+
+const LANE_HEAD_CELL = "border-b border-line px-3 py-2.5 text-left align-top font-normal lg:sticky lg:top-14 lg:z-20";
+
+export function LaneTable({ caption, head, lanes, children }: { caption: string; head: LaneHead; lanes: readonly LaneHead[]; children: ReactNode }) {
   return (
-    <div
-      className={`-mx-6 flex snap-x snap-mandatory scroll-px-6 gap-4 overflow-x-auto px-6 pb-2 lg:mx-0 lg:grid lg:overflow-visible lg:px-0 ${className}`}
-      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
-    >
-      {children}
+    <div className="overflow-x-auto rounded-card border border-line bg-surface lg:overflow-clip">
+      <table className="w-full min-w-[40rem] table-fixed border-separate border-spacing-0 text-body">
+        <caption className="sr-only">{caption}</caption>
+        <colgroup>
+          <col className="w-40 lg:w-[17rem]" />
+          {lanes.map((lane) => (
+            <col key={lane.key} />
+          ))}
+        </colgroup>
+        <thead>
+          <tr>
+            <th scope="col" className={`${LANE_HEAD_CELL} sticky left-0 z-30 ${head.tint ?? "bg-surface"}`}>
+              <LaneHeading lane={head} />
+            </th>
+            {lanes.map((lane) => (
+              <th key={lane.key} scope="col" className={`${LANE_HEAD_CELL} border-l ${lane.tint ?? "bg-surface"}`}>
+                <LaneHeading lane={lane} />
+              </th>
+            ))}
+          </tr>
+        </thead>
+        {children}
+      </table>
     </div>
   );
 }
 
-/** 보드의 열 — 머리에 단계 이름·설명·건수, 아래에 카드가 쌓인다. 비면 비었다고 적는다. */
-export function BoardColumn({ id, title, description, count, children }: { id: string; title: ReactNode; description?: ReactNode; count: number; children: ReactNode }) {
+function LaneHeading({ lane }: { lane: LaneHead }) {
   return (
-    <section aria-labelledby={`${id}-title`} className="flex w-[17rem] shrink-0 snap-start flex-col rounded-card border border-line bg-surface-muted lg:w-auto">
-      <header className="flex items-start justify-between gap-2 px-3 pt-3 pb-2">
-        <div className="min-w-0">
-          <h2 id={`${id}-title`} className="text-body font-semibold break-keep">
+    <span className="flex items-start justify-between gap-2">
+      <span className="min-w-0">
+        <span className="block font-semibold break-keep text-ink">{lane.title}</span>
+        {lane.description && <span className="block text-caption text-ink-muted">{lane.description}</span>}
+      </span>
+      <span className="shrink-0 font-mono text-caption tabular-nums text-ink-muted">
+        <span aria-hidden>{lane.count}</span>
+        <span className="sr-only">{lane.count}건</span>
+      </span>
+    </span>
+  );
+}
+
+/** 표의 마지막 줄은 감싼 상자의 테두리와 겹치지 않게 아래 선을 뺀다. */
+const LANE_LAST_ROW = "[tbody:last-child>tr:last-child>&]:border-b-0";
+
+/** 단계 줄 묶음(tbody). title이 있으면 묶음 첫 줄에 전체 폭 머리줄(예: 고정·접수 순)을 둔다. span은 행 머리 + 단계 열 수다. */
+export function LaneGroup({ title, span, children }: { title?: ReactNode; span: number; children: ReactNode }) {
+  return (
+    <tbody>
+      {title && (
+        <tr>
+          <th scope="rowgroup" colSpan={span} className={`border-b border-line bg-surface px-4 py-1.5 text-left text-caption font-semibold text-ink-muted ${LANE_LAST_ROW}`}>
             {title}
-          </h2>
-          {description && <p className="text-caption text-ink-muted">{description}</p>}
-        </div>
-        <span className="shrink-0 font-mono text-caption tabular-nums text-ink-muted" aria-label={`${count}건`}>
-          {count}
-        </span>
-      </header>
-      <div className="flex flex-1 flex-col gap-2 px-3 pb-3">
-        {count === 0 ? <p className="py-6 text-center text-caption text-ink-faint">없음</p> : children}
-      </div>
-    </section>
+          </th>
+        </tr>
+      )}
+      {children}
+    </tbody>
+  );
+}
+
+/** 단계 줄 한 줄 — 행 머리(header)와 단계 칸. 항목 카드(children)는 lane번째 칸에만 놓고 나머지 칸은 비운다. */
+export function LaneRow({ header, lanes, lane, children }: { header: ReactNode; lanes: number; lane: number; children: ReactNode }) {
+  return (
+    <tr>
+      <th scope="row" className={`sticky left-0 z-10 border-b border-line bg-surface px-3 py-2 text-left align-middle font-normal ${LANE_LAST_ROW}`}>
+        {header}
+      </th>
+      {Array.from({ length: lanes }, (_, i) => (
+        <td key={i} className={`border-b border-l border-line bg-surface-muted p-2 align-middle ${LANE_LAST_ROW}`}>
+          {i === lane ? children : null}
+        </td>
+      ))}
+    </tr>
   );
 }
 
@@ -377,4 +428,17 @@ export function Spinner({ className = "" }: { className?: string }) {
 /** 값이 아직 없을 때 — 미확정 비율 · 자료 없는 금액. 빈 문자열이나 0으로 채우지 않는다. */
 export function Empty({ children = "미확정" }: { children?: ReactNode }) {
   return <span className="text-ink-faint">{children}</span>;
+}
+
+/**
+ * 아직 오지 않은 단계 화면의 빈 칸 — 칸 이름은 그대로 두고 값 자리에 흐린 줄표만 둔다. 화면 낭독기에는 "비어 있음"으로 읽힌다.
+ * 미확정 값(Empty)과 다르다: Empty는 단계는 왔지만 값이 정해지지 않은 것이고, Blank는 그 단계가 아직 오지 않은 것이다.
+ */
+export function Blank() {
+  return (
+    <span className="text-ink-faint">
+      <span aria-hidden>—</span>
+      <span className="sr-only">비어 있음</span>
+    </span>
+  );
 }

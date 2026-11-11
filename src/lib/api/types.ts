@@ -25,9 +25,10 @@ export type CaseStage = "intake" | "analysis" | "facts" | "judgment" | "report";
 /**
  * 담당 사건 보드 한 칸(GET /cases 응답 초안). BE 계약 확정 전 FE 제안이라 같은 이름으로 BE에 맞춘다.
  * 단계(stage)와 그 단계 안의 상태는 분리한다 — 같은 warning이라도 사실 카드의 확인 대기와 판단의 추가 확인은 할 일이 다르다.
+ * created_at은 접수 시각(BE cases.created_at)이고 사건 목록을 접수 순으로 늘어놓는 기준이다.
  */
 export type CaseSummary = {
-  case_id: string; accident_date: string; input_path: "video" | "manual";
+  case_id: string; accident_date: string; created_at: string; input_path: "video" | "manual";
   stage: CaseStage;
   task_status: TaskStatus | null;
   judgment_status: JudgmentStatus | null;

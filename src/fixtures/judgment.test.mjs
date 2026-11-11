@@ -1,5 +1,5 @@
 // 판단 화면 견본(judgment.json)이 담당 사건 보드 견본(case-board.json)·BE 제약과 어긋나지 않는지 본다.
-// 보드에서 판단 열의 카드를 누르면 이 견본으로 화면을 그리므로, 두 파일의 상태·버전·질문 수가 같아야 한다.
+// 보드 판단 열에서 판단 단계 카드를 누르면 이 견본으로 화면을 그리므로, 두 파일의 상태·버전·질문 수가 같아야 한다.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";

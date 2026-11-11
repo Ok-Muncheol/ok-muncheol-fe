@@ -4,7 +4,8 @@
 타입 필드 모양을 보여 주며 실행 가능한 시연 시나리오·평가 정답은 아니다.
 BE 계약 변경 시 `src/lib/api/types.ts`와 함께 갱신하고 대응 PR을 연결한다.
 
-`case-board.json`은 FE가 만든 담당 사건 보드(`CaseSummary`) 합성 견본이다. 단계마다 대표 상태만 남긴 12건(접수 1·영상 분석 1·사실 카드 3·판단 5·검토 보고서 2)이고 BE 생성물이 아니다.
+`case-board.json`은 FE가 만든 담당 사건 보드(`CaseSummary`) 합성 견본이다. 단계마다 대표 상태만 남긴 12건(접수 1·영상 분석 1·사실 카드 3·판단 5·검토 보고서 2 — 보드 열로는 접수 2·판단 8·검토 보고서 2)이고 BE 생성물이 아니다.
+`created_at`(접수 시각)은 사고 뒤·마지막 변경 전이고, 뒤 단계 사건일수록 먼저 접수했다(사건 목록의 접수 순).
 BE `GET /cases` 계약이 생기면 `contracts.json` 쪽으로 옮기고 이 파일은 지운다.
 
 `judgment.json`은 FE가 만든 판단 화면(`JudgmentRunView`·`FactCard`) 합성 견본이다. `runs`는 BE 판단 조회(`GET /cases/{id}/judgment`) 응답 모양이고
@@ -12,7 +13,7 @@ BE `GET /cases` 계약이 생기면 `contracts.json` 쪽으로 옮기고 이 파
 상태·버전·안 답한 질문 수가 보드 견본과 맞는지, BE `judgment_runs`·`judgment_answers` 제약을 지키는지,
 판정 사유가 BE처럼 걸린 검증의 이유를 잇는지는 `judgment.test.mjs`가 본다. 도표가 정해지는 ‘초안 작성 가능’ 견본은 임의 도표·과실비율을 만들지 않으려고 두지 않았다.
 
-`fact-cards.json`은 FE가 만든 사실 카드 화면(`FactCard`) 합성 견본이다. `case-board.json`의 사실 카드 단계 사건마다 확정 전 카드가 하나씩 있고
+`fact-cards.json`은 FE가 만든 판단 화면 사실 카드 자리(`FactCard`) 합성 견본이다. `case-board.json`의 사실 카드 단계 사건마다 확정 전 카드가 하나씩 있고
 영상 분석 칸·직접 입력·진술·불명·담당자 수정·매핑 전 상태를 담는다. 프레임은 ID·시각만 있고 이미지·서명 URL은 없다. 보드 견본·카드 규칙과 맞는지는 `fact-cards.test.mjs`가 본다.
 
 `profile.json`은 FE가 만든 로그인한 보상 담당자(내 정보·머리글 이름) 합성 견본이다. 실제 사람이 아니고 `user_id`는 다른 견본의 `confirmed_by`와 같은 값이다.

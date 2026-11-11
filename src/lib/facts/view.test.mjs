@@ -1,4 +1,4 @@
-// 사실 카드 화면 규칙 테스트. Node가 .ts의 타입만 지우고 실행한다(런타임 import 없음).
+// 사실 카드(판단 화면 안) 규칙 테스트. Node가 .ts의 타입만 지우고 실행한다(런타임 import 없음).
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildPatch, changedKeys, countFields, editValue, frameTime, setConfirmed } from "./view.ts";

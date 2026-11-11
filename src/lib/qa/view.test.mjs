@@ -9,7 +9,9 @@ import {
   QA_TOOL_LABELS,
   citationSource,
   hypothesisKind,
+  latestJudgment,
   pagesLabel,
+  qaSlot,
   questionProblem,
   splitAnswer,
   toolLabel,
@@ -17,6 +19,42 @@ import {
 
 const contracts = JSON.parse(readFileSync(new URL("../../fixtures/contracts.json", import.meta.url), "utf8"));
 const sample = contracts.qa_answer;
+const board = JSON.parse(readFileSync(new URL("../../fixtures/case-board.json", import.meta.url), "utf8")).cases;
+
+test("최신 판단은 판단 조회를 먼저 쓰고, 없으면(견본 보고서 단계) 사건 요약의 버전으로 고른다", () => {
+  const result = { status: "draft_ready" };
+  assert.deepEqual(latestJudgment({ judgment_version: 3, status: "completed", result, report_version: 4 }, null), {
+    judgmentVersion: 3,
+    decided: true,
+    reportVersion: 4,
+  });
+  assert.equal(latestJudgment({ judgment_version: 3, status: "running", result: null, report_version: null }, null).decided, false);
+  const summary = { task_status: "completed", judgment_status: "deferred", versions: { judgment_version: 2, report_version: 2 } };
+  assert.deepEqual(latestJudgment(null, summary), { judgmentVersion: 2, decided: true, reportVersion: 2 });
+  assert.equal(latestJudgment(null, { ...summary, task_status: "running" }).decided, false, "새 판단 진행 중");
+  assert.equal(latestJudgment(null, { ...summary, versions: { judgment_version: null, report_version: null } }), null);
+  assert.equal(latestJudgment(null, null), null);
+});
+
+test("질의응답은 최신 판정으로 만든 최신 보고서에서만 묻는다", () => {
+  const latest = { judgmentVersion: 2, decided: true, reportVersion: 3 };
+  assert.deepEqual(qaSlot(latest, 3), { kind: "ready", judgmentVersion: 2 });
+  assert.deepEqual(qaSlot(latest, 2), { kind: "not_latest", judgmentVersion: 2, latestReport: 3 }, "지난 보고서");
+  assert.deepEqual(qaSlot({ ...latest, reportVersion: null }, 1), { kind: "not_latest", judgmentVersion: 2, latestReport: null }, "최신 판정의 보고서 없음");
+  assert.deepEqual(qaSlot({ ...latest, decided: false }, 3), { kind: "undecided" }, "새 판단이 판정 전");
+  assert.deepEqual(qaSlot(null, 1), { kind: "undecided" });
+  // 보고서를 보이지 않는 자리(보고서 전)는 어긋날 보고서가 없어 판정만 났으면 묻는다
+  assert.deepEqual(qaSlot({ ...latest, reportVersion: null }, null), { kind: "ready", judgmentVersion: 2 });
+  assert.deepEqual(qaSlot({ ...latest, decided: false }, null), { kind: "undecided" });
+});
+
+test("견본의 검토 보고서 단계 사건은 최신 보고서에서 물을 수 있다", () => {
+  const reports = board.filter((c) => c.stage === "report");
+  assert.ok(reports.length > 0);
+  for (const c of reports) {
+    assert.equal(qaSlot(latestJudgment(null, c), c.versions.report_version).kind, "ready", c.case_id);
+  }
+});
 
 test("빈 질문과 BE 한도(2000자)를 넘는 질문은 보내지 않는다", () => {
   assert.equal(questionProblem("  \n "), "질문을 입력한다.");

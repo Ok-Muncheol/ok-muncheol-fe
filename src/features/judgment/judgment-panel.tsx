@@ -6,7 +6,7 @@
 import { CheckLabel, StatusLabel } from "@/components/status-label";
 import type { JudgmentResult, ValidationCheck } from "@/lib/api/types";
 import { ATTEMPT_LABELS, REBUTTAL_KIND_LABELS, validationLayers, type Layer } from "@/lib/judgment/view";
-import { Badge, Card, DescriptionList, DescriptionRow, Empty } from "@/ui/controls";
+import { Badge, Blank, Card, DescriptionList, DescriptionRow, Empty } from "@/ui/controls";
 
 /** 판정 + 검증 3겹(검토 보고서). */
 export function JudgmentPanel({ result }: { result: JudgmentResult }) {
@@ -67,6 +67,25 @@ export function JudgmentOutcome({ result, evidenceHref }: { result: JudgmentResu
           ) : (
             <Empty>없음</Empty>
           )}
+        </DescriptionRow>
+      </DescriptionList>
+    </Card>
+  );
+}
+
+/** 판정 전 화면의 빈 판정 — 판정(JudgmentOutcome)과 같은 칸을 비워 둔다. label은 머리 배지(판정 전·기록 없음)다. */
+export function JudgmentSkeleton({ label }: { label: string }) {
+  return (
+    <Card title="판정" aside={<Badge dot>{label}</Badge>}>
+      <DescriptionList>
+        <DescriptionRow term="적용 도표">
+          <Blank />
+        </DescriptionRow>
+        <DescriptionRow term="과실비율 A : B">
+          <Blank />
+        </DescriptionRow>
+        <DescriptionRow term="계산 로그">
+          <Blank />
         </DescriptionRow>
       </DescriptionList>
     </Card>

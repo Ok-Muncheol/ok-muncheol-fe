@@ -5,7 +5,7 @@ BE와 같은 담당(정지원(A)·구준휘(B)·김지은(C)·옥석현(D), 코�
 서비스 범위는 [README.md](README.md), 판단·검색·계산 계약은
 [BE TEAM.md](https://github.com/Ok-Muncheol/ok-muncheol-be/blob/main/TEAM.md)를 따른다.
 
-아래 파일은 **타입·화면 컴포넌트 초안**이다. Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안·내 정보(합성 견본)까지 있다. BE 요청은 판단 화면만 보내고(API 모드) 인증·업로드·상태 저장은 아직 연결하지 않았다.
+아래 파일은 **타입·화면 컴포넌트 초안**이다. Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·판단 화면(사실 카드 포함) 초안·검토 보고서의 근거 질의응답·내 정보(합성 견본)까지 있다. BE 요청은 판단 화면과 근거 질의응답만 보내고(API 모드) 인증·업로드·상태 저장은 아직 연결하지 않았다.
 컴포넌트 일부는 전달받은 값을 표시하지만 완성 화면/업무 동작을 뜻하지 않는다. 타입은 수동 초안이며 OpenAPI 생성물이 아니다.
 설치·개발 서버·검증 명령은 README 「개발 시작과 검증」에 있다. lumi의 런타임·모바일 화면·배포 완료 상태를 복제하지 않는다.
 
@@ -22,7 +22,7 @@ BE와 같은 담당(정지원(A)·구준휘(B)·김지은(C)·옥석현(D), 코�
 | 담당 | BE 책임 | FE 책임 / 경로 |
 | --- | --- | --- |
 | 정지원 | 영상 접수·비전 워커·사실 카드·담당자 확인 | `src/features/cases/`, `facts/`: 사건 접수·영상/수동 선택·업로드·진행·카드 편집/확정·매핑 |
-| 구준휘 | 판단 워크플로우·검증 3겹·질의응답 | `src/features/judgment/`, `qa/`: 판단 진행·구분 질문·검증·근거 답변/what-if. `src/features/cases/case-board.tsx`·`case-stepper.tsx`: 담당 사건 보드·사건 상세(`/cases`, `/cases/[id]`). `src/features/profile/`: 내 정보(`/profile`) |
+| 구준휘 | 판단 워크플로우·검증 3겹·질의응답 | `src/features/judgment/`, `qa/`: 판단 진행·구분 질문·검증·근거 답변/what-if. `src/features/cases/case-board.tsx`·`case-stepper.tsx`·`pin-*`: 담당 사건 보드(사건마다 한 줄 — 접수 순, 접수·판단·검토 보고서 세 열)·사건 고정·사건 화면 맨 위 진행 단계(세 단계, 누르면 그 단계 화면 — 아직 오지 않은 단계는 칸을 비운 틀)(`/cases`, `/cases/[id]`, `/cases/[id]/reports`). `src/features/profile/`: 내 정보(`/profile`) |
 | 김지은 | 검색툴 3개·PDF 파싱/청킹/문서 임베딩·평가셋 | `src/features/evidence/`, `knowledge/`: 도표/결정례/약관·원문/페이지·개발용 품질 확인 |
 | 옥석현 | 공통 RAG·손해액/보험금·구상·검토 초안 보고서 | `src/features/calculation/`, `claims/`, `reports/`: 산정·구상 패키지·보고서·버전/승인 |
 
@@ -35,8 +35,8 @@ PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책�
 | 파일 | 채울 본문 / 연결 |
 | --- | --- |
 | `src/features/cases/case-intake.tsx` | 사건 범위/당사자 수·영상/수동 입력, BE cases API, 업로드/실패/재시도 |
-| `src/features/facts/fact-card-panel.tsx` | 값·모델 원값·출처·확신도·증거, 편집/저장/확정, 수정 이력·매핑·버전 충돌. 초안(구준휘, 2026-11-10): 칸 수정·담당자 확인·저장/확정 요청 모양까지 있고 요청·이력·매핑 편집은 없다 |
-| `src/app/cases/[id]/facts/page.tsx`, `src/features/facts/evidence-frames.tsx`·`fact-source.ts`, `src/lib/facts/view.ts` | 사실 카드 화면 초안(카드·당사자·근거 프레임 목록)과 카드 조회·화면 규칙. 카드 조회 API·권한 있는 프레임 URL·영상 연결 |
+| `src/features/facts/fact-card-panel.tsx` | 값·모델 원값·출처·확신도·증거, 편집/저장/확정, 수정 이력·매핑·버전 충돌. 초안(구준휘, 2026-11-10): 칸 수정·담당자 확인·저장/확정 요청 모양까지 있고 요청·이력·매핑 편집은 없다. 카드가 아직 없을 때의 빈 틀은 `fact-card-skeleton.tsx`(같은 칸 순서) |
+| `src/features/facts/evidence-frames.tsx`·`parties-card.tsx`·`fact-source.ts`, `src/lib/facts/view.ts` | 판단 화면(`src/app/cases/[id]/judgment/page.tsx`) 안의 사실 카드 자리 — 카드·사고·당사자·근거 프레임과 카드 조회·화면 규칙. 사실 카드 화면은 판단 화면에 합쳤다(구준휘, 2026-11-11). 카드 조회 API·권한 있는 프레임 URL·영상 연결 |
 | `src/lib/supabase/README.md` | 인증·직접 업로드·권한 있는 프레임 조회·Realtime 알림/조회 복원 구현 |
 
 완료 기준: 영상 없이도 입력/확정, 카드 칸→근거 프레임 이동, 불명·불일치·매핑 확인,
@@ -51,7 +51,7 @@ PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책�
 | `src/features/judgment/question-panel.tsx` | BE 질문/보기/불명 응답, 기대 카드 버전, 답변→정지원 카드 재확정→재판단 |
 | `src/app/cases/[id]/judgment/page.tsx`, `src/features/judgment/judgment-source.ts`, `retry-judgment.tsx` | 판단 화면(진행 단계·실패·구분 질문·확인할 칸·판정·판정 근거). API 모드에서 판단 조회·답변·판단 시작/다시 시작을 BE로 보낸다(2026-11-10). 판정 근거는 고른 도표의 원문 근거를 김지은 근거 패널로 보이고 적용 도표에서 이동한다(2026-11-11). Realtime 변경 알림·로그인 토큰 연결 |
 | `src/lib/judgment/view.ts`, `src/lib/api/chart-scope.ts` | 판단 화면 규칙(단계·검증 층·답변 모양)과 도표 선택 칸 표기. BE `graph.py`·`chart_scope.py`와 맞춘다 |
-| `src/features/qa/qa-panel.tsx`, `src/lib/qa/view.ts` | 근거 답변·추가 질문·가정 조건/결과. 공식 결과와 나란히 구분. 판정이 난 판단 화면 아래에서 BE `POST /cases/{id}/qa`로 묻고 답·인용 근거(`[E1]` → 근거로 이동, 출처 공식 판단·검색·가정 실행 — 가정 근거는 경고 톤)·가정 결과(공식과 분리)·공식 반영 안내를 그린다(2026-11-11). 질문·답은 저장하지 않는다. LLM 시간 상한을 넘으면 BE가 504 `qa_timeout`(다시 질문 가능)을 준다 |
+| `src/features/qa/qa-panel.tsx`, `src/lib/qa/view.ts` | 근거 답변·추가 질문·가정 조건/결과. 공식 결과와 나란히 구분. 검토 보고서 화면(`/cases/[id]/reports/[version]`) 오른쪽에서 BE `POST /cases/{id}/qa`로 묻고 답·인용 근거(`[E1]` → 근거로 이동, 출처 공식 판단·검색·가정 실행 — 가정 근거는 경고 톤)·가정 결과(공식과 분리)·공식 반영 안내를 그린다(2026-11-11). 최신 판정을 근거로 답하므로 그 판정으로 만든 최신 보고서에서만 묻고, 지난 버전·판정 전·조회 실패면 안내만 둔다(`qaSlot`). 질문·답은 저장하지 않는다. LLM 시간 상한을 넘으면 BE가 504 `qa_timeout`(다시 질문 가능)을 준다 |
 | `src/app/profile/page.tsx`, `src/features/profile/profile-source.ts` | 내 정보 초안(소속·계정·담당 사건 수·로그아웃). 로그인한 담당자는 지금 합성 견본(`src/fixtures/profile.json`)이다. 세션 사용자 조회·로그아웃의 세션 종료를 정지원 인증과 연결 |
 | `src/lib/api/types.ts`, `client.ts` | BE 계약 대응·요청 클라이언트·인증/오류·버전 충돌·복원 |
 | `src/components/status-label.tsx`, `src/app/README.md` | 공통 상태 표현·앱/라우트 통합 |
@@ -79,6 +79,8 @@ PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책�
 | `src/features/calculation/calculation-panel.tsx` | 인정 손해액·보험금·자기부담금·추정/자료 필요/확정·근거/규칙 버전 |
 | `src/features/claims/claim-package-panel.tsx` | 예정액/청구액/회수액/고객 자기부담금 검토액, 승인 후 PDF/JSON 다운로드 |
 | `src/features/reports/review-report.tsx` | 1~7항목·확장 8~9항목, 근거·계산 로그·보고서 버전·승인/이력 |
+| `src/app/cases/[id]/reports/[version]/page.tsx` | 왼쪽 「보고서 본문」 자리(지금은 준비 중 카드)에 보고서 조회·ReviewReport·승인 상태를 붙인다. 오른쪽은 구준휘 근거 질의응답이다(2026-11-11) |
+| `src/features/reports/report-skeleton.tsx` | 보고서가 아직 없을 때(`/cases/[id]/reports`)의 빈 보고서 본문 칸(판정 상태·적용 도표·과실비율·검증 3겹·근거·승인). ReviewReport의 칸 이름·순서와 맞춘다(구준휘 통합이 둠, 2026-11-11) |
 
 완료 기준: 표시한 버전에만 승인, 근거·수치·버전 일치, 자료 없으면 미확정,
 공식 재산정과 what-if 분리, 견적만 추가하면 금액 단계부터 재실행, 승인 전 외부 전달 차단.
@@ -89,7 +91,7 @@ BE `app/schemas/` → `make contracts` → FE `types.ts`/`fixtures/contracts.jso
 현재 JSON은 필드 모양 양식이고 실행 가능한 시나리오가 아니다. OpenAPI 확정 후 자동 생성 방식으로 교체한다.
 `client.ts`는 BE 경로 17개에 요청을 보낸다(오류 `ApiRequestError`·버전 충돌 `isVersionConflict`·접수 중복 키 `newIdempotencyKey`).
 로그인 연결 전에는 토큰 없이 보내 로컬 BE 개발 인증에서만 통한다. 화면 데이터 출처는 `isSampleSource`(`src/features/cases/case-source.ts`) 하나로 고른다 —
-운영은 늘 BE, 그 밖은 견본이 기본이고 `OKM_DATA_SOURCE=api`면 BE다. 지금 BE를 읽는 화면은 판단 화면뿐이고, 나머지 화면 연결은 담당별 `*-source.ts`·패널의 TODO에서 한다.
+운영은 늘 BE, 그 밖은 견본이 기본이고 `OKM_DATA_SOURCE=api`면 BE다. 지금 BE를 읽는 화면은 판단 화면과 검토 보고서의 근거 질의응답뿐이고, 나머지 화면 연결은 담당별 `*-source.ts`·패널의 TODO에서 한다.
 
 | 날짜 | 합류 목표 |
 | --- | --- |
