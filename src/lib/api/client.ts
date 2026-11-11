@@ -3,7 +3,8 @@
  *
  * - 주소: NEXT_PUBLIC_BACKEND_URL(끝에 / 없이). 비우면 로컬 BE(LOCAL_BACKEND_URL)를 쓴다(.env.example).
  * - 인증: getAccessToken이 준 Supabase 세션 토큰을 Authorization: Bearer로 보낸다. 담당자(actor_id)는 BE가 토큰에서만 정한다.
- *   로그인 연결(src/lib/supabase/) 전에는 토큰 없이 보내므로 로컬 BE 개발 인증(APP_ENV=local·DEV_ACTOR_ID)에서만 통하고 그 밖에서는 401이다.
+ *   화면은 세션 토큰을 붙이는 createServerApiClient()(server.ts)·createBrowserApiClient()(browser.ts)를 쓴다. 로그인하지 않으면
+ *   토큰 없이 보내므로 로컬 BE 개발 인증(APP_ENV=local·DEV_ACTOR_ID)에서만 통하고 그 밖에서는 401이다.
  * - 오류: BE는 모든 오류를 {error: ApiError}로 돌려준다(BE app/api/errors.py). 그 응답과 연결 실패, ApiError 모양이 아닌 응답을
  *   모두 ApiRequestError로 던진다. 버전 충돌(409 version_conflict)은 isVersionConflict로 가려 최신 값을 다시 조회하게 한다.
  * - 중복 요청: 판단·영상 분석 접수는 부르는 쪽이 newIdempotencyKey()로 키를 만들고, 같은 접수를 다시 보낼 때 같은 키를 쓴다.

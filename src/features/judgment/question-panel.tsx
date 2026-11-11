@@ -13,7 +13,8 @@ import { useState, useTransition, type FormEvent } from "react";
 import { ModelValue } from "@/components/model-value";
 import { VerificationLabel } from "@/components/status-label";
 import { fieldLabel, optionLabel } from "@/lib/api/chart-scope";
-import { asApiError, createApiClient } from "@/lib/api/client";
+import { createBrowserApiClient } from "@/lib/api/browser";
+import { asApiError } from "@/lib/api/client";
 import type { AnswerView, ApiError, FactField, QuestionAnswer, QuestionView } from "@/lib/api/types";
 import { UNKNOWN_CHOICE, answerFor } from "@/lib/judgment/view";
 import { Button, ChoiceGroup, Empty, Notice } from "@/ui/controls";
@@ -95,7 +96,7 @@ function QuestionForm({
     setSending(true);
     setError(null);
     try {
-      await createApiClient().answerQuestion(caseId, answer);
+      await createBrowserApiClient().answerQuestion(caseId, answer);
       // 답한 질문과 다음 할 일(남은 질문·카드 반영·재개한 판정)은 판단 조회를 다시 읽어 그린다
       startRefresh(() => router.refresh());
     } catch (caught) {

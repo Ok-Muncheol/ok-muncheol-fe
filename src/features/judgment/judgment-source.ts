@@ -5,7 +5,8 @@
  */
 import { isSampleSource } from "@/features/cases/case-source";
 import sample from "@/fixtures/judgment.json";
-import { ApiRequestError, asApiError, createApiClient } from "@/lib/api/client";
+import { ApiRequestError, asApiError } from "@/lib/api/client";
+import { createServerApiClient } from "@/lib/api/server";
 import type { ApiError, JudgmentRunView } from "@/lib/api/types";
 
 const RUNS = sample.runs as JudgmentRunView[];
@@ -20,7 +21,7 @@ export type JudgmentLoad = { run: JudgmentRunView | null; error: ApiError | null
 export async function getLatestJudgmentRun(caseId: string): Promise<JudgmentLoad> {
   if (isSampleSource()) return { run: RUNS.find((r) => r.case_id === caseId) ?? null, error: null };
   try {
-    return { run: await createApiClient().getJudgment(caseId), error: null };
+    return { run: await createServerApiClient().getJudgment(caseId), error: null };
   } catch (error) {
     if (error instanceof ApiRequestError) return { run: null, error: asApiError(error) };
     throw error;
