@@ -1,9 +1,9 @@
 /**
- * B: 근거 질의응답 화면의 순수 규칙 — 질문 길이 검사, 답 본문의 [E1] 근거 표시 나누기, 도구·코퍼스·쪽 표기, 가정 결과 종류.
+ * B: 근거 질의응답 화면의 순수 규칙 — 질문 길이 검사, 답 본문의 [E1] 근거 표시 나누기, 도구·코퍼스·쪽·출처 표기, 가정 결과 종류.
  * 화면(src/features/qa/)과 테스트(view.test.mjs)가 같이 쓴다. 런타임 import는 두지 않는다.
- * 답·근거·가정 결과는 BE 값을 그대로 그린다(BE app/agents/qa.py). 가정 결과는 공식 판정과 섞지 않는다.
+ * 답·근거·가정 결과는 BE 값을 그대로 그린다(BE app/agents/qa.py). 가정 결과와 그 근거는 공식 판정과 섞지 않는다.
  */
-import type { Corpus, QaCitation, QaHypothesis } from "../api/types";
+import type { Corpus, QaCitation, QaCitationSource, QaHypothesis } from "../api/types";
 
 /** BE app/api/routes.py AskRequest — 1~2000자 */
 export const QA_MAX_LENGTH = 2000;
@@ -59,6 +59,20 @@ export const QA_CORPUS_LABELS: Record<Corpus, string> = {
 export function pagesLabel(citation: Pick<QaCitation, "page_start" | "page_end">): string {
   const { page_start: start, page_end: end } = citation;
   return start === end ? `${start}쪽` : `${start}–${end}쪽`;
+}
+
+/** 인용 근거의 출처 표기. 가정 실행의 근거는 공식 판정의 근거가 아니라서 가정 결과 상자와 같은 경고 톤으로 가른다. */
+export const QA_SOURCE_LABELS: Record<QaCitationSource, string> = {
+  official: "공식 판단 근거",
+  search: "검색 결과",
+  hypothesis: "가정 실행 근거",
+};
+
+/** 출처 배지 — 출처가 없는 예전 응답(BE #94 전)이나 모르는 값이면 그리지 않는다 */
+export function citationSource(citation: Pick<QaCitation, "source">): { label: string; hypothetical: boolean } | null {
+  const source = citation.source;
+  if (!source || !(source in QA_SOURCE_LABELS)) return null;
+  return { label: QA_SOURCE_LABELS[source], hypothetical: source === "hypothesis" };
 }
 
 /** 가정 결과 한 건의 종류 — 가정 판정이 났는지, 확인할 칸이 남아 멈췄는지, 실패했는지 */
