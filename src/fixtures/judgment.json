@@ -126,7 +126,7 @@
       "fields": {
         "accident_type": { "value": "car_to_car", "model_value": "car_to_car", "source": "vision", "model_confidence": 0.96, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
         "location_type": { "value": "unsignalized_intersection", "model_value": "unsignalized_intersection", "source": "vision", "model_confidence": 0.58, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
-        "road_priority": { "value": "major_minor", "model_value": "major_minor", "source": "vision", "model_confidence": 0.52, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+        "road_priority": { "value": "major_B", "model_value": "major_B", "source": "vision", "model_confidence": 0.52, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
         "movement_A": { "value": "u_turn", "model_value": "left_turn", "source": "vision", "model_confidence": 0.29, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
         "movement_B": { "value": "right_turn", "model_value": "right_turn", "source": "vision", "model_confidence": 0.43, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
         "entry_order": { "value": "first", "model_value": "first", "source": "vision", "model_confidence": 0.51, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] }
