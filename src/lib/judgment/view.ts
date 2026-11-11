@@ -1,10 +1,12 @@
 /**
- * B: 판단 화면의 순수 규칙 — 판단 그래프 단계 표시, 검증 3겹의 층별 상태, 구분 질문 답변 모양, 당사자 역할.
+ * B: 판단 화면의 순수 규칙 — 판단 그래프 단계 표시, 검증 3겹의 층별 상태, 구분 질문 답변 모양, 판정 근거, 당사자 역할.
  * 화면(src/features/judgment/)과 테스트(view.test.mjs)가 같이 쓴다. 런타임 import는 두지 않는다.
  * 판정·도표·과실은 BE 값을 그대로 그린다 — 여기서는 어느 단계·검증이 어디까지 갔는지만 고른다.
  */
 import type {
   ConfirmationQuestion,
+  EvidenceHit,
+  JudgmentResult,
   JudgmentRunView,
   JudgmentStage,
   JudgmentStatus,
@@ -157,6 +159,31 @@ export function answeredValues(questions: readonly QuestionView[]): Record<strin
   const values: Record<string, string> = {};
   for (const q of questions) if (q.answer?.value != null && !q.answer.unknown) values[q.field_key] = q.answer.value;
   return values;
+}
+
+/* ---------- 판정 근거 ---------- */
+
+/** 판단 화면에서 판정 근거로 이동하는 앵커 */
+export const JUDGMENT_EVIDENCE_ID = "judgment-evidence";
+
+/**
+ * 판정 근거 — BE result.evidence는 판정이 고른 도표 후보의 원문 근거다(graph.py _result).
+ * 도표를 고르지 못한 판정(보류, 도표를 고르기 전에 멈춘 추가 확인)은 null — 근거 칸을 그리지 않고
+ * 판정 카드의 적용 도표 "미확정"과 사유가 대신한다. 근거 패널의 "근거를 찾지 못했다" 안내가 그 경우엔 사실과 다르다.
+ */
+export function judgmentEvidence(result: Pick<JudgmentResult, "chart_id" | "evidence">): EvidenceHit[] | null {
+  return result.chart_id ? result.evidence : null;
+}
+
+/**
+ * 근거 패널의 선택 표시(evidence-panel EvidenceDecision 모양). 판정 근거는 모두 고른 도표의 근거라 '판단에 사용'이다.
+ * BE는 근거마다의 이유를 주지 않으므로 이유 칸에는 BE 값(판정 도표 ID)만 적는다.
+ */
+export function evidenceDecisions(
+  hits: readonly EvidenceHit[],
+  chartId: string,
+): Record<string, { status: "selected"; reason: string }> {
+  return Object.fromEntries(hits.map((hit) => [hit.chunk.chunk_id, { status: "selected", reason: `판정 도표 ${chartId}의 근거` }]));
 }
 
 /* ---------- 당사자 ---------- */

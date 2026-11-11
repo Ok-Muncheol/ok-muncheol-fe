@@ -4,12 +4,14 @@
  * 판단에 쓴 사실 전체는 사실 카드 화면에서 본다. 판정 · 과실은 BE 값만 그린다.
  * 판단은 판단 조회(judgment-source — 견본 또는 BE GET /cases/{id}/judgment)로 읽고, 답변 · 판단 접수 뒤에는 다시 읽는다.
  * 사건 요약(보드)을 못 읽어도 판단은 그린다 — API 모드는 사건 목록 API 전이다. TODO: Realtime 변경 알림이 오면 다시 읽는다.
- * 판정이 났으면 판정 아래에 근거 질의응답(QaPanel)을 둔다 — 가정 결과는 공식 판정과 따로 그리고 저장하지 않는다.
+ * 판정이 났으면 판정 아래에 판정 근거(김지은 근거 패널 — 고른 도표의 원문 근거)와 근거 질의응답(QaPanel)을 둔다.
+ * 가정 결과는 공식 판정과 따로 그리고 저장하지 않는다. 검증 3겹의 층별 결과는 검토 보고서가 보여 준다.
  */
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { StatusLabel } from "@/components/status-label";
 import { getCaseSummary, isSampleSource } from "@/features/cases/case-source";
+import { EvidencePanel } from "@/features/evidence/evidence-panel";
 import { getFactCard } from "@/features/facts/fact-source";
 import { JudgmentOutcome } from "@/features/judgment/judgment-panel";
 import { JudgmentProgress } from "@/features/judgment/judgment-progress";
@@ -21,10 +23,13 @@ import { fieldLabel, optionLabel } from "@/lib/api/chart-scope";
 import type { ApiError, ConfirmationQuestion, FactCard, JudgmentRunView, PartyMapping, QuestionView } from "@/lib/api/types";
 import { stageIndex } from "@/lib/cases/stages";
 import {
+  JUDGMENT_EVIDENCE_ID,
   answerableQuestions,
   answeredValues,
+  evidenceDecisions,
   fieldsToCheck,
   isStaleInput,
+  judgmentEvidence,
   partyRoles,
   runBadgeStatus,
   stageLabel,
@@ -134,6 +139,8 @@ export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgmen
   }
 
   const { result } = run;
+  // 판정이 고른 도표의 원문 근거. 도표를 고르지 못한 판정이면 null이라 근거 칸을 그리지 않는다
+  const evidence = result ? judgmentEvidence(result) : null;
   const latestCard = card?.version ?? summary?.versions.fact_card_version ?? null;
   const answerable = answerableQuestions(run);
   const toCheck = fieldsToCheck(run);
@@ -218,7 +225,12 @@ export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgmen
           </Card>
         )}
         {toCheck.length > 0 && <FieldsToCheck questions={toCheck} card={card} factsHref={factsHref} />}
-        {result && <JudgmentOutcome result={result} />}
+        {result && <JudgmentOutcome result={result} evidenceHref={evidence ? `#${JUDGMENT_EVIDENCE_ID}` : undefined} />}
+        {result?.chart_id && evidence && (
+          <div id={JUDGMENT_EVIDENCE_ID} className="scroll-mt-24">
+            <EvidencePanel hits={evidence} decisions={evidenceDecisions(evidence, result.chart_id)} />
+          </div>
+        )}
         {run.status === "completed" && result && <QaPanel caseId={id} live={live} judgmentVersion={run.judgment_version} />}
       </div>
     </div>
