@@ -124,6 +124,27 @@ export type JudgmentNextAction = "answer_remaining" | "update_fact_card" | null;
 export type AnswerResult = JudgmentTaskView & {
   pending_question_ids: string[]; next_action: JudgmentNextAction; field_values: Record<string, string>;
 };
+/**
+ * 근거 질의응답(POST /cases/{id}/qa) 응답 — BE app/schemas/judgment.py QaAnswer, docs/contracts/README.md 「근거 질의응답」.
+ * 최신 판정(judgment_version)을 근거로 답한다. 판정이 난 판단이 없으면 409 judgment_required.
+ * 답 본문의 [E1] 표시는 citations의 ref다(도구가 돌려준 근거만). 가정 결과(what-if)는 hypotheticals에만 있고
+ * 공식 판단·보고서는 바뀌지 않는다. 가정 실행을 했으면 fact_change_hint가 공식 반영 경로를 알린다. 질문·답은 저장하지 않는다.
+ */
+export type QaCitation = {
+  ref: string; chunk_id: string; parent_id: string; corpus: Corpus; edition: string;
+  page_start: number; page_end: number; excerpt: string;
+};
+/** simulate 가정 실행 한 번. completed면 가정 판정, waiting_for_confirmation면 확인할 칸(open_fields)이 남아 멈춤, failed면 error */
+export type QaHypothesis = {
+  changes: Record<string, string>; status: "completed" | "waiting_for_confirmation" | "failed";
+  judgment_status: JudgmentStatus | null; chart_id: string | null; fault_A: number | null; fault_B: number | null;
+  reasons: string[]; open_fields: string[]; error: ApiError | null;
+};
+export type QaToolCall = { name: string; ok: boolean };
+export type QaAnswer = {
+  case_id: string; judgment_version: number; answer: string; citations: QaCitation[];
+  hypotheticals: QaHypothesis[]; tool_calls: QaToolCall[]; fact_change_hint: string | null;
+};
 export type CalculationResult = {
   versions: VersionRef; status: "estimated" | "needs_documents" | "confirmed"; currency: "KRW";
   recognized_damage: number | null; insurance_payment: number | null; deductible: number | null;

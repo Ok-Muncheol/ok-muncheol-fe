@@ -4,6 +4,7 @@
  * 판단에 쓴 사실 전체는 사실 카드 화면에서 본다. 판정 · 과실은 BE 값만 그린다.
  * 판단은 판단 조회(judgment-source — 견본 또는 BE GET /cases/{id}/judgment)로 읽고, 답변 · 판단 접수 뒤에는 다시 읽는다.
  * 사건 요약(보드)을 못 읽어도 판단은 그린다 — API 모드는 사건 목록 API 전이다. TODO: Realtime 변경 알림이 오면 다시 읽는다.
+ * 판정이 났으면 판정 아래에 근거 질의응답(QaPanel)을 둔다 — 가정 결과는 공식 판정과 따로 그리고 저장하지 않는다.
  */
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -15,6 +16,7 @@ import { JudgmentProgress } from "@/features/judgment/judgment-progress";
 import { getLatestJudgmentRun } from "@/features/judgment/judgment-source";
 import { QuestionPanel } from "@/features/judgment/question-panel";
 import { RetryJudgment, StartJudgment } from "@/features/judgment/retry-judgment";
+import { QaPanel } from "@/features/qa/qa-panel";
 import { fieldLabel, optionLabel } from "@/lib/api/chart-scope";
 import type { ApiError, ConfirmationQuestion, FactCard, JudgmentRunView, PartyMapping, QuestionView } from "@/lib/api/types";
 import { stageIndex } from "@/lib/cases/stages";
@@ -217,6 +219,7 @@ export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgmen
         )}
         {toCheck.length > 0 && <FieldsToCheck questions={toCheck} card={card} factsHref={factsHref} />}
         {result && <JudgmentOutcome result={result} />}
+        {run.status === "completed" && result && <QaPanel caseId={id} live={live} judgmentVersion={run.judgment_version} />}
       </div>
     </div>
   );
