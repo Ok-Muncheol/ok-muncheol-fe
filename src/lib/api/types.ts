@@ -10,6 +10,16 @@ export type TaskView = {
   task_id: string; case_id: string; stage: string; status: TaskStatus; input_version: number;
 };
 export type ApiError = { code: string; message: string; retryable: boolean };
+/** 업로드 파일 종류. 형식은 BE가 검사한다 — estimate는 application/pdf, video는 mp4·mov·avi·webm·mkv(아니면 422 invalid_upload_type). */
+export type UploadKind = "estimate" | "video";
+/** POST /cases/{id}/uploads 응답(BE UploadTicket). upload_url에 키 없이 파일 본문과 Content-Type만 넣어 PUT하고, storage_path를 /estimates·/analysis에 보낸다. */
+export type UploadTicket = {
+  /** 버킷 포함: case-files/{case_id}/estimates/{uuid}.pdf · case-files/{case_id}/videos/{uuid}.{확장자} */
+  storage_path: string;
+  /** Supabase 서명 업로드 URL(절대 주소). 한 번만 쓸 수 있고 expires_in초(7200) 동안 유효하다 */
+  upload_url: string;
+  expires_in: number;
+};
 /** 사건이 지금 어느 단계에 있는지 — README 「범위와 사용자 흐름」 순서. 영상 없는 사건은 analysis를 건너뛴다. */
 export type CaseStage = "intake" | "analysis" | "facts" | "judgment" | "report";
 /**
