@@ -1,4 +1,4 @@
-// 사실 카드 화면 견본(fact-cards.json)이 담당 사건 보드 견본(case-board.json)·카드 규칙과 어긋나지 않는지 본다.
+// 판단 화면 사실 카드 견본(fact-cards.json)이 담당 사건 보드 견본(case-board.json)·카드 규칙과 어긋나지 않는지 본다.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";

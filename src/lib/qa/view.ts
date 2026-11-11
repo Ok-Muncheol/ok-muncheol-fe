@@ -1,9 +1,50 @@
 /**
- * B: 근거 질의응답 화면의 순수 규칙 — 질문 길이 검사, 답 본문의 [E1] 근거 표시 나누기, 도구·코퍼스·쪽·출처 표기, 가정 결과 종류.
- * 화면(src/features/qa/)과 테스트(view.test.mjs)가 같이 쓴다. 런타임 import는 두지 않는다.
- * 답·근거·가정 결과는 BE 값을 그대로 그린다(BE app/agents/qa.py). 가정 결과와 그 근거는 공식 판정과 섞지 않는다.
+ * B: 근거 질의응답 화면의 순수 규칙 — 검토 보고서에서 물을 수 있는지, 질문 길이 검사, 답 본문의 [E1] 근거 표시 나누기,
+ * 도구·코퍼스·쪽·출처 표기, 가정 결과 종류. 화면(src/features/qa/, 검토 보고서 화면)과 테스트(view.test.mjs)가 같이 쓴다.
+ * 런타임 import는 두지 않는다. 답·근거·가정 결과는 BE 값을 그대로 그린다(BE app/agents/qa.py). 가정 결과와 그 근거는 공식 판정과 섞지 않는다.
  */
-import type { Corpus, QaCitation, QaCitationSource, QaHypothesis } from "../api/types";
+import type { CaseSummary, Corpus, JudgmentRunView, QaCitation, QaCitationSource, QaHypothesis } from "../api/types";
+
+/** 질의응답이 근거로 삼는 최신 판단 — 판정이 났는지와 그 판정으로 만든 최신 보고서 버전. */
+export type LatestJudgment = { judgmentVersion: number; decided: boolean; reportVersion: number | null };
+
+/**
+ * 최신 판단을 고른다. API 모드는 판단 조회(GET /cases/{id}/judgment)이고, report_version은 그 판단으로 만든 보고서의 최신 버전이다.
+ * 견본 모드는 판단 견본이 판단 단계 사건에만 있어서, 판단 실행이 없으면 사건 요약(보드)의 버전·판정으로 고른다.
+ */
+export function latestJudgment(
+  run: Pick<JudgmentRunView, "judgment_version" | "status" | "result" | "report_version"> | null,
+  summary: Pick<CaseSummary, "task_status" | "judgment_status" | "versions"> | null,
+): LatestJudgment | null {
+  if (run) {
+    return { judgmentVersion: run.judgment_version, decided: run.status === "completed" && run.result !== null, reportVersion: run.report_version };
+  }
+  if (!summary || summary.versions.judgment_version === null) return null;
+  return {
+    judgmentVersion: summary.versions.judgment_version,
+    decided: summary.task_status === "completed" && summary.judgment_status !== null,
+    reportVersion: summary.versions.report_version,
+  };
+}
+
+/**
+ * 검토 보고서 화면 오른쪽의 근거 질의응답 자리. BE는 최신 판단의 판정을 근거로 답하므로(판정 전이면 409 judgment_required)
+ * 그 판정으로 만든 최신 보고서를 볼 때만 묻는다 — 지난 보고서 옆에서 물으면 화면의 보고서와 다른 판정으로 답할 수 있다.
+ * reportVersion이 null이면 보고서를 보이지 않는 자리(/reports — 보고서 전)라 어긋날 보고서가 없어 판정만 났으면 묻는다.
+ * not_latest의 latestReport가 null이면 최신 판정으로 만든 보고서가 없다(보고서 생성 실패) — 보고서 전 자리에서 묻는다.
+ */
+export type QaSlot =
+  | { kind: "ready"; judgmentVersion: number }
+  | { kind: "not_latest"; judgmentVersion: number; latestReport: number | null }
+  | { kind: "undecided" };
+
+export function qaSlot(latest: LatestJudgment | null, reportVersion: number | null): QaSlot {
+  if (!latest || !latest.decided) return { kind: "undecided" };
+  if (reportVersion !== null && latest.reportVersion !== reportVersion) {
+    return { kind: "not_latest", judgmentVersion: latest.judgmentVersion, latestReport: latest.reportVersion };
+  }
+  return { kind: "ready", judgmentVersion: latest.judgmentVersion };
+}
 
 /** BE app/api/routes.py AskRequest — 1~2000자 */
 export const QA_MAX_LENGTH = 2000;

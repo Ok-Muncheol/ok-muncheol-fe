@@ -11,7 +11,7 @@
 
 현재는 **담당별 타입·컴포넌트 초안 단계**다. `src/features/`에 역할별 파일, `src/lib/api/`에 계약과 BE 요청
 클라이언트, `src/fixtures/`에 BE 생성 합성 양식이 있다. 일부 컴포넌트는 값을 표시하지만 완성 업무 화면은 아니다.
-Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·사실 카드·판단 화면 초안·내 정보(합성 견본 표시)까지 있고 Vercel 프로젝트 `ok-muncheol-fe`로 배포된다. 접수·보고서 화면과 인증·상태 저장은 아직 없다. 화면은 견본 모드면 합성 견본을, API 모드면 BE를 읽는다(운영은 늘 API 모드, 로컬은 `OKM_DATA_SOURCE=api`일 때) — 지금 BE를 읽는 화면은 판단 화면뿐이다.
+Next.js 앱은 라우트 골격과 담당 사건 보드·사건 상세·판단 화면(사실 카드 포함) 초안·검토 보고서의 근거 질의응답·내 정보(합성 견본 표시)까지 있고 Vercel 프로젝트 `ok-muncheol-fe`로 배포된다. 접수 화면·보고서 본문과 인증·상태 저장은 아직 없다. 화면은 견본 모드면 합성 견본을, API 모드면 BE를 읽는다(운영은 늘 API 모드, 로컬은 `OKM_DATA_SOURCE=api`일 때) — 지금 BE를 읽는 화면은 판단 화면과 검토 보고서의 근거 질의응답뿐이다.
 CI(lint·typecheck·test·build)와 ship 하네스는 있다([브랜치·PR 규칙](#브랜치pr-규칙)).
 
 **개발 마감: 2026-11-13(금).** 11/12 기능 통합·11/13 최종 검수 목표다.
@@ -55,12 +55,16 @@ flowchart TD
     R1 & R2 & R3 --> G["⑤ 검토 보고서<br/>1~7항목 초안<br/>이력·담당자 승인"]
 ```
 
-①~⑤는 담당 사건 보드의 열 순서다(`src/lib/cases/stages.ts`의 `STAGES`). 이 그림은 화면 단계만 그린다.
+①~⑤는 화면 단계 순서다(`src/lib/cases/stages.ts`의 `STAGES`).
+담당 사건 보드와 사건 화면 맨 위 진행 단계 한 줄은 이를 담당자 일 기준 세 단계로 묶는다 — 접수(①②)·판단(③④)·검토 보고서(⑤)(`BOARD_COLUMNS`).
+진행 단계 한 줄의 단계를 누르면 그 단계 화면으로 간다. 지난 단계는 그때 내용을, 아직 오지 않은 단계는 같은 칸을 비운 틀을 보인다.
+보드는 사건마다 한 줄이다(스윔레인). 왼쪽 칸은 사건, 카드는 그 사건이 있는 열 칸에만 놓이고 단계 이름을 단다. 줄은 접수 순이고 고정한 사건은 위에 모은다.
+이 그림은 화면 단계만 그린다.
 API 경로·판단 그래프 단계와 판정 상태 3종이 어느 분기에서 나오는지는 BE [선행 MVP 처리 흐름](https://github.com/Ok-Muncheol/ok-muncheol-be#선행-mvp-처리-흐름)을 따른다.
 
 차대보행자·차대자전거·PM·3대 이상 연쇄 사고·단독 사고는 접수 단계에서 범위 밖으로 안내한다.
 영상이 없는 사건에는 수동 사실 카드와 진술 근거 입력 경로를 제공한다. 보험금·구상은 MVP 화면에
-구현된 기능처럼 표시하지 않는다. 근거 질의응답은 판정이 난 판단 화면에서 가정 결과를 공식 판정과 나눠 보여 준다.
+구현된 기능처럼 표시하지 않는다. 근거 질의응답은 검토 보고서 화면 오른쪽에서 묻고, 가정 결과를 왼쪽 공식 보고서와 나눠 보여 준다.
 최종 판단은 담당자가 수행한다.
 
 ## 화면 원칙
@@ -77,7 +81,7 @@ API 경로·판단 그래프 단계와 판정 상태 3종이 어느 분기에서
 
 | 구성 | 기술 | 지금 상태 (2026-11-10) |
 | --- | --- | --- |
-| 앱 | Next.js 16 App Router · React 19 · TypeScript 5 · Tailwind CSS v4, Node 24 · npm (세부 구성과 버전은 lumi를 따랐다) | 사건 보드·상세, 사실 카드·판단 화면 초안·내 정보(합성 견본), 개발용 코퍼스 미리보기 |
+| 앱 | Next.js 16 App Router · React 19 · TypeScript 5 · Tailwind CSS v4, Node 24 · npm (세부 구성과 버전은 lumi를 따랐다) | 사건 보드·상세, 판단 화면(사실 카드 포함) 초안·검토 보고서의 근거 질의응답·내 정보(합성 견본), 개발용 코퍼스 미리보기 |
 | BE 호출 | `ApiClient`(fetch, `src/lib/api/client.ts`) | BE 경로 17개와 1:1로 요청하고 오류·버전 충돌·중복 요청 키를 다룬다. 판단 화면은 API 모드에서 판단 조회·답변·판단 접수를 보내고, 나머지 화면은 견본을 읽으며 연결할 자리에 TODO를 남겼다 |
 | 인증 | Supabase Auth, BE에서 토큰·담당 사건 권한 검증, DB·Storage RLS | 미구현. Supabase SDK가 없어 토큰 없이 보내므로 로컬 BE 개발 인증에서만 통한다 |
 | 영상·파일 | Supabase Storage의 서명 URL로 직접 업로드·권한 있는 조회 | 미구현 |
@@ -118,6 +122,7 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 | 링크 · quiet 버튼 글자 · 현재 메뉴 밑줄(바탕 위 옥색 글자·선) | `text-primary-strong` · `border-primary-strong` |
 | 선택 · quiet 버튼 hover | `bg-primary-soft` · `text-on-primary-soft` |
 | 상태 톤(배지·안내 상자) | `bg-{info,success,warning,danger,model}-soft` + `text-on-{톤}-soft`, 점·테두리는 `bg-{톤}` · `border-{톤}` |
+| 단계 열 머리(담당 사건 보드) — 상태 톤이 아니라 열 구분. 옥색을 단계가 갈수록 짙게 섞었다 | `bg-stage-intake` · `bg-stage-judgment` · `bg-stage-report` |
 | 그림자 | `shadow-card`(카드) · `shadow-raised`(팝오버·드롭다운) |
 | 반경 | `rounded-card` 12 · `rounded-control` 8(버튼·입력) · `rounded-badge` 6 (px) |
 | 글자 크기 | `text-title` 22 · `text-heading` 17 · `text-body` 14 · `text-caption` 12 (px) |
@@ -133,7 +138,8 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 | model | 모델이 낸 값(담당자 값과 구분) | 모델 원값 · 확신도 |
 
 공통 컨트롤은 `src/ui/controls.tsx`에 있다 — `Button`·`ButtonLink`(primary·secondary·quiet·danger, md·sm), `Badge`·`Notice`(톤),
-`PageHeader`·`Card`·`DescriptionList`/`DescriptionRow`, `Field`·`Input`·`Select`·`Textarea`, `ChoiceGroup`(보기 하나 고르기 — 구분 질문)·`Checkbox`(켜고 끄기 — 담당자 확인), `Table`·`Th`·`Td`, `StatStrip`/`Stat`·`Board`/`BoardColumn`(요약 수치 줄·단계 보드), `Spinner`·`Empty`.
+`PageHeader`·`Card`·`DescriptionList`/`DescriptionRow`, `Field`·`Input`·`Select`·`Textarea`, `ChoiceGroup`(보기 하나 고르기 — 구분 질문)·`Checkbox`(켜고 끄기 — 담당자 확인), `Table`·`Th`·`Td`, `StatStrip`/`Stat`·`LaneTable`/`LaneGroup`/`LaneRow`(요약 수치 줄·항목마다 한 줄인 단계 줄 표), `Spinner`·`Empty`(단계는 왔지만 값이 정해지지 않음)·`Blank`(아직 오지 않은 단계의 빈 칸).
+상태가 있는 틀은 따로 둔다 — `src/ui/side-panel.tsx`의 `SidePanelLayout`(본문 + 오른쪽 접는 패널, 검토 보고서의 근거 질의응답).
 앱 틀(머리글·주 메뉴)은 `src/ui/app-shell.tsx`이고 `/login`은 머리글 없이 그린다. 작업 진행·판정 상태는 `src/components/status-label.tsx`가 톤을 정한다.
 
 - 밝은 옥색(`primary`)은 흰 바탕과 대비가 1.9:1뿐이라 면으로만 칠하고, 그 위 글자는 `on-primary`(짙은 옥색)다. 바탕 위 옥색 글자·선은 `primary-strong`을 쓴다 — `text-primary`·`border-primary`를 바탕 위에 쓰면 읽히지 않는다.
@@ -146,20 +152,20 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 ## 화면·경로 제안
 
 **아래 라우트는 아직 대부분 골격이다.** `/cases`(담당 사건 보드)와 `/cases/[id]`(사건 상세)는 합성 견본(`src/fixtures/case-board.json`)을,
-`/cases/[id]/judgment`(판단 초안)는 판단 단계 사건의 합성 견본(`src/fixtures/judgment.json`)을, `/cases/[id]/facts`(사실 카드 초안)는 사실 카드·판단 단계 사건의 합성 카드(`src/fixtures/fact-cards.json`·`judgment.json`)를, `/profile`(내 정보)은 합성 담당자(`src/fixtures/profile.json`)를 그리고 운영 배포에서는 비어 있다(판단 화면만 운영에서 BE를 읽는다).
-판단 화면은 API 모드에서 BE 판단 조회(`GET /cases/{id}/judgment`)를 읽고 구분 질문 답변·판단 시작·다시 시작을 보낸다(견본 모드는 보내지 않는다). 사실 카드의 저장·확정은 API 연결 전이라 보내지 않는다. 내 정보의 로그아웃은 끝낼 세션이 없어 로그인 화면으로만 보낸다. 근거 프레임은 시각만 있고 이미지는 없다. 접수·보고서 화면은 제목만 있다. 컴포넌트 연결 계획은 `src/app/README.md`에 있다.
+`/cases/[id]/judgment`(판단 초안 — 사실 카드 화면을 합쳤다)는 판단 단계 사건의 합성 판단(`src/fixtures/judgment.json`)과 사실 카드·판단 단계 사건의 합성 카드(`src/fixtures/fact-cards.json`·`judgment.json`)를, `/profile`(내 정보)은 합성 담당자(`src/fixtures/profile.json`)를 그리고 운영 배포에서는 비어 있다(판단 화면만 운영에서 BE를 읽는다).
+판단 화면은 API 모드에서 BE 판단 조회(`GET /cases/{id}/judgment`)를 읽고 구분 질문 답변·판단 시작·다시 시작을 보낸다(견본 모드는 보내지 않는다). 사실 카드의 저장·확정은 API 연결 전이라 보내지 않는다. 내 정보의 로그아웃은 끝낼 세션이 없어 로그인 화면으로만 보낸다. 근거 프레임은 시각만 있고 이미지는 없다. 접수 화면은 제목만 있고, 검토 보고서 화면은 오른쪽 근거 질의응답만 있다(본문은 연결 전). 컴포넌트 연결 계획은 `src/app/README.md`에 있다.
 보상 담당자용 데스크톱 업무 화면을 우선 설계하고 좁은 화면에서도
 핵심 정보·확인·저장이 가능하도록 한다. lumi의 모바일 웰니스 화면 구성을 그대로 가져오지 않는다.
 
 | 경로 제안 | 화면과 주요 동작 |
 | --- | --- |
 | `/login` | 보상 담당자 로그인 |
-| `/cases` | 담당 사건 목록, 진행·판정·승인 상태 |
+| `/cases` | 담당 사건 — 사건마다 한 줄(접수 순, 사건 고정)이고 카드는 접수·판단·검토 보고서 중 그 사건의 열에 놓인다. 진행·판정·승인 상태 |
 | `/cases/new` | 사고 정보·당사자·입력 경로·범위 확인. 주 메뉴에는 두지 않는다 — 사건은 담당자에게 배정돼 들어온다 |
 | `/cases/[id]` | 진행 상태·질문·현재 버전 요약 |
-| `/cases/[id]/facts` | 영상/키프레임 + 사실 카드, 수동 입력·근거·수정 이력·확정 |
-| `/cases/[id]/judgment` | 도표 검색·판단 진행, 구분 질문 답변, 판정과 사유(걸린 검증의 이유) |
-| `/cases/[id]/reports/[version]` | 판정·검증 3겹·근거·비율 검토 초안, 버전 비교·담당자 승인 |
+| `/cases/[id]/judgment` | 진행 단계 「판단」 화면 — 사실 카드(영상/키프레임·수동 입력·근거·확정)와 도표 검색·판단 진행, 구분 질문 답변, 판정과 사유(걸린 검증의 이유)를 한 화면에 둔다(사실 카드 화면을 합쳤다) |
+| `/cases/[id]/reports` | 검토 보고서 자리 — 최신 보고서가 있으면 그 버전으로 보내고, 없으면 보고서 칸을 비운 틀(판정이 났으면 여기서 근거 질의응답) |
+| `/cases/[id]/reports/[version]` | 판정·검증 3겹·근거·비율 검토 초안, 버전 비교·담당자 승인. 오른쪽에 근거 질의응답·what-if(최신 판정으로 만든 최신 보고서에서만 묻는다 — 왼쪽 손잡이로 접고 펼친다) |
 | `/profile` | 내 정보 — 담당자 소속·이메일·담당자 ID, 담당 사건 수, 로그아웃. 머리글 오른쪽 이름을 누르면 온다 |
 | `/dev` | 개발 전용 비식별 견본·상태별 화면 미리보기 (Vercel 운영 배포에서는 404 — `VERCEL_ENV=production`) |
 
@@ -231,7 +237,7 @@ Realtime 연결이 끊겨도 업로드·분석·판단을 자동 중복 생성�
 
 현재 가능한 작업은 역할별 타입·컴포넌트 본문 작성, 계약 검토, 화면의 BE 연결이다. `src/lib/api/client.ts`는 BE 경로
 17개에 요청을 보낸다(오류 `ApiRequestError`, 버전 충돌 `isVersionConflict`, 접수 중복 키 `newIdempotencyKey`). 지금 BE를 읽는
-화면은 판단 화면뿐이고 나머지는 합성 견본을 읽는다. 로그인 연결 전이라 토큰 없이 보내므로 로컬 BE 개발 인증
+화면은 판단 화면과 검토 보고서의 근거 질의응답뿐이고 나머지는 합성 견본을 읽는다. 로그인 연결 전이라 토큰 없이 보내므로 로컬 BE 개발 인증
 (`APP_ENV=local`·`DEV_ACTOR_ID`)에서만 통한다. `src/fixtures/contracts.json`은 BE 생성 양식이며 실행 가능한 목업 시나리오가 아니다.
 
 Node.js 24(`.nvmrc`)와 npm을 쓴다.

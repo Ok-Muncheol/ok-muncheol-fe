@@ -10,14 +10,12 @@
  */
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
-import { ModelValue } from "@/components/model-value";
-import { VerificationLabel } from "@/components/status-label";
 import { fieldLabel, optionLabel } from "@/lib/api/chart-scope";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError } from "@/lib/api/client";
 import type { AnswerView, ApiError, FactField, QuestionAnswer, QuestionView } from "@/lib/api/types";
 import { UNKNOWN_CHOICE, answerFor } from "@/lib/judgment/view";
-import { Button, ChoiceGroup, Empty, Notice } from "@/ui/controls";
+import { Button, ChoiceGroup, Notice } from "@/ui/controls";
 
 type Props = {
   caseId: string;
@@ -26,7 +24,7 @@ type Props = {
   questions: readonly QuestionView[];
   /** 질문을 받은 카드 버전 — 답변의 expected_card_version */
   expectedCardVersion: number;
-  /** 질문이 묻는 카드 칸의 지금 값. 카드를 못 읽었으면 비어 있다. */
+  /** 같은 화면 사실 카드의 칸 — 칸이 있으면 질문의 칸 이름을 그 칸으로 가는 링크로 둔다. 카드를 못 읽었으면 비어 있다. */
   fields: Partial<Record<string, FactField>>;
 };
 
@@ -199,27 +197,22 @@ function AnsweredQuestion({
   );
 }
 
+/**
+ * 질문 번호와 묻는 칸. 칸의 지금 값·확인 상태·모델 원값은 같은 화면의 사실 카드에 있어 다시 적지 않고,
+ * 카드에 그 칸이 있으면 칸 이름을 그 칸으로 가는 링크(#fact-{칸}, FactCardPanel의 입력 id)로 둔다.
+ */
 function QuestionMeta({ position, fieldKey, field }: { position: string; fieldKey: string; field: FactField | undefined }) {
   return (
     <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-muted">
       <span className="font-mono tabular-nums">질문 {position}</span>
       <span aria-hidden>·</span>
-      <span>{fieldLabel(fieldKey)}</span>
-      {field && <FieldNow fieldKey={fieldKey} field={field} />}
+      {field ? (
+        <a href={`#fact-${fieldKey}`} className="text-primary-strong underline-offset-4 hover:underline">
+          {fieldLabel(fieldKey)} — 사실 카드에서 보기
+        </a>
+      ) : (
+        <span>{fieldLabel(fieldKey)}</span>
+      )}
     </p>
-  );
-}
-
-/** 지금 카드 값·확인 상태와 모델 원값. 모델 값은 model 톤으로만 적는다. */
-function FieldNow({ fieldKey, field }: { fieldKey: string; field: FactField }) {
-  return (
-    <>
-      <span aria-hidden>·</span>
-      <span>
-        지금 카드 값 <span className="font-semibold text-ink">{optionLabel(fieldKey, field.value) ?? <Empty>불명</Empty>}</span>
-      </span>
-      <VerificationLabel status={field.verification_status} />
-      <ModelValue fieldKey={fieldKey} field={field} />
-    </>
   );
 }
