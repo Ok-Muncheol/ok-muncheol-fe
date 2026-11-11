@@ -8,8 +8,10 @@ import {
   answerFor,
   answerableQuestions,
   answeredValues,
+  evidenceDecisions,
   fieldsToCheck,
   isStaleInput,
+  judgmentEvidence,
   partyRoles,
   runBadgeStatus,
   stageLabel,
@@ -137,4 +139,27 @@ test("확인 대기 실행은 남은 답 → 카드 반영 순으로 기다리�
 test("카드에 반영할 값은 값으로 답한 칸만 — ‘확인 불가’와 안 답한 질문은 넣지 않는다", () => {
   const questions = [question("movement_B", answered(null)), question("signal_B", answered("a")), question("night")];
   assert.deepEqual(answeredValues(questions), { signal_B: "a" });
+});
+
+const evidenceHit = (chunkId) => ({
+  chunk: {
+    chunk_id: chunkId, parent_id: "synthetic-standards:S-1", page_start: 10, page_end: 10, text: "합성", metadata: {},
+    document: { document_id: "synthetic-standards", corpus: "fault_standards", source_uri: "synthetic.pdf", edition: "synthetic-1",
+      effective_from: "2024-01-01", effective_to: null, content_hash: "0", parser_version: "synthetic" },
+  },
+  score: 0.9, retrieval_version: "synthetic",
+});
+
+test("판정 근거는 도표를 고른 판정에만 있다 — 보류·도표 전에 멈춘 추가 확인은 근거 칸을 그리지 않는다", () => {
+  const hits = [evidenceHit("c1")];
+  assert.deepEqual(judgmentEvidence({ chart_id: "S-1", evidence: hits }), hits);
+  assert.deepEqual(judgmentEvidence({ chart_id: "S-1", evidence: [] }), [], "도표는 골랐는데 근거가 비면 패널이 '근거 없음'을 알린다");
+  assert.equal(judgmentEvidence({ chart_id: null, evidence: [] }), null);
+});
+
+test("판정 근거는 모두 '판단에 사용'이고 이유 칸에는 BE 값(판정 도표 ID)만 적는다", () => {
+  assert.deepEqual(evidenceDecisions([evidenceHit("c1"), evidenceHit("c2")], "S-1"), {
+    c1: { status: "selected", reason: "판정 도표 S-1의 근거" },
+    c2: { status: "selected", reason: "판정 도표 S-1의 근거" },
+  });
 });

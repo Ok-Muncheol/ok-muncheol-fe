@@ -18,7 +18,8 @@ export function JudgmentPanel({ result }: { result: JudgmentResult }) {
   );
 }
 
-export function JudgmentOutcome({ result }: { result: JudgmentResult }) {
+/** evidenceHref가 있으면 적용 도표에서 그 화면의 판정 근거로 이동한다(판단 화면). */
+export function JudgmentOutcome({ result, evidenceHref }: { result: JudgmentResult; evidenceHref?: string }) {
   const hasFault = result.fault_A !== null && result.fault_B !== null;
   return (
     <Card title="판정" aside={<StatusLabel status={result.status} />}>
@@ -34,7 +35,18 @@ export function JudgmentOutcome({ result }: { result: JudgmentResult }) {
       )}
       <DescriptionList>
         <DescriptionRow term="적용 도표" note={result.edition && <>적용판 <span className="font-mono">{result.edition}</span></>}>
-          {result.chart_id ? <span className="font-mono">{result.chart_id}</span> : <Empty />}
+          {result.chart_id ? (
+            <>
+              <span className="font-mono">{result.chart_id}</span>
+              {evidenceHref && (
+                <a href={evidenceHref} className="ml-2 text-caption text-primary-strong underline-offset-4 hover:underline">
+                  근거 보기
+                </a>
+              )}
+            </>
+          ) : (
+            <Empty />
+          )}
         </DescriptionRow>
         <DescriptionRow term="과실비율 A : B" note={hasFault && "검토 초안 — 담당자가 승인하기 전에는 외부로 전달하지 않는다."}>
           {hasFault ? (

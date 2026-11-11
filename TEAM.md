@@ -49,7 +49,7 @@ PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책�
 | --- | --- |
 | `src/features/judgment/judgment-panel.tsx` | 작업 진행과 세 판정 상태, 근거 체크/반박 검토/코드 계산 검증·실패 이유 |
 | `src/features/judgment/question-panel.tsx` | BE 질문/보기/불명 응답, 기대 카드 버전, 답변→정지원 카드 재확정→재판단 |
-| `src/app/cases/[id]/judgment/page.tsx`, `src/features/judgment/judgment-source.ts`, `retry-judgment.tsx` | 판단 화면(진행 단계·실패·구분 질문·확인할 칸·판정). API 모드에서 판단 조회·답변·판단 시작/다시 시작을 BE로 보낸다(2026-11-10). Realtime 변경 알림·로그인 토큰 연결 |
+| `src/app/cases/[id]/judgment/page.tsx`, `src/features/judgment/judgment-source.ts`, `retry-judgment.tsx` | 판단 화면(진행 단계·실패·구분 질문·확인할 칸·판정·판정 근거). API 모드에서 판단 조회·답변·판단 시작/다시 시작을 BE로 보낸다(2026-11-10). 판정 근거는 고른 도표의 원문 근거를 김지은 근거 패널로 보이고 적용 도표에서 이동한다(2026-11-11). Realtime 변경 알림·로그인 토큰 연결 |
 | `src/lib/judgment/view.ts`, `src/lib/api/chart-scope.ts` | 판단 화면 규칙(단계·검증 층·답변 모양)과 도표 선택 칸 표기. BE `graph.py`·`chart_scope.py`와 맞춘다 |
 | `src/features/qa/qa-panel.tsx`, `src/lib/qa/view.ts` | 근거 답변·추가 질문·가정 조건/결과. 공식 결과와 나란히 구분. 판정이 난 판단 화면 아래에서 BE `POST /cases/{id}/qa`로 묻고 답·인용 근거(`[E1]` → 근거로 이동, 출처 공식 판단·검색·가정 실행 — 가정 근거는 경고 톤)·가정 결과(공식과 분리)·공식 반영 안내를 그린다(2026-11-11). 질문·답은 저장하지 않는다. LLM 시간 상한을 넘으면 BE가 504 `qa_timeout`(다시 질문 가능)을 준다 |
 | `src/app/profile/page.tsx`, `src/features/profile/profile-source.ts` | 내 정보 초안(소속·계정·담당 사건 수·로그아웃). 로그인한 담당자는 지금 합성 견본(`src/fixtures/profile.json`)이다. 세션 사용자 조회·로그아웃의 세션 종료를 정지원 인증과 연결 |
