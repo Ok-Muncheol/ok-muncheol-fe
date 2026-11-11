@@ -130,9 +130,16 @@ export type AnswerResult = JudgmentTaskView & {
  * 답 본문의 [E1] 표시는 citations의 ref다(도구가 돌려준 근거만). 가정 결과(what-if)는 hypotheticals에만 있고
  * 공식 판단·보고서는 바뀌지 않는다. 가정 실행을 했으면 fact_change_hint가 공식 반영 경로를 알린다. 질문·답은 저장하지 않는다.
  */
+/**
+ * 인용 근거를 돌려준 도구 — official 공식 판단 로그 / search 결정례·약관 검색 / hypothesis 가정 실행(공식 판정의 근거가 아니다).
+ * 공식 판단 로그가 돌려준 근거이기도 하면 official이다(BE app/schemas/judgment.py CitationSource).
+ */
+export type QaCitationSource = "official" | "search" | "hypothesis";
 export type QaCitation = {
   ref: string; chunk_id: string; parent_id: string; corpus: Corpus; edition: string;
   page_start: number; page_end: number; excerpt: string;
+  /** BE #94부터 온다. 그 전 응답에는 없다 */
+  source?: QaCitationSource;
 };
 /** simulate 가정 실행 한 번. completed면 가정 판정, waiting_for_confirmation면 확인할 칸(open_fields)이 남아 멈춤, failed면 error */
 export type QaHypothesis = {

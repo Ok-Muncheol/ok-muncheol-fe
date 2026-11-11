@@ -5,7 +5,9 @@ import { test } from "node:test";
 import {
   QA_CORPUS_LABELS,
   QA_MAX_LENGTH,
+  QA_SOURCE_LABELS,
   QA_TOOL_LABELS,
+  citationSource,
   hypothesisKind,
   pagesLabel,
   questionProblem,
@@ -61,4 +63,17 @@ test("가정 결과 종류 — 판정·확인할 칸·실패", () => {
   assert.equal(hypothesisKind({ ...judged, status: "failed", judgment_status: null, error }), "failed");
   // 완료인데 판정이 비면 판정으로 그리지 않는다
   assert.equal(hypothesisKind({ ...judged, judgment_status: null }), "failed");
+});
+
+test("인용 근거 출처 — 가정 실행의 근거만 가정으로 가르고, 출처가 없는 예전 응답은 표시하지 않는다", () => {
+  assert.deepEqual(Object.keys(QA_SOURCE_LABELS), ["official", "search", "hypothesis"]);
+  assert.deepEqual(citationSource({ source: "official" }), { label: "공식 판단 근거", hypothetical: false });
+  assert.deepEqual(citationSource({ source: "search" }), { label: "검색 결과", hypothetical: false });
+  assert.deepEqual(citationSource({ source: "hypothesis" }), { label: "가정 실행 근거", hypothetical: true });
+  assert.equal(citationSource({}), null, "BE #94 전 응답");
+  assert.equal(citationSource({ source: "unknown" }), null);
+});
+
+test("BE 견본(qa_answer)의 인용에는 출처가 있다", () => {
+  for (const citation of sample.citations) assert.ok(citationSource(citation), citation.ref);
 });

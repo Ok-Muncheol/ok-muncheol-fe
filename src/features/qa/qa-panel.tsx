@@ -3,7 +3,7 @@
 /**
  * B: 근거 질의응답 — 판정이 난 판단을 근거로 묻고 답을 받는다(POST /cases/{id}/qa, BE app/agents/qa.py).
  * BE는 판단 로그 · 결정례 · 약관 검색 · 가정 실행 도구로 답한다. 가정 결과(what-if)는 공식 판정과 따로 그리고
- * 공식 판단 · 보고서는 바뀌지 않는다. 답의 [E1] 표시는 아래 인용 근거로 이동한다.
+ * 공식 판단 · 보고서는 바뀌지 않는다. 답의 [E1] 표시는 아래 인용 근거로 이동하고, 인용마다 출처(공식 판단 · 검색 · 가정 실행)를 단다.
  * 질문 · 답은 저장하지 않는다 — 이 화면을 떠나면 사라진다. API 모드(live)만 보낸다. 견본 모드는 보내지 않는다.
  */
 import { type FormEvent, useState } from "react";
@@ -14,6 +14,7 @@ import type { ApiError, QaAnswer, QaHypothesis } from "@/lib/api/types";
 import {
   QA_CORPUS_LABELS,
   QA_MAX_LENGTH,
+  citationSource,
   hypothesisKind,
   pagesLabel,
   questionProblem,
@@ -150,13 +151,22 @@ function QaExchange({ exchange }: { exchange: Exchange }) {
         <div>
           <p className="text-caption font-semibold text-ink-muted">인용 근거</p>
           <ul className="mt-1 flex flex-col gap-2">
-            {answer.citations.map((citation) => (
-              <li key={citation.ref} id={anchor(citation.ref)} className="text-caption">
-                <span className="font-mono font-semibold">{citation.ref}</span> {QA_CORPUS_LABELS[citation.corpus] ?? citation.corpus} ·
-                적용판 <span className="font-mono">{citation.edition}</span> · {pagesLabel(citation)}
-                <span className="block text-ink-muted break-keep">{citation.excerpt}</span>
-              </li>
-            ))}
+            {answer.citations.map((citation) => {
+              const source = citationSource(citation);
+              return (
+                <li key={citation.ref} id={anchor(citation.ref)} className="text-caption">
+                  <span className="font-mono font-semibold">{citation.ref}</span>{" "}
+                  {source && (
+                    <Badge tone={source.hypothetical ? "warning" : "neutral"} className="mr-1 align-middle">
+                      {source.label}
+                    </Badge>
+                  )}
+                  {QA_CORPUS_LABELS[citation.corpus] ?? citation.corpus} · 적용판 <span className="font-mono">{citation.edition}</span> ·{" "}
+                  {pagesLabel(citation)}
+                  <span className="block text-ink-muted break-keep">{citation.excerpt}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
