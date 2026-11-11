@@ -25,7 +25,7 @@ const FAULT = { agreed_counterparty_fault: 70, fault_change_reason: "상대 보�
 // [메서드, 인자, HTTP 메서드, 경로, 본문] — BE app/api/routes.py 순서
 const ROUTES = [
   ["createCase", [{ accident_date: "2026-11-01" }], "POST", "/cases", { accident_date: "2026-11-01" }],
-  ["requestUpload", [CASE], "POST", `/cases/${CASE}/uploads`, undefined],
+  ["requestUpload", [CASE, "estimate", "application/pdf"], "POST", `/cases/${CASE}/uploads`, { kind: "estimate", content_type: "application/pdf" }],
   ["startAnalysis", [CASE, "videos/a.mp4", "analysis-key-1"], "POST", `/cases/${CASE}/analysis`, { storage_path: "videos/a.mp4" }],
   ["getCase", [CASE], "GET", `/cases/${CASE}`, undefined],
   ["getFactCard", [CASE], "GET", `/cases/${CASE}/fact-card`, undefined],

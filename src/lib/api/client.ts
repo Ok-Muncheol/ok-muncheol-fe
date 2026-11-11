@@ -13,12 +13,17 @@
  */
 import type {
   AgreedFaultInput, AnswerResult, ApiError, CaseFacts, ClaimResult, ConfirmResult, CounterpartyInfo,
-  FactCard, FactPatch, JudgmentRunView, JudgmentTaskView, QaAnswer, QuestionAnswer, ReviewReport,
+  FactCard, FactPatch, JudgmentRunView, JudgmentTaskView, QaAnswer, QuestionAnswer, ReviewReport, UploadKind, UploadTicket,
 } from "./types";
 
 export interface ApiClient {
   createCase(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
-  requestUpload(caseId: string): Promise<Record<string, unknown>>;
+  /**
+   * POST /cases/{id}/uploads — 견적서(estimate, application/pdf)·영상(video, mp4·mov·avi·webm·mkv) 업로드 서명 URL.
+   * kind가 다르면 422 invalid_request, 형식이 kind와 안 맞으면 422 invalid_upload_type. BE 경로 본문 연결 전에는 501.
+   * 받은 upload_url에 파일을 PUT하고(키 없이 Content-Type만) storage_path를 uploadEstimate·startAnalysis에 넘긴다. 파일 하나 50MB까지
+   */
+  requestUpload(caseId: string, kind: UploadKind, contentType: string): Promise<UploadTicket>;
   /** POST /cases/{id}/analysis — 202. idempotencyKey는 newIdempotencyKey()로 만들고 같은 접수를 다시 보낼 때 그대로 쓴다 */
   startAnalysis(caseId: string, storagePath: string, idempotencyKey: string): Promise<Record<string, unknown>>;
   getCase(caseId: string): Promise<Record<string, unknown>>;
@@ -39,7 +44,7 @@ export interface ApiClient {
   getClaim(caseId: string, version: number): Promise<ClaimResult>;
   /** POST /cases/{id}/documents — 서류·면책 체크 추가 → 재산정한 새 보고서(추가 확인·보류 사건이면 null) */
   addDocuments(caseId: string, documents: Record<string, unknown>[], caseFacts?: CaseFacts): Promise<ReviewReport | null>;
-  /** POST /cases/{id}/estimates — 서명 URL로 Storage에 올린 견적서 PDF 경로. BE 연결 전에는 501 */
+  /** POST /cases/{id}/estimates — requestUpload(kind=estimate)로 올린 견적서 PDF의 storage_path. BE가 Storage에서 받아 자동 추출·재산정한다 */
   uploadEstimate(caseId: string, storagePath: string, partyId: string): Promise<ReviewReport | null>;
   /** PATCH /cases/{id}/agreed-fault — 협의 과실 입력·해제 → 새 보고서(다시 확인 완료 필요) */
   setAgreedFault(caseId: string, input: AgreedFaultInput): Promise<ReviewReport>;
@@ -142,7 +147,8 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
 
   return {
     createCase: (payload) => request("POST", "/cases", { body: payload }),
-    requestUpload: (caseId) => request("POST", `${caseUrl(caseId)}/uploads`),
+    requestUpload: (caseId, kind, contentType) =>
+      request("POST", `${caseUrl(caseId)}/uploads`, { body: { kind, content_type: contentType } }),
     startAnalysis: (caseId, storagePath, idempotencyKey) =>
       request("POST", `${caseUrl(caseId)}/analysis`, { body: { storage_path: storagePath }, idempotencyKey }),
     getCase: (caseId) => request("GET", caseUrl(caseId)),
