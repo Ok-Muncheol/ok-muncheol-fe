@@ -9,7 +9,8 @@
  */
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { asApiError, createApiClient, newIdempotencyKey } from "@/lib/api/client";
+import { createBrowserApiClient } from "@/lib/api/browser";
+import { asApiError, newIdempotencyKey } from "@/lib/api/client";
 import type { ApiError } from "@/lib/api/types";
 import { Button } from "@/ui/controls";
 
@@ -41,7 +42,7 @@ function JudgmentRequest({ caseId, cardVersion, live, label }: Props & { label: 
     setError(null);
     const idempotencyKey = (key.current ??= newIdempotencyKey());
     try {
-      await createApiClient().startJudgment(caseId, cardVersion, idempotencyKey);
+      await createBrowserApiClient().startJudgment(caseId, cardVersion, idempotencyKey);
       key.current = null;
       startRefresh(() => router.refresh());
     } catch (caught) {

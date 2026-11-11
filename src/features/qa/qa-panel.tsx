@@ -9,7 +9,8 @@
 import { type FormEvent, useState } from "react";
 import { StatusLabel } from "@/components/status-label";
 import { fieldLabel, optionLabel } from "@/lib/api/chart-scope";
-import { asApiError, createApiClient } from "@/lib/api/client";
+import { createBrowserApiClient } from "@/lib/api/browser";
+import { asApiError } from "@/lib/api/client";
 import type { ApiError, QaAnswer, QaHypothesis } from "@/lib/api/types";
 import {
   QA_CORPUS_LABELS,
@@ -49,7 +50,7 @@ export function QaPanel({ caseId, live, judgmentVersion }: Props) {
     setSending(true);
     setError(null);
     try {
-      const answer = await createApiClient().askQuestion(caseId, question);
+      const answer = await createBrowserApiClient().askQuestion(caseId, question);
       setExchanges((previous) => [{ id: Date.now(), question, answer }, ...previous]);
       setText("");
     } catch (caught) {

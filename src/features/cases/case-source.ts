@@ -18,11 +18,11 @@ export function isSampleSource(): boolean {
 }
 
 export async function listCases(): Promise<CaseSummary[]> {
-  // TODO: createApiClient().listCases() — 담당자 토큰으로 자기 사건만 받는다.
+  // TODO: createServerApiClient().listCases()(src/lib/api/server.ts) — 담당자 토큰으로 자기 사건만 받는다.
   return isSampleSource() ? SAMPLE : [];
 }
 
 export async function getCaseSummary(caseId: string): Promise<CaseSummary | null> {
-  // TODO: createApiClient().getCase(caseId) — 새로고침 복구는 이 조회가 맡고 Realtime은 변경 알림만 준다.
+  // TODO: createServerApiClient().getCase(caseId) — 새로고침 복구는 이 조회가 맡고 Realtime은 변경 알림만 준다.
   return (await listCases()).find((c) => c.case_id === caseId) ?? null;
 }

@@ -117,7 +117,7 @@ export function FactCardPanel({ card }: { card: FactCard }) {
           </Field>
         )}
         <div className="flex flex-wrap items-center gap-2">
-          {/* TODO(A): createApiClient().patchFactCard / confirmFactCard — 견본이라 보내지 않고 보낼 값만 남긴다. */}
+          {/* TODO(A): createBrowserApiClient().patchFactCard / confirmFactCard(src/lib/api/browser.ts) — 견본이라 보내지 않고 보낼 값만 남긴다. */}
           <Button variant={dirty ? "primary" : "secondary"} disabled={!dirty || reason.trim() === ""} onClick={() => setHeld({ kind: "save", patch: buildPatch(card, draft, reason) })}>
             저장
           </Button>

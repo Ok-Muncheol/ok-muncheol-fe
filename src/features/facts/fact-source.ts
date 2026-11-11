@@ -13,6 +13,6 @@ const CARDS = [...drafts.fact_cards, ...judged.fact_cards] as unknown as FactCar
 
 /** 사건의 최신 사실 카드. 없으면 아직 카드가 만들어지지 않았거나(접수·영상 분석 단계) 조회 연결 전이다. */
 export async function getFactCard(caseId: string): Promise<FactCard | null> {
-  // TODO(A): createApiClient().getFactCard(caseId) — 새로고침·재접속 복구는 이 조회가 맡는다.
+  // TODO(A): createServerApiClient().getFactCard(caseId)(src/lib/api/server.ts) — 새로고침·재접속 복구는 이 조회가 맡는다.
   return isSampleSource() ? (CARDS.find((c) => c.case_id === caseId) ?? null) : null;
 }

@@ -1,9 +1,10 @@
 /**
- * B 통합: 내 정보(/profile)와 머리글이 읽는 로그인한 보상 담당자. 지금은 비식별 합성 견본이고, 로그인이 붙으면
- * Supabase 세션 사용자로 바꾼다(src/lib/supabase/README.md). 운영 배포에서는 견본을 보여 주지 않는다(사건 보드와 같은 기준).
+ * B 통합: 내 정보(/profile)와 머리글이 읽는 로그인한 보상 담당자. 로그인했으면 Supabase 세션 사용자(검증한 토큰의
+ * sub·email, 이름·소속·역할은 user_metadata)이고, 아니면 견본 모드에서만 비식별 합성 견본을 보여 준다(사건 보드와 같은 기준).
  */
 import { isSampleSource } from "@/features/cases/case-source";
 import sample from "@/fixtures/profile.json";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
  * user_id는 Supabase auth.users.id다 — BE가 토큰에서 정하는 actor_id이고, 사건 담당자(cases.assignee_id)와
@@ -13,7 +14,32 @@ export type ReviewerProfile = { user_id: string; name: string; email: string; te
 
 const SAMPLE: ReviewerProfile = sample.profile;
 
+/** 화면이 견본 표시를 붙일지 가린다(로그인한 사용자면 견본이 아니다). */
+export function isSampleProfile(profile: ReviewerProfile): boolean {
+  return profile.user_id === SAMPLE.user_id;
+}
+
 export async function getCurrentProfile(): Promise<ReviewerProfile | null> {
-  // TODO: 세션 사용자(id·email)를 읽고, 이름·소속은 user_metadata로 둘지 BE 조회로 받을지 정해 연결한다.
+  const user = await sessionUser();
+  if (user) return user;
   return isSampleSource() ? SAMPLE : null;
+}
+
+/** 로그인한 사용자. getClaims는 토큰 서명을 검증한다(쿠키 값을 그대로 믿지 않는다). */
+async function sessionUser(): Promise<ReviewerProfile | null> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
+  const meta = (claims.user_metadata ?? {}) as Record<string, unknown>;
+  const text = (key: string) => (typeof meta[key] === "string" ? (meta[key] as string) : "");
+  const email = typeof claims.email === "string" ? claims.email : "";
+  return {
+    user_id: claims.sub,
+    name: text("name") || email || "보상 담당자",
+    email,
+    team: text("team"),
+    role: text("role") || "보상 담당자",
+  };
 }
