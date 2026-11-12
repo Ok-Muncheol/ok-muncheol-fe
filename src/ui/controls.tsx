@@ -288,7 +288,8 @@ export function Th({ className = "", ...props }: ThHTMLAttributes<HTMLTableCellE
 }
 
 export function Td({ className = "", ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={`border-b border-line px-4 py-2.5 align-top last:border-b-0 ${className}`} {...props} />;
+  // 마지막 줄의 칸만 아래 선을 뺀다(감싼 상자 테두리와 겹치지 않게). last:는 줄의 마지막 칸에 걸려 쓰지 않는다.
+  return <td className={`border-b border-line px-4 py-2.5 align-top [tr:last-child>&]:border-b-0 ${className}`} {...props} />;
 }
 
 /* ---------- 요약 수치 · 단계 줄 표 ---------- */

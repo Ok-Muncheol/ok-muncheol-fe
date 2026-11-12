@@ -5,7 +5,7 @@ Codex·Claude Code 같은 AI 에이전트가 이 저장소에서 작업할 때 �
 
 ## 디자인 시스템: 청람
 
-보상 담당자가 데스크톱에서 하루 종일 쓰는 업무 화면이다. 토큰과 클래스 표는 README 「디자인 시스템: 청람」에, 공통 컨트롤은 `src/ui/controls.tsx`에 있다. `/dev`에서 한 화면으로 본다.
+보상 담당자가 데스크톱에서 하루 종일 쓰는 업무 화면이다. 토큰과 클래스 표는 README 「디자인 시스템: 청람」에, 공통 컨트롤은 `src/ui/controls.tsx`에 있다. `/design`(운영 https://ok-muncheol-fe.vercel.app/design 에서도 열림)에서 한 화면으로 본다. 토큰이나 컨트롤을 더하면 `/design`에도 한 칸 더한다.
 
 - 색은 토큰 클래스(`bg-surface`, `text-ink`, `border-line` 등)만 쓴다. `bg-[#…]` 같은 임의 색 값이나 `style` 속성으로 색을 넣지 않는다. 그런 색은 다크 모드에서 그대로 남는다.
 - Tailwind 기본 팔레트는 지웠다. `bg-gray-100`·`text-blue-600` 같은 클래스는 에러 없이 무시되고 색이 칠해지지 않는다. 영상 프레임 위 오버레이용 `white`·`black`만 남아 있다.
