@@ -1,6 +1,6 @@
 /**
- * B 통합: 담당 사건 보드·상세가 읽는 사건 요약. 지금은 비식별 합성 견본이고, BE GET /cases·GET /cases/{id}가 생기면
- * ApiClient(src/lib/api/client.ts)로 바꾼다. 운영 배포에서는 견본을 보여 주지 않는다(/dev와 같은 기준).
+ * B 통합: 담당 사건 보드·상세가 읽는 사건 요약. 견본 모드는 비식별 합성 견본, API 모드는 BE GET /cases(담당자에게 배정된 사건 목록) ·
+ * GET /cases/{id}다(ApiClient — src/lib/api/client.ts). 운영 배포에서는 견본을 보여 주지 않는다(/dev와 같은 기준).
  */
 import { redirect } from "next/navigation";
 import { ApiRequestError } from "@/lib/api/client";
@@ -20,9 +20,21 @@ export function isSampleSource(): boolean {
   return process.env.OKM_DATA_SOURCE !== "api";
 }
 
+/**
+ * 담당 사건 목록 — 로그인한 담당자에게 배정된 사건(BE GET /cases, 담당자 토큰으로 자기 사건만). 배정되면 다음에 보드를 열 때 바로 보인다.
+ * 로그인하지 않았으면(401) 로그인 화면으로 보낸다. 그 밖에 못 읽으면 빈 목록이다(보드가 「배정된 사건이 없어요」).
+ */
 export async function listCases(): Promise<CaseSummary[]> {
-  // TODO: createServerApiClient().listCases()(src/lib/api/server.ts) — 담당자 토큰으로 자기 사건만 받는다.
-  return isSampleSource() ? SAMPLE : [];
+  if (isSampleSource()) return SAMPLE;
+  try {
+    const rows = await createServerApiClient().listCases();
+    // 예전 BE 응답에는 배정 시각(created_at)이 없다 — 마지막 변경 시각으로 채운다.
+    return rows.map((c) => ({ ...c, created_at: c.created_at ?? c.updated_at }));
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 401) redirect(`/login?next=${encodeURIComponent("/cases")}`);
+    if (error instanceof ApiRequestError) return [];
+    throw error;
+  }
 }
 
 /**

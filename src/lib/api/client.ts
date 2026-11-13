@@ -13,11 +13,13 @@
  * 런타임 import는 두지 않는다 — 테스트(client.test.mjs)가 Node로 이 파일을 바로 읽는다.
  */
 import type {
-  AgreedFaultInput, AnswerResult, ApiError, CaseFacts, ClaimResult, ConfirmResult, CounterpartyInfo,
+  AgreedFaultInput, AnswerResult, ApiError, CaseFacts, CaseSummary, ClaimResult, ConfirmResult, CounterpartyInfo,
   EvidenceView, FactCard, FactPatch, JudgmentRunView, JudgmentTaskView, QaAnswer, QuestionAnswer, ReviewReport, UploadKind, UploadTicket,
 } from "./types";
 
 export interface ApiClient {
+  /** GET /cases — 로그인한 담당자에게 배정된 사건 요약 목록(최근 바뀐 순). 없으면 [] */
+  listCases(): Promise<CaseSummary[]>;
   createCase(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
   /**
    * POST /cases/{id}/uploads — 견적서(estimate, application/pdf)·영상(video, mp4·mov·avi·webm·mkv) 업로드 서명 URL.
@@ -149,6 +151,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
   const reportUrl = (caseId: string, version: number) => `${caseUrl(caseId)}/reports/${seg(version)}`;
 
   return {
+    listCases: () => request("GET", "/cases"),
     createCase: (payload) => request("POST", "/cases", { body: payload }),
     requestUpload: (caseId, kind, contentType) =>
       request("POST", `${caseUrl(caseId)}/uploads`, { body: { kind, content_type: contentType } }),
