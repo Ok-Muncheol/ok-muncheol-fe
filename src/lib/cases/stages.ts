@@ -52,8 +52,8 @@ export function columnIndex(stage: CaseStage): number {
 }
 
 /**
- * 진행 단계 한 줄에서 단계를 누르면 가는 화면. 지난 단계는 그때 내용을, 아직 오지 않은 단계는 칸을 비운 화면을 보여 준다.
- * 접수는 사건 개요, 판단은 판단 화면(사실 카드를 합쳤다)이다. 검토 보고서는 최신 보고서이고, 아직 없으면 보고서 자리(/reports — 칸을 비운 화면)다.
+ * 진행 단계 한 줄에서 단계를 누르면 가는 화면(지난 단계와 지금 단계만 누를 수 있다).
+ * 접수는 접수 화면(영상 · 사건 정보), 판단은 판단 화면(사실 카드를 합쳤다)이다. 검토 보고서는 최신 보고서이고, 아직 없으면 보고서 자리(/reports — 칸을 비운 화면)다.
  */
 export function stepHref(c: Pick<CaseSummary, "case_id" | "stage" | "versions">, column: BoardColumnKey): string {
   const base = `/cases/${encodeURIComponent(c.case_id)}`;

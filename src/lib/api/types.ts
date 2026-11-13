@@ -13,6 +13,15 @@ export type ApiError = { code: string; message: string; retryable: boolean };
 /** 업로드 파일 종류. 형식은 BE가 검사한다 — estimate는 application/pdf, video는 mp4·mov·avi·webm·mkv(아니면 422 invalid_upload_type). */
 export type UploadKind = "estimate" | "video";
 /** POST /cases/{id}/uploads 응답(BE UploadTicket). upload_url에 키 없이 파일 본문과 Content-Type만 넣어 PUT하고, storage_path를 /estimates·/analysis에 보낸다. */
+/**
+ * GET /cases/{id}/evidence — 최신 카드 근거 사진과 최신 완료 분석의 H.264 미리보기 영상을 보기용 서명 URL(expires_in초, 1시간)로 준다.
+ * 파일이 없으면 url · preview_url이 null이다. 주소가 만료되므로 화면을 열 때마다 새로 읽는다(BE #170).
+ */
+export type EvidenceView = {
+  frames: { frame_id: string; timestamp_ms: number; url: string | null }[];
+  preview_url: string | null;
+  expires_in: number;
+};
 export type UploadTicket = {
   /** 버킷 포함: case-files/{case_id}/estimates/{uuid}.pdf · case-files/{case_id}/videos/{uuid}.{확장자} */
   storage_path: string;

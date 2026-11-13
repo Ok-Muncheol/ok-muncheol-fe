@@ -6,37 +6,38 @@
  * 저장·확정·판단 접수 뒤에는 다시 읽는다. 판정 · 과실은 BE 값만 그린다. 검증 3겹과 근거 질의응답은 검토 보고서 화면에 있다.
  * TODO: Realtime 변경 알림이 오면 다시 읽는다. TODO(A): 영상 재생(H.264 사본 재생 URL)·근거 장면 이미지, 수정 이력.
  */
-import Link from "next/link";
-import { CaseStepper } from "@/features/cases/case-stepper";
 import { redirect } from "next/navigation";
+import { CaseHeader } from "@/features/cases/case-header";
 import { getCaseSummary, isSampleSource } from "@/features/cases/case-source";
 import { CaseWorkspace } from "@/features/facts/case-workspace";
-import { getFactCard } from "@/features/facts/fact-source";
+import { getEvidence, getFactCard } from "@/features/facts/fact-source";
 import { getLatestJudgmentRun } from "@/features/judgment/judgment-source";
-import { caseTitle, isBeforeCard } from "@/lib/cases/intake";
+import { isBeforeCard } from "@/lib/cases/intake";
 
 export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgment">) {
   const { id } = await props.params;
   const live = !isSampleSource();
-  const [summary, { run, error }, card] = await Promise.all([getCaseSummary(id), getLatestJudgmentRun(id), getFactCard(id)]);
+  // 근거 보기 주소는 1시간 뒤 만료되므로 화면을 열 때마다 새로 읽는다.
+  const [summary, { run, error }, card, evidence] = await Promise.all([getCaseSummary(id), getLatestJudgmentRun(id), getFactCard(id), getEvidence(id)]);
   const base = `/cases/${encodeURIComponent(id)}`;
 
   if (!card && summary?.input_path === "video" && isBeforeCard(summary.stage)) redirect(base);
 
-  const title = caseTitle(card?.accident_date ?? summary?.accident_date);
-  const back = (
-    <Link href="/cases" className="text-caption text-ink-muted hover:text-ink">
-      ← 담당 사건
-    </Link>
+  // 머리는 접수 · 검토 보고서 화면과 같은 모양이다(CaseHeader).
+  const header = (
+    <CaseHeader
+      info={{ caseId: id, accidentDate: card?.accident_date ?? summary?.accident_date, assignedAt: summary?.created_at }}
+      progress={summary}
+      viewing="judgment"
+    />
   );
 
   if (!card) {
     return (
-      <div className="mx-auto max-w-3xl">
-        {back}
-        <h1 className="mt-2 text-title font-bold">{summary ? title : "사건을 찾지 못했어요"}</h1>
-        <p className="mt-4 text-body text-ink-muted">{summary ? "사실 카드를 불러오지 못했어요. 잠시 후 다시 열어 주세요." : "담당 사건 목록에서 다시 골라 주세요."}</p>
-      </div>
+      <>
+        {header}
+        <p className="text-body text-ink-muted">{summary ? "사실 카드를 불러오지 못했어요. 잠시 후 다시 열어 주세요." : "담당 사건 목록에서 다시 골라 주세요."}</p>
+      </>
     );
   }
 
@@ -45,13 +46,7 @@ export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgmen
 
   return (
     <>
-      <div className="mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {back}
-          {summary && <CaseStepper summary={summary} viewing="judgment" />}
-        </div>
-        <h1 className="mt-3 text-title font-bold tracking-tight break-keep">{title}</h1>
-      </div>
+      {header}
       <CaseWorkspace
         // 카드·판단이 바뀌면(저장·확정·판단 뒤 다시 읽음) 고르던 값을 새 카드로 다시 시작한다.
         key={`${card.version}-${card.status}-${run?.task_id ?? "none"}-${run?.status ?? ""}`}
@@ -62,6 +57,7 @@ export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgmen
         run={run}
         loadError={error}
         reportHref={reportVersion !== null ? `${base}/reports/${reportVersion}` : null}
+        evidence={evidence}
       />
     </>
   );

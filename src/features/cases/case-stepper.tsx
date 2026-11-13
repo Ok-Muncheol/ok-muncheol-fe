@@ -1,14 +1,18 @@
 /**
- * B 통합: 사건 화면 위의 진행 단계 한 줄 — 담당 사건 보드와 같은 세 단계(접수 › 판단 › 검토 보고서, BOARD_COLUMNS)다.
- * 상자 · 번호 원 없이 글자만 둔다. 지난 단계는 회색 글자와 작은 체크, 지금 단계는 옥색 굵은 글자(옥색은 「지금 위치」), 다음은 옅은 회색이다.
- * 모든 단계가 그 단계 화면으로 가는 링크다(stepHref). 지금 보고 있는 화면의 단계(viewing)는 링크가 아니다.
- * 사건 화면 머리줄 오른쪽(← 담당 사건 맞은편)에 둔다.
+ * B 통합: 사건 화면 머리의 진행 단계 한 줄 — 담당 사건 보드와 같은 세 단계(접수 › 판단 › 검토 보고서, BOARD_COLUMNS)다.
+ * 상자 · 번호 원 없이 글자만 둔다.
+ * - 지난 단계: 회색 글자 + 작은 체크, 누르면 그 단계 화면(stepHref)
+ * - 사건이 지금 있는 단계: 굵은 글자, 누르면 그 단계 화면
+ * - 아직 오지 않은 단계: 옅은 회색 글자이고 누를 수 없다 — 빈 화면으로 보내지 않는다
+ * 지금 보고 있는 화면의 단계(viewing)는 옥색 굵은 글자(옥색은 「지금 위치」)이고 링크가 아니다. 사건 머리(case-header.tsx)가 쓴다.
  */
 import Link from "next/link";
 import type { CaseSummary } from "@/lib/api/types";
 import { BOARD_COLUMNS, type BoardColumnKey, columnIndex, stepHref } from "@/lib/cases/stages";
 
-export function CaseStepper({ summary: c, viewing }: { summary: Pick<CaseSummary, "case_id" | "stage" | "versions">; viewing?: BoardColumnKey }) {
+export type StepperCase = Pick<CaseSummary, "case_id" | "stage" | "versions">;
+
+export function CaseStepper({ summary: c, viewing }: { summary: StepperCase; viewing?: BoardColumnKey }) {
   const current = columnIndex(c.stage);
   return (
     <nav aria-label="진행 단계">
@@ -16,7 +20,7 @@ export function CaseStepper({ summary: c, viewing }: { summary: Pick<CaseSummary
         {BOARD_COLUMNS.map((column, i) => {
           const state = i < current ? "done" : i === current ? "current" : "next";
           const here = column.key === viewing;
-          const tone = state === "current" ? "font-semibold text-primary-strong" : state === "done" ? "text-ink-muted" : "text-ink-faint";
+          const tone = here ? "font-semibold text-primary-strong" : state === "current" ? "font-semibold text-ink" : state === "done" ? "text-ink-muted" : "text-ink-faint";
           const content = (
             <span className={`inline-flex items-center gap-1 whitespace-nowrap ${tone}`}>
               {state === "done" && (
@@ -26,6 +30,7 @@ export function CaseStepper({ summary: c, viewing }: { summary: Pick<CaseSummary
               )}
               {column.label}
               {state === "done" && <span className="sr-only">(지난 단계)</span>}
+              {state === "current" && <span className="sr-only">(진행 중인 단계)</span>}
               {state === "next" && <span className="sr-only">(아직 오지 않은 단계)</span>}
             </span>
           );
@@ -38,6 +43,8 @@ export function CaseStepper({ summary: c, viewing }: { summary: Pick<CaseSummary
               )}
               {here ? (
                 <span aria-current="page">{content}</span>
+              ) : state === "next" ? (
+                content
               ) : (
                 <Link href={stepHref(c, column.key)} className="rounded-badge px-0.5 hover:underline hover:underline-offset-4">
                   {content}

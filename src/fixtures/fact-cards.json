@@ -60,7 +60,12 @@
     "movement_A": { "value": "straight", "model_value": "straight", "source": "vision", "model_confidence": 0.55, "verification_status": "unverified", "evidence_frame_ids": [ "SYN-2026-0130-f2" ], "source_document_ids": [] },
     "movement_B": { "value": "right_turn", "model_value": "right_turn", "source": "vision", "model_confidence": 0.47, "verification_status": "needs_review", "evidence_frame_ids": [ "SYN-2026-0130-f2" ], "source_document_ids": [] },
     "signal_A": { "value": "yellow", "model_value": "yellow", "source": "vision", "model_confidence": 0.31, "verification_status": "needs_review", "evidence_frame_ids": [ "SYN-2026-0130-f2" ], "source_document_ids": [] },
-    "signal_B": { "value": "green", "model_value": "green", "source": "vision", "model_confidence": 0.6, "verification_status": "unverified", "evidence_frame_ids": [ "SYN-2026-0130-f2" ], "source_document_ids": [] }
+    "signal_B": { "value": "green", "model_value": "green", "source": "vision", "model_confidence": 0.6, "verification_status": "unverified", "evidence_frame_ids": [ "SYN-2026-0130-f2" ], "source_document_ids": [] },
+    "collision_signal_A": { "value": null, "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] },
+    "collision_signal_B": { "value": null, "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] },
+    "lane_marking_A": { "value": null, "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] },
+    "lane_marking_B": { "value": null, "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] },
+    "unprotected_left_sign": { "value": null, "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] }
    }
   },
   {

@@ -110,12 +110,13 @@ const OPTIONS: Record<string, Record<string, string>> = {
   movement_B: MOVEMENT,
   lane_marking_A: LANE_MARKING,
   lane_marking_B: LANE_MARKING,
+  // 계약 v1 4절(11/13): 같은 방향 옆 차로에서 나란히 가던 차는 같은 방향 앞/뒤이고, 왼쪽·오른쪽은 옆 도로에서 가로질러 들어온 차만이다.
   relative_position: {
-    left: "왼쪽에서",
-    right: "오른쪽에서",
+    left: "왼쪽 도로에서",
+    right: "오른쪽 도로에서",
     opposite: "맞은편에서",
-    same_direction_front: "같은 방향 앞",
-    same_direction_rear: "같은 방향 뒤",
+    same_direction_front: "같은 방향 앞(옆 차로 포함)",
+    same_direction_rear: "같은 방향 뒤(옆 차로 포함)",
   },
   night: { false: "낮", true: "밤" },
 };
@@ -165,18 +166,30 @@ export function isRelevant(key: string, locationType: Value): boolean {
   return true;
 }
 
-export type FieldGroups = { review: string[]; rest: string[]; unused: string[] };
+export type FieldGroups = { review: string[]; rest: string[]; manual: string[]; unused: string[] };
 
 /**
- * 칸 묶기 — review: 확인이 필요한 칸(BE needs_review, 구분 질문이 걸린 칸), rest: 나머지 쓰는 칸, unused: 이 사고와 상관없는 칸.
+ * 칸 묶기 — 화면은 두 묶음이다. rest: AI가 채운 값(직접 입력 사건이면 입력한 값), manual: 담당자 입력 칸,
+ * unused: 이 사고와 상관없는 칸(접어 둔다). review는 따로 빼는 묶음이 아니라 표시다 — 확인이 필요한 칸(BE needs_review, 구분 질문이 걸린 칸)은
+ * 자기 묶음 안에서 맨 앞에 두고(그 안에서는 카드 칸 순서) 화면이 표시한다. 확인할 칸은 상관없어 보여도 unused로 접지 않는다(BE가 확정을 막는다).
+ * manual은 영상 카드에서 비전이 채우지 않는 칸(충돌 순간 신호 · 차로 노면표시 · 비보호 좌회전 표지, 카드 v1 — 출처 manual)이다.
+ * 확정을 막지 않는 선택 칸이라 AI가 채운 값과 섞지 않는다. 직접 입력 사건(모든 칸이 manual)은 rest다.
  * 확인이 필요한 칸은 상관없어 보여도 위에 둔다(BE가 확정을 막는다). 묶음은 원래 카드 상태로 정해 고르는 동안 칸이 움직이지 않는다.
  */
 export function groupFields(original: Fields, draft: Fields, asked: readonly string[] = []): FieldGroups {
   const location = draft.location_type?.value ?? null;
   const keys = [...CARD_FIELD_ORDER.filter((k) => draft[k]), ...Object.keys(draft).filter((k) => !(CARD_FIELD_ORDER as readonly string[]).includes(k))];
   const review = keys.filter((k) => asked.includes(k) || original[k]?.verification_status === "needs_review");
-  const others = keys.filter((k) => !review.includes(k));
-  return { review, rest: others.filter((k) => isRelevant(k, location)), unused: others.filter((k) => !isRelevant(k, location)) };
+  const fromVideo = keys.some((k) => original[k]?.source === "vision");
+  const isManual = (k: string) => fromVideo && original[k]?.source === "manual";
+  // 확인할 칸을 앞에 — 묶음은 원래 카드 상태로 정하므로 고른 뒤에도 칸이 움직이지 않는다.
+  const used = [...review, ...keys.filter((k) => !review.includes(k) && isRelevant(k, location))];
+  return {
+    review,
+    rest: used.filter((k) => !isManual(k)),
+    manual: used.filter(isManual),
+    unused: keys.filter((k) => !used.includes(k)),
+  };
 }
 
 /** 담당자가 값을 고른다 — 같은 값을 골라도 「확인함」이다(AI 값이 맞다는 답). 모델 원값은 그대로 둔다. */

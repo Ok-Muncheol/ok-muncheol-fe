@@ -14,7 +14,7 @@
  */
 import type {
   AgreedFaultInput, AnswerResult, ApiError, CaseFacts, ClaimResult, ConfirmResult, CounterpartyInfo,
-  FactCard, FactPatch, JudgmentRunView, JudgmentTaskView, QaAnswer, QuestionAnswer, ReviewReport, UploadKind, UploadTicket,
+  EvidenceView, FactCard, FactPatch, JudgmentRunView, JudgmentTaskView, QaAnswer, QuestionAnswer, ReviewReport, UploadKind, UploadTicket,
 } from "./types";
 
 export interface ApiClient {
@@ -29,6 +29,8 @@ export interface ApiClient {
   startAnalysis(caseId: string, storagePath: string, idempotencyKey: string): Promise<Record<string, unknown>>;
   getCase(caseId: string): Promise<Record<string, unknown>>;
   getFactCard(caseId: string): Promise<FactCard>;
+  /** GET /cases/{id}/evidence — 근거 사진 · 미리보기 영상 서명 URL(1시간). 담당자 본인 사건만, 카드가 없으면 빈 목록 */
+  getEvidence(caseId: string): Promise<EvidenceView>;
   patchFactCard(caseId: string, patch: FactPatch): Promise<FactCard>;
   confirmFactCard(caseId: string, expectedVersion: number): Promise<FactCard>;
   /** POST /cases/{id}/judgments — 202. 판단을 끝까지 실행한 뒤의 상태(완료·질문 대기·실패). idempotencyKey는 startAnalysis와 같다 */
@@ -154,6 +156,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
       request("POST", `${caseUrl(caseId)}/analysis`, { body: { storage_path: storagePath }, idempotencyKey }),
     getCase: (caseId) => request("GET", caseUrl(caseId)),
     getFactCard: (caseId) => request("GET", `${caseUrl(caseId)}/fact-card`),
+    getEvidence: (caseId) => request("GET", `${caseUrl(caseId)}/evidence`),
     patchFactCard: (caseId, patch) => request("PATCH", `${caseUrl(caseId)}/fact-card`, { body: patch }),
     confirmFactCard: (caseId, expectedVersion) =>
       request("POST", `${caseUrl(caseId)}/fact-card/confirm`, { body: { expected_version: expectedVersion } }),

@@ -29,6 +29,7 @@ const ROUTES = [
   ["startAnalysis", [CASE, "videos/a.mp4", "analysis-key-1"], "POST", `/cases/${CASE}/analysis`, { storage_path: "videos/a.mp4" }],
   ["getCase", [CASE], "GET", `/cases/${CASE}`, undefined],
   ["getFactCard", [CASE], "GET", `/cases/${CASE}/fact-card`, undefined],
+  ["getEvidence", [CASE], "GET", `/cases/${CASE}/evidence`, undefined],
   ["patchFactCard", [CASE, PATCH], "PATCH", `/cases/${CASE}/fact-card`, PATCH],
   ["confirmFactCard", [CASE, 3], "POST", `/cases/${CASE}/fact-card/confirm`, { expected_version: 3 }],
   ["startJudgment", [CASE, 3, "judgment-key-1"], "POST", `/cases/${CASE}/judgments`, { card_version: 3 }],
@@ -62,9 +63,9 @@ function fakeClient({ respond = () => json(200, {}), ...options } = {}) {
 
 const failure = (promise) => promise.then(() => assert.fail("오류가 나야 한다"), (error) => error);
 
-test("메서드 17개가 BE 경로 17개와 1:1이다", () => {
+test("메서드 18개가 BE 경로 18개와 1:1이다", () => {
   const { client } = fakeClient();
-  assert.equal(ROUTES.length, 17);
+  assert.equal(ROUTES.length, 18);
   assert.deepEqual(Object.keys(client).sort(), ROUTES.map(([name]) => name).sort());
 });
 

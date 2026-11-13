@@ -16,7 +16,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FAULT_RATIO_HEAD_ID, FaultResult } from "@/features/judgment/fault-result";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
-import type { AnswerResult, ApiError, FactCard, FactField, JudgmentResult, JudgmentRunView, PartyMapping } from "@/lib/api/types";
+import type { AnswerResult, ApiError, EvidenceView, FactCard, FactField, JudgmentResult, JudgmentRunView, PartyMapping } from "@/lib/api/types";
 import { buildCardPatch, cardLabel, changedFields, pick, readableMessage, remainingReview, sameMapping, withDefaultChart } from "@/lib/facts/card";
 import { answeredValues } from "@/lib/judgment/view";
 import { frameTime } from "@/lib/facts/view";
@@ -32,6 +32,8 @@ type Props = {
   /** 판단 조회가 실패했으면 그 이유 */
   loadError: ApiError | null;
   reportHref: string | null;
+  /** 근거 사진 · 미리보기 영상 보기 주소(BE GET /cases/{id}/evidence). 없으면 빈 자리 */
+  evidence?: EvidenceView | null;
 };
 
 /** 카드 수정 API(PATCH)가 받는 수정 이유 — 수정 이력용이라 담당자에게 고르게 하지 않고 고정 문구로 보낸다. */
@@ -51,7 +53,7 @@ function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, reportHref }: Props) {
+export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, reportHref, evidence = null }: Props) {
   const router = useRouter();
   // 이미 값으로 답한 구분 질문은 그 값을 카드에 미리 채운다 — 확인 완료 때 카드에 반영·재확정한다.
   const [draft, setDraft] = useState(() => {
@@ -302,7 +304,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
       {loadError && <p className="mb-4 text-body text-danger">판단 기록을 불러오지 못했어요. {loadError.message}</p>}
 
       <div className={hasVideo ? "grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]" : "mx-auto max-w-3xl"}>
-        {hasVideo && <Media card={card} draft={draft} selected={frame} onSelect={setFrame} />}
+        {hasVideo && <Media card={card} draft={draft} evidence={evidence} selected={frame} onSelect={setFrame} />}
         <FactCardPanel
           card={card}
           draft={draft}
@@ -411,30 +413,72 @@ function BottomBar({ children }: { children: ReactNode }) {
 }
 
 /**
- * 왼쪽 영상 칸. 브라우저가 재생할 수 있는 영상(H.264 사본)이 아직 없어 근거 장면 목록만 보인다.
- * 카드의 근거 장면(▸ 00:03.4)을 누르면 여기서 그 장면이 강조된다.
+ * 왼쪽 영상 칸 — 위는 분석이 만든 H.264 미리보기 영상, 아래는 근거 장면 목록(사진 · 시각 · 이 장면을 근거로 쓴 칸).
+ * 근거 장면을 누르거나 카드 칸의 근거 시각(▸ 00:03.4)을 누르면 영상이 그 장면으로 가서 멈춘다.
+ * 보기 주소는 BE GET /cases/{id}/evidence(1시간 서명 URL — 화면을 열 때마다 새로 읽는다)이고, 없으면(견본 · 파일 없음) 빈 자리와 시각만 보인다.
  */
-function Media({ card, draft, selected, onSelect }: { card: FactCard; draft: Record<string, FactField>; selected: string | null; onSelect: (id: string) => void }) {
+function Media({
+  card,
+  draft,
+  evidence,
+  selected,
+  onSelect,
+}: {
+  card: FactCard;
+  draft: Record<string, FactField>;
+  evidence: EvidenceView | null;
+  selected: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const video = useRef<HTMLVideoElement>(null);
   const frames = [...card.evidence_frames].sort((a, b) => a.timestamp_ms - b.timestamp_ms);
+  const photos = new Map((evidence?.frames ?? []).map((f) => [f.frame_id, f.url]));
+  const preview = evidence?.preview_url ?? null;
+
+  // 고른 장면으로 영상을 옮긴다(카드 칸의 근거 시각을 눌러도 온다).
+  useEffect(() => {
+    const at = card.evidence_frames.find((f) => f.frame_id === selected)?.timestamp_ms;
+    if (at === undefined || !video.current) return;
+    video.current.pause();
+    video.current.currentTime = at / 1000;
+  }, [selected, card.evidence_frames]);
+
   return (
     <aside aria-label="영상" className="flex flex-col gap-3 lg:sticky lg:top-8">
-      <div className="flex aspect-video items-center justify-center rounded-card bg-surface-muted text-caption text-ink-muted">영상 재생은 준비 중이에요</div>
+      {preview ? (
+        <video ref={video} src={preview} controls muted playsInline preload="metadata" className="aspect-video w-full rounded-card bg-black" />
+      ) : (
+        <div className="flex aspect-video items-center justify-center rounded-card bg-surface-muted text-caption text-ink-muted">영상 미리보기가 아직 없어요</div>
+      )}
       {frames.length > 0 && (
         <div>
           <h2 className="text-caption font-semibold text-ink-muted">근거 장면</h2>
-          <ol className="mt-1 flex flex-col">
+          <ol className="mt-1 flex flex-col gap-0.5">
             {frames.map((f) => {
               const fields = Object.keys(draft).filter((key) => draft[key].evidence_frame_ids.includes(f.frame_id));
+              const photo = photos.get(f.frame_id) ?? null;
+              const active = selected === f.frame_id;
               return (
                 <li key={f.frame_id}>
                   <button
                     type="button"
                     onClick={() => onSelect(f.frame_id)}
-                    aria-pressed={selected === f.frame_id}
-                    className={`flex w-full items-baseline gap-3 rounded-control px-2 py-1.5 text-left hover:bg-surface-muted ${selected === f.frame_id ? "bg-primary-soft" : ""}`}
+                    aria-pressed={active}
+                    className={`flex w-full items-center gap-3 rounded-control p-1.5 text-left transition-colors hover:bg-surface-muted ${active ? "bg-primary-soft" : ""}`}
                   >
-                    <span className="font-semibold tabular-nums">{frameTime(f.timestamp_ms)}</span>
-                    <span className="text-caption text-ink-muted">{fields.length > 0 ? fields.map(cardLabel).join(" · ") : "연결된 칸 없음"}</span>
+                    {photo && (
+                      // 서명 URL(외부 Storage 주소)이라 next/image 대신 그대로 그린다.
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={photo}
+                        alt={`${frameTime(f.timestamp_ms)} 장면`}
+                        className={`aspect-video w-24 shrink-0 rounded-badge bg-surface-muted object-cover ${active ? "ring-2 ring-primary-strong" : ""}`}
+                      />
+                    )}
+                    <span className="min-w-0">
+                      <span className="block font-semibold tabular-nums">{frameTime(f.timestamp_ms)}</span>
+                      <span className="block text-caption text-ink-muted">{fields.length > 0 ? fields.map(cardLabel).join(" · ") : "연결된 칸 없음"}</span>
+                    </span>
                   </button>
                 </li>
               );

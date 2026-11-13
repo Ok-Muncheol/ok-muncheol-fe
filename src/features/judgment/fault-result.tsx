@@ -267,7 +267,7 @@ function NotReady({ result }: { result: JudgmentResult }) {
           </ul>
         </div>
       )}
-      <p className="text-caption text-ink-muted">사실이 틀렸다면 위 카드에서 「수정하기」로 고친 뒤 다시 확인 완료를 눌러 주세요.</p>
+      <p className="text-caption text-ink-muted">사실이 틀렸다면 위 카드에서 「수정하기」로 고친 뒤 「확정하고 과실 비율 판단」을 다시 눌러 주세요.</p>
     </div>
   );
 }

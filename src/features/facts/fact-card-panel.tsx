@@ -2,8 +2,9 @@
 
 /**
  * A: 사실 카드 — 사건 작업 화면(case-workspace.tsx) 위쪽 오른쪽. 값과 상태는 부모가 쥐고 여기서는 그리고 고르기만 한다.
- * - 맨 위: BE가 needs_review로 표시한 칸과 구분 질문이 걸린 칸. 칸마다 노란 바탕에 보기를 칩으로 펼쳐 두고, 고르면 노란색이 빠진다.
- * - 그 아래 「AI가 채운 값」: 값만 한 줄로 보이고 「바꾸기」를 누르면 칩이 열린다. 이 칸들은 확인 완료 때 확인한 것으로 처리된다(BE 확정 규칙).
+ * - 두 묶음이다: 「AI가 채운 값」(2열)과 「담당자 입력 · 선택」(영상이 채우지 않는 칸). 값만 한 줄로 보이고 「바꾸기」를 누르면 칩이 열린다.
+ * - 확인이 필요한 칸(BE needs_review · 구분 질문이 걸린 칸)은 따로 빼지 않고 자기 묶음 안 맨 앞에 둔다. 칸 이름 앞 주황 점으로 표시하고
+ *   보기를 칩으로 펼쳐 둔다(두 열을 다 쓴다). 고르면 점이 빠지고 칸이 닫힌다.
  * - 이 사고와 상관없는 칸(신호 없는 교차로의 신호 등)은 접어 둔다.
  * 칩을 고르면 그 칸은 담당자 확인이다 — AI 값과 같은 칩을 골라도 확인이다. 모델 원값은 건드리지 않고, 고친 칸에만 AI 의견을 회색으로 남긴다.
  * 칸마다 AI 확신도(model_confidence)와, 있으면 평가 영상 정답률(vision_detail.eval.accuracy)을 작게 보인다.
@@ -80,18 +81,21 @@ export function FactCardPanel({ card, draft, mapping, onField, onMapping, editab
 
       <Parties mapping={mapping} onChange={onMapping} editable={editable("party_mapping")} />
 
-      {/* 확인이 필요한 칸은 맨 위에 두고 칸마다 노랗게 칠한다 — 담당자가 고르면 노란색이 빠진다. */}
-      {groups.review.length > 0 && (
-        <div className="border-t border-line px-5">
-          <ul className="divide-y divide-line">{groups.review.map((key) => row(key, true))}</ul>
-        </div>
-      )}
-
       {groups.rest.length > 0 && (
         // 이미 채운 값은 2열로 촘촘하게 — 고치려고 연 칸만 두 열을 다 쓴다.
         <div className="border-t border-line px-5 pt-4 pb-1">
           <h3 className="text-caption font-semibold text-ink-muted">{card.fields[groups.rest[0]]?.source === "vision" ? "AI가 채운 값" : "입력한 값"}</h3>
-          <ul className="mt-1 grid gap-x-8 sm:grid-cols-2">{groups.rest.map((key) => row(key, false, true))}</ul>
+          <ul className="mt-1 grid gap-x-8 sm:grid-cols-2">{groups.rest.map((key) => row(key, groups.review.includes(key), true))}</ul>
+        </div>
+      )}
+
+      {/* 영상 카드에서 비전이 채우지 않는 담당자 입력 칸 — 확정을 막지 않는 선택 칸이다. 판단이 물으면 제자리에서 확인할 칸으로 표시된다. */}
+      {groups.manual.length > 0 && (
+        <div className="border-t border-line px-5 pt-4 pb-1">
+          <h3 className="text-caption font-semibold text-ink-muted">
+            담당자 입력 <span className="font-normal text-ink-faint">· 선택</span>
+          </h3>
+          <ul className="mt-1 grid gap-x-8 sm:grid-cols-2">{groups.manual.map((key) => row(key, groups.review.includes(key), true))}</ul>
         </div>
       )}
 
@@ -172,7 +176,9 @@ function FieldRow({
   const accuracy = fieldAccuracy(field);
   const confidence = field.model_confidence;
   const pending = field.verification_status === "needs_review";
-  const changed = differsFromModel(field);
+  // 담당자 입력 칸(출처 manual)은 AI 값이 없어 「고침」·「AI 의견」을 붙이지 않는다.
+  const manual = field.source === "manual";
+  const changed = !manual && differsFromModel(field);
   const checked = field.verification_status === "human_confirmed";
   // 아직 담당자가 고르지 않은 확인 필요 칸 · 질문 칸만 노랗게 칠한다.
   const attention = field.verification_status === "needs_review" || (question !== undefined && opened);
@@ -180,10 +186,15 @@ function FieldRow({
   return (
     <li
       id={`fact-${fieldKey}`}
-      className={`scroll-mt-24 py-3 transition-colors target:bg-primary-soft ${compact ? `border-t border-line ${open ? "sm:col-span-2" : ""}` : "-mx-5 px-5"} ${attention ? "bg-warning-soft/50" : ""}`}
+      className={`scroll-mt-24 py-3 transition-colors target:bg-primary-soft ${compact ? `border-t border-line ${open ? "sm:col-span-2" : ""}` : "-mx-5 px-5"} `}
     >
       <div className="flex items-baseline justify-between gap-3">
-        <p className="font-semibold text-ink">{cardLabel(fieldKey)}</p>
+        <p className="flex items-center gap-1.5 font-semibold text-ink">
+          {/* 확인이 필요한 칸 — 담당자가 고르면 점이 빠진다 */}
+          {attention && <span aria-hidden title="확인이 필요한 칸" className="size-1.5 shrink-0 rounded-full bg-warning" />}
+          {cardLabel(fieldKey)}
+          {attention && <span className="sr-only">(확인 필요)</span>}
+        </p>
         <p className="flex shrink-0 items-baseline gap-3 text-caption">
           {(confidence !== null || accuracy !== null) && (
             <span className="text-ink-muted">
@@ -203,7 +214,7 @@ function FieldRow({
           )}
           {!open && editable && (
             <button type="button" className="font-semibold text-primary-strong hover:underline" onClick={() => setOpened(true)}>
-              바꾸기
+              {field.value === null ? "입력" : "바꾸기"}
             </button>
           )}
         </p>
@@ -225,7 +236,7 @@ function FieldRow({
       ) : (
         <p className="mt-0.5 flex flex-wrap items-baseline gap-2 text-body">
           <span className={field.value === null ? "text-ink-muted" : changed ? "font-semibold text-ink" : "text-ink"}>
-            {pending && field.value === null ? "아직 몰라요" : cardValueLabel(fieldKey, field.value)}
+            {field.value === null && pending ? "아직 몰라요" : field.value === null && manual ? "비어 있음" : cardValueLabel(fieldKey, field.value)}
           </span>
           {changed ? (
             <span className="rounded-control bg-surface-muted px-1.5 text-caption font-semibold text-ink">고침</span>

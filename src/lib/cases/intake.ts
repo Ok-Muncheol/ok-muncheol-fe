@@ -53,6 +53,13 @@ export function caseTitle(accidentDate: string | null | undefined, now: Date = n
   return `${year}${MONTH_DAY.format(date)} 사고`;
 }
 
+const KOREAN_DAY = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", timeZone: "Asia/Seoul" });
+/** 사건 정보 줄의 날짜 — "2026년 11월 8일". 날짜만 온 값("2026-11-08")은 한국 날짜로 읽는다. 읽을 수 없으면 받은 값 그대로. */
+export function koreanDay(iso: string): string {
+  const date = parseAccidentDate(iso);
+  return Number.isNaN(date.getTime()) ? iso : KOREAN_DAY.format(date);
+}
+
 /** 오늘 날짜(한국) "YYYY-MM-DD" — 날짜 입력의 최댓값. */
 export function todayInKorea(now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(now);
