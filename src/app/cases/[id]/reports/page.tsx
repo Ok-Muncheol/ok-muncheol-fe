@@ -46,7 +46,11 @@ export default async function ReportsPage(props: PageProps<"/cases/[id]/reports"
 
   return (
     <>
-      {summary && <CaseStepper summary={summary} viewing="report" />}
+      {summary && (
+        <div className="mb-4">
+          <CaseStepper summary={summary} viewing="report" />
+        </div>
+      )}
       <PageHeader
         eyebrow={
           <>

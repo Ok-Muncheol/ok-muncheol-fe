@@ -4,8 +4,10 @@
  * TODO: GET /cases/{id}로 복원(Realtime은 변경 알림만), 확인 질문 요약.
  */
 import { CaseStatusBadge } from "@/features/cases/case-board";
-import { getCaseSummary } from "@/features/cases/case-source";
+import { CaseIntake } from "@/features/cases/case-intake";
+import { getCaseSummary, isSampleSource } from "@/features/cases/case-source";
 import { CaseStepper } from "@/features/cases/case-stepper";
+import { isBeforeCard } from "@/lib/cases/intake";
 import { STAGES, currentStatus, stageIndex } from "@/lib/cases/stages";
 import { ButtonLink, Card, DescriptionList, DescriptionRow, Empty, Notice, PageHeader } from "@/ui/controls";
 
@@ -29,12 +31,32 @@ export default async function CasePage(props: PageProps<"/cases/[id]">) {
     );
   }
 
+  // A: 카드가 나오기 전의 영상 사건은 새 사건 화면과 같은 화면이다 — 새로고침·다시 들어와도 「영상 분석 중이에요」나 다시 올리기가 보인다.
+  if (summary.input_path === "video" && isBeforeCard(summary.stage)) {
+    return (
+      <CaseIntake
+        sample={isSampleSource()}
+        existing={{
+          caseId: summary.case_id,
+          stage: summary.stage,
+          accidentDate: summary.accident_date,
+          assignedAt: summary.created_at,
+          taskStatus: summary.task_status,
+          trail: <CaseStepper summary={summary} viewing="intake" />,
+          error: summary.analysis?.error ?? null,
+        }}
+      />
+    );
+  }
+
   const stage = STAGES[stageIndex(summary.stage)];
   const { versions } = summary;
 
   return (
     <>
-      <CaseStepper summary={summary} viewing="intake" />
+      <div className="mb-4">
+        <CaseStepper summary={summary} viewing="intake" />
+      </div>
       <PageHeader
         eyebrow="담당 사건"
         title={

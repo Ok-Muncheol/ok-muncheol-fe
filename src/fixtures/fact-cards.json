@@ -44,6 +44,10 @@
      "storage_path": "synthetic/SYN-2026-0130/frame-2.jpg"
     }
    ],
+   "parties": [
+    { "party_id": "synthetic-party-2", "role": "촬영 차량", "track_id": null },
+    { "party_id": "synthetic-party-1", "role": "상대 차량", "track_id": null }
+   ],
    "party_mapping": {
     "video_ego_party_id": "synthetic-party-2",
     "insured_party_id": "synthetic-party-2",

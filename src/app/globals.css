@@ -2,36 +2,35 @@
 
 /*
  * 디자인 시스템 「청람(靑藍)」: 보상 담당자가 하루 종일 보는 업무 화면이다.
- * 주요 색은 밝은 옥색 한 가지로 두고, 상태(진행·확인 필요·보류·실패)는
- * 색이 아니라 뜻으로 구분되는 네 가지 톤(info · success · warning · danger)으로만 표시한다.
- * 밝은 옥색(primary)은 흰 바탕과 대비가 1.9:1뿐이라 면으로만 칠하고, 그 위 글자는 짙은 옥색(on-primary)이다.
- * 바탕 위에 옥색으로 그리는 글자·선(링크 · quiet 버튼 · 현재 메뉴 · 초점 고리)은 primary-strong을 쓴다.
- * info는 주요 색과 따로 둔 파랑이다. 옥색은 success 초록과 색상이 가까워 info까지 옥색이면 ‘처리 중’과 ‘완료’가 섞여 보인다.
- * 색 세트는 라이트 · 다크 둘이고, 다크는 OS 설정(prefers-color-scheme)을 따른다. 시간대별 변화는 없다.
+ * 바탕은 아주 옅은 회색(page), 면은 흰색(surface)이고 면은 그림자 대신 1px 테두리(line)로 나눈다. 그림자는 떠 있는 것(아래 버튼 · 메뉴)에만 쓴다(shadow-raised).
+ * 옥색은 「누를 곳」과 「지금 위치」에만 쓴다 — 진한 옥색 면(primary, 흰 글자 5.2:1)은 주 버튼, primary-strong은 바탕 위 링크 · 현재 메뉴 · 초점 고리,
+ * 연한 옥색(primary-soft)은 선택된 줄 · 고른 칩의 바탕이다.
+ * 상태색은 둘만 눈에 띄게 둔다 — warning(주황)은 「내 차례」, danger(빨강)는 「실패」. 처리 중(info)과 모델 값(model)은 회색 톤이다(토큰 이름은 그대로 둔다).
+ * 색 세트는 라이트 · 다크 둘이고, 다크는 OS 설정(prefers-color-scheme)을 따른다.
  * 두 세트 모두 WCAG AA(글자 4.5:1, 표시선과 컨트롤 테두리 3:1)를 넘긴다. 새 토큰은 두 세트에 모두 넣는다.
  */
 :root {
   color-scheme: light;
-  --ok-page: #f3f5f9;
+  --ok-page: #f7f8fa;
   --ok-surface: #ffffff;
-  --ok-surface-muted: #eaeef5;
+  --ok-surface-muted: #f2f4f7;
   --ok-surface-raised: #ffffff;
-  --ok-ink: #14213a;
-  --ok-ink-muted: #56657c;
-  --ok-ink-faint: #8391a7;
-  --ok-line: #d9e0ea;
-  --ok-line-strong: #7b8aa1;
+  --ok-ink: #111827;
+  --ok-ink-muted: #596273;
+  --ok-ink-faint: #8a93a1;
+  --ok-line: #e4e7ec;
+  --ok-line-strong: #8a93a1;
   --ok-control: #ffffff;
-  --ok-primary: #4dcfbb;
-  --ok-primary-hover: #3dc0ab;
-  --ok-on-primary: #04332d;
-  --ok-primary-soft: #ddf5f1;
-  --ok-on-primary-soft: #0a524a;
+  --ok-primary: #0f7a6d;
+  --ok-primary-hover: #0b6b60;
+  --ok-on-primary: #ffffff;
+  --ok-primary-soft: #e7f4f1;
+  --ok-on-primary-soft: #0a5c53;
   --ok-primary-strong: #0b7468;
   --ok-focus: #0b7468;
-  --ok-info: #1a4fc4;
-  --ok-info-soft: #e3ebfb;
-  --ok-on-info-soft: #143a92;
+  --ok-info: #596273;
+  --ok-info-soft: #f2f4f7;
+  --ok-on-info-soft: #3d4553;
   --ok-success: #1b7a4b;
   --ok-success-soft: #e0f3e8;
   --ok-on-success-soft: #135c38;
@@ -41,9 +40,9 @@
   --ok-danger: #c0392b;
   --ok-danger-soft: #fbe5e2;
   --ok-on-danger-soft: #932a1f;
-  --ok-model: #6b4fc1;
-  --ok-model-soft: #ede8fa;
-  --ok-on-model-soft: #4d3594;
+  --ok-model: #596273;
+  --ok-model-soft: #f2f4f7;
+  --ok-on-model-soft: #3d4553;
   /*
    * 단계 열 머리(담당 사건 보드) — 상태 톤이 아니라 열 구분이다. 새 색상을 들이지 않고 옥색(primary)을 바탕에 섞어
    * 단계가 갈수록 짙게 한다(라이트 10·20·30%, 다크 8·14·20%). ink·ink-muted 글자가 모두 4.5:1을 넘는다.
@@ -51,33 +50,33 @@
   --ok-stage-intake: #edfaf8;
   --ok-stage-judgment: #dbf5f1;
   --ok-stage-report: #caf1eb;
-  --ok-shadow-card: 0 1px 0 rgb(20 33 58 / 0.04), 0 2px 8px rgb(20 33 58 / 0.06);
-  --ok-shadow-raised: 0 4px 16px rgb(20 33 58 / 0.12);
+  --ok-shadow-card: none;
+  --ok-shadow-raised: 0 1px 2px rgb(17 24 39 / 0.06), 0 8px 24px rgb(17 24 39 / 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --ok-page: #0f1520;
-    --ok-surface: #161e2c;
-    --ok-surface-muted: #1d2738;
-    --ok-surface-raised: #1d2738;
-    --ok-ink: #e6ecf5;
-    --ok-ink-muted: #a4b2c7;
-    --ok-ink-faint: #7d8ba0;
-    --ok-line: #2a3649;
-    --ok-line-strong: #6f8099;
-    --ok-control: #161e2c;
-    --ok-primary: #52d6c2;
-    --ok-primary-hover: #76e0d0;
-    --ok-on-primary: #032b26;
-    --ok-primary-soft: #143a36;
+    --ok-page: #0e1218;
+    --ok-surface: #151a22;
+    --ok-surface-muted: #1c222c;
+    --ok-surface-raised: #1c222c;
+    --ok-ink: #e8ebf0;
+    --ok-ink-muted: #a3acb9;
+    --ok-ink-faint: #7c8593;
+    --ok-line: #262d38;
+    --ok-line-strong: #6b7482;
+    --ok-control: #151a22;
+    --ok-primary: #3cc4b0;
+    --ok-primary-hover: #5ad1bf;
+    --ok-on-primary: #04201c;
+    --ok-primary-soft: #12322e;
     --ok-on-primary-soft: #b8efe6;
     --ok-primary-strong: #5edac7;
     --ok-focus: #5edac7;
-    --ok-info: #8fb3f5;
-    --ok-info-soft: #1f3458;
-    --ok-on-info-soft: #cfe0ff;
+    --ok-info: #a3acb9;
+    --ok-info-soft: #1c222c;
+    --ok-on-info-soft: #d5dae2;
     --ok-success: #6fcf97;
     --ok-success-soft: #173826;
     --ok-on-success-soft: #b9ebcd;
@@ -87,14 +86,14 @@
     --ok-danger: #f28b7d;
     --ok-danger-soft: #42201c;
     --ok-on-danger-soft: #fbc9c2;
-    --ok-model: #b8a4f3;
-    --ok-model-soft: #2c2449;
-    --ok-on-model-soft: #e0d7fb;
+    --ok-model: #a3acb9;
+    --ok-model-soft: #1c222c;
+    --ok-on-model-soft: #d5dae2;
     --ok-stage-intake: #1b2d38;
     --ok-stage-judgment: #1e3841;
     --ok-stage-report: #22434a;
     --ok-shadow-card: none;
-    --ok-shadow-raised: 0 4px 16px rgb(0 0 0 / 0.4);
+    --ok-shadow-raised: 0 8px 24px rgb(0 0 0 / 0.45);
   }
 }
 
@@ -111,8 +110,8 @@
   --radius-control: 8px;
   --radius-badge: 6px;
 
-  --text-title: 1.375rem;
-  --text-title--line-height: 1.35;
+  --text-title: 1.5rem;
+  --text-title--line-height: 1.3;
   --text-heading: 1.0625rem;
   --text-heading--line-height: 1.4;
   --text-body: 0.875rem;
@@ -162,7 +161,7 @@
   --shadow-card: var(--ok-shadow-card);
   --shadow-raised: var(--ok-shadow-raised);
 
-  --font-sans: var(--font-noto-sans-kr), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-sans: var(--font-pretendard), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
@@ -176,6 +175,22 @@
   /* 판단 화면 안 링크(구분 질문·확인할 칸 → 사실 카드 칸 #fact-…)로 갈 때 위에 붙은 머리글(56px)이 칸을 가리지 않게 한다. */
   [id^="fact-"] {
     scroll-margin-top: 5rem;
+  }
+}
+
+/* 과실 비율 막대가 한 번 차오르고(왼쪽부터 드러남) 숫자가 살짝 떠오른다. 움직임 줄이기 설정에서는 쓰지 않는다(motion-safe). */
+@keyframes ok-reveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes ok-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
 }
 

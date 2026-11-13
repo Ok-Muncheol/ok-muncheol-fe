@@ -43,7 +43,7 @@ export function SidePanelLayout({
   return (
     <div className={`grid items-start gap-6 ${open ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_auto]"}`}>
       <div className="min-w-0">{main}</div>
-      <aside aria-label={label} className="relative min-w-0 lg:sticky lg:top-18">
+      <aside aria-label={label} className="relative min-w-0 lg:sticky lg:top-6">
         <div id={panelId} className={open ? undefined : "lg:hidden"}>
           <button
             id={`${id}-collapse`}
@@ -58,7 +58,7 @@ export function SidePanelLayout({
             <span className="sr-only">{label} 접기</span>
           </button>
           {/* 안쪽 여백(p-2)과 바깥 음수 여백(-m-2)은 넘김 상자가 카드 그림자를 자르지 않게 한다. */}
-          <div className="lg:-m-2 lg:max-h-[calc(100dvh-5.5rem)] lg:overflow-y-auto lg:p-2 lg:[scrollbar-width:thin]">{panel}</div>
+          <div className="lg:-m-2 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:p-2 lg:[scrollbar-width:thin]">{panel}</div>
         </div>
         <button
           id={`${id}-expand`}
