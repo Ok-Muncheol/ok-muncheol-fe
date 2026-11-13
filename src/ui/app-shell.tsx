@@ -33,8 +33,8 @@ export function AppShell({ children, showDev, accountName }: { children: ReactNo
   const name = accountName ?? "보상 담당자";
 
   return (
-    <div className="min-h-dvh lg:pl-60">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line bg-surface px-3 py-5 lg:flex">
+    <div className="min-h-dvh lg:pl-60 print:pl-0">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 print:hidden! flex-col border-r border-line bg-surface px-3 py-5 lg:flex">
         <Brand className="px-3" />
         <nav aria-label="주 메뉴" className="mt-8 flex flex-col gap-0.5">
           {items.map((item) => {
@@ -83,7 +83,7 @@ export function AppShell({ children, showDev, accountName }: { children: ReactNo
       </aside>
 
       {/* 좁은 화면 — 같은 메뉴를 위 한 줄로 */}
-      <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-line bg-surface px-4 lg:hidden">
+      <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-line bg-surface px-4 lg:hidden print:hidden">
         <Brand />
         <nav aria-label="주 메뉴" className="flex h-full min-w-0 items-stretch gap-1 overflow-x-auto">
           {items.map((item) => (

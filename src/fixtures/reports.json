@@ -1,0 +1,778 @@
+{
+  "synthetic": true,
+  "note": "FE가 만든 검토 보고서(ReviewReport) · 구상 청구서(ClaimPackage) 합성 견본이다. 도표 ID · 비율 · 금액 · 보험사 · 차량번호는 모두 지어낸 견본 값(이름에 「견본」)이고 실제 약관 · 사건이 아니다. 보고서 본문 키는 BE app/reports/assembler.py와 같다.",
+  "reports": [
+    {
+      "versions": {
+        "case_id": "SYN-2026-0109",
+        "fact_card_version": 2,
+        "judgment_version": 1,
+        "report_version": 1
+      },
+      "judgment": {
+        "versions": {
+          "case_id": "SYN-2026-0109",
+          "fact_card_version": 2,
+          "judgment_version": 1,
+          "report_version": 1
+        },
+        "status": "draft_ready",
+        "chart_id": "SYN-견본-1",
+        "edition": "견본",
+        "fault_A": 70,
+        "fault_B": 30,
+        "calculation_log": [
+          "기본 A 60 : B 40",
+          "A 현저한 과실(견본) +10",
+          "최종 A 70 : B 30"
+        ],
+        "evidence": [],
+        "questions": [],
+        "checks": [
+          {
+            "layer": "evidence",
+            "passed": true,
+            "reasons": []
+          },
+          {
+            "layer": "rebuttal",
+            "passed": true,
+            "reasons": []
+          },
+          {
+            "layer": "calculation",
+            "passed": true,
+            "reasons": []
+          }
+        ],
+        "reasons": [
+          "견본 판단 — 실제 도표 · 과실비율이 아님"
+        ],
+        "base_fault_A": 60,
+        "modifiers": [
+          {
+            "modifier_id": "syn-m1",
+            "name": "현저한 과실(견본)",
+            "applies_to": "A",
+            "delta": 10,
+            "decision": "적용",
+            "evidence_fields": [
+              "signal_A"
+            ]
+          },
+          {
+            "modifier_id": "syn-m2",
+            "name": "야간(견본)",
+            "applies_to": "B",
+            "delta": 5,
+            "decision": "미적용",
+            "evidence_fields": [
+              "night"
+            ]
+          }
+        ],
+        "alternatives": []
+      },
+      "sections": [
+        {
+          "no": 1,
+          "title": "판정 상태",
+          "state": "filled",
+          "body": {
+            "상태": "초안 작성 가능",
+            "사유": [
+              "견본 판단 — 실제 도표 · 과실비율이 아님"
+            ],
+            "검증": [
+              {
+                "단계": "evidence",
+                "통과": true,
+                "사유": ""
+              },
+              {
+                "단계": "rebuttal",
+                "통과": true,
+                "사유": ""
+              },
+              {
+                "단계": "calculation",
+                "통과": true,
+                "사유": ""
+              }
+            ]
+          },
+          "evidence_ids": [],
+          "empty_reason": null
+        },
+        {
+          "no": 2,
+          "title": "확정 사실",
+          "state": "filled",
+          "body": {
+            "사고 일자": "2026-10-30T19:30:00+09:00",
+            "카드 버전": 2,
+            "확정": "synthetic-adjuster · 2026-11-07T15:10:00+09:00",
+            "사실 카드": [
+              {
+                "칸": "accident_type",
+                "값": "vehicle_to_vehicle",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              },
+              {
+                "칸": "location_type",
+                "값": "signalized_intersection",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              },
+              {
+                "칸": "signal_A",
+                "값": "red",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              },
+              {
+                "칸": "signal_B",
+                "값": "green",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              },
+              {
+                "칸": "movement_A",
+                "값": "straight",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              },
+              {
+                "칸": "movement_B",
+                "값": "straight",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              }
+            ],
+            "근거 키프레임": [
+              "SYN-2026-0109-f1@1800ms",
+              "SYN-2026-0109-f2@3200ms"
+            ],
+            "당사자": {
+              "촬영 차량": "synthetic-party-109-1",
+              "보험가입자": "synthetic-party-109-1",
+              "도표 A": "synthetic-party-109-2",
+              "도표 B": "synthetic-party-109-1"
+            }
+          },
+          "evidence_ids": [],
+          "empty_reason": null
+        },
+        {
+          "no": 3,
+          "title": "적용 도표",
+          "state": "filled",
+          "body": {
+            "도표": "SYN-견본-1",
+            "적용판": "견본",
+            "근거 원문": []
+          },
+          "evidence_ids": [
+            "SYN-견본-1"
+          ],
+          "empty_reason": null
+        },
+        {
+          "no": 4,
+          "title": "기본 과실",
+          "state": "filled",
+          "body": {
+            "A : B": "60 : 40"
+          },
+          "evidence_ids": [
+            "SYN-견본-1"
+          ],
+          "empty_reason": null
+        },
+        {
+          "no": 5,
+          "title": "수정요소",
+          "state": "filled",
+          "body": {
+            "목록": [
+              {
+                "수정요소": "현저한 과실(견본)",
+                "대상": "A",
+                "가감": "+10",
+                "판정": "적용",
+                "근거 칸": "signal_A"
+              },
+              {
+                "수정요소": "야간(견본)",
+                "대상": "B",
+                "가감": "+5",
+                "판정": "미적용",
+                "근거 칸": "night"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "syn-m1",
+            "syn-m2"
+          ],
+          "empty_reason": null
+        },
+        {
+          "no": 6,
+          "title": "최종 과실비율(초안)",
+          "state": "filled",
+          "body": {
+            "A : B": "70 : 30",
+            "코드 계산 로그": [
+              "기본 A 60 : B 40",
+              "A 현저한 과실(견본) +10",
+              "최종 A 70 : B 30"
+            ]
+          },
+          "evidence_ids": [
+            "calculation_log"
+          ],
+          "empty_reason": null
+        },
+        {
+          "no": 7,
+          "title": "추가 확인 사항",
+          "state": "filled",
+          "body": {
+            "담당자 질문": [],
+            "미해결 반박·검증": [],
+            "유사 결정례": []
+          },
+          "evidence_ids": [],
+          "empty_reason": null
+        },
+        {
+          "no": 8,
+          "title": "손해액·보험금",
+          "state": "filled",
+          "body": {
+            "산정 상태": "약관 검토 필요",
+            "고객 차량 손해액": "2,000,000원",
+            "손해액 상태": "확정",
+            "손해액 출처": "견적서 PDF 자동 추출 (일련번호 SYN-EST-0001, 견본)",
+            "손해 구분": "분손",
+            "보상 인정 손해액": "2,000,000원",
+            "자기부담금": "200,000원",
+            "자차 보험금": "1,800,000원",
+            "부담 요약": {
+              "고객 부담(자기부담금)": "200,000원",
+              "보험사 지급(자차 보험금)": "1,800,000원",
+              "상대방 부담 예상액(지급 전 예상치)": "1,260,000원",
+              "보험사 최종 부담 예상액": "540,000원"
+            },
+            "계산식": {
+              "자차 보험금": "보상 인정 손해액 − 자기부담금"
+            },
+            "기본 가정": [
+              "자차 계약 정보 없음 — 가입 · 보험기간 · 운전자 범위 안으로 가정",
+              "면책 사실 미입력 — 해당 없음으로 가정"
+            ],
+            "산정 전 검증": [
+              {
+                "항목": "면책 사유(무면허 · 음주 · 고의)",
+                "결과": "기본 가정(미입력)",
+                "내용": "면책 사실 미입력 — 해당 없음으로 가정",
+                "판정": "code"
+              }
+            ],
+            "사유": [
+              "견본 산정 — 실제 약관 · 금액이 아님"
+            ],
+            "약관 적용판": "견본",
+            "규칙 버전": "example-2026-11",
+            "근거 상태": "예시 규칙 기준 — 약관 검수 전 초안",
+            "근거 조항": "연결 안 됨"
+          },
+          "evidence_ids": [
+            "SYN-est-1"
+          ],
+          "empty_reason": null
+        },
+        {
+          "no": 9,
+          "title": "구상",
+          "state": "filled",
+          "body": {
+            "구상 예정액(산정 보험금 × 상대 과실)": "1,260,000원",
+            "청구액(예정액 자동)": "1,260,000원",
+            "고객 자기부담금 검토액": "140,000원",
+            "협의 과실 / 변경 이유": "없음(판단 과실비율 기준)",
+            "주의": "1차 판정 초안 — 예정액은 단순 산식(원 미만 버림). 실제 청구·회수는 정산 조건 확인 후",
+            "근거 조항": "연결 안 됨",
+            "법령 근거": [
+              {
+                "조항": "상법 제682조(제3자에 대한 보험대위)"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "calculation",
+            "example-2026-11"
+          ],
+          "empty_reason": null
+        }
+      ],
+      "calculation": {
+        "versions": {
+          "case_id": "SYN-2026-0109",
+          "fact_card_version": 2,
+          "judgment_version": 1,
+          "report_version": 1
+        },
+        "status": "needs_contract_review",
+        "currency": "KRW",
+        "recognized_damage": 2000000,
+        "insurance_payment": 1800000,
+        "deductible": 200000,
+        "rule_version": "example-2026-11",
+        "source_document_ids": [
+          "SYN-est-1"
+        ],
+        "reasons": [
+          "견본 산정 — 실제 약관 · 금액이 아님"
+        ],
+        "counterparty_fault": 70,
+        "loss_type": "partial",
+        "assumptions": [
+          "자차 계약 정보 없음 — 가입 · 보험기간 · 운전자 범위 안으로 가정",
+          "면책 사실 미입력 — 해당 없음으로 가정"
+        ]
+      },
+      "recovery": {
+        "planned": 1260000,
+        "claimed": 1260000,
+        "recovered": null,
+        "customer_deductible_review": 140000
+      },
+      "approval_status": "draft",
+      "approved_by": null,
+      "approved_at": null,
+      "created_at": "2026-11-08T09:40:00+09:00",
+      "party_mapping": {
+        "video_ego_party_id": "synthetic-party-109-1",
+        "insured_party_id": "synthetic-party-109-1",
+        "chart_party_A_id": "synthetic-party-109-2",
+        "chart_party_B_id": "synthetic-party-109-1"
+      }
+    },
+    {
+      "versions": {
+        "case_id": "SYN-2026-0110",
+        "fact_card_version": 3,
+        "judgment_version": 2,
+        "report_version": 2
+      },
+      "judgment": {
+        "versions": {
+          "case_id": "SYN-2026-0110",
+          "fact_card_version": 3,
+          "judgment_version": 2,
+          "report_version": 2
+        },
+        "status": "draft_ready",
+        "chart_id": "SYN-견본-2",
+        "edition": "견본",
+        "fault_A": 80,
+        "fault_B": 20,
+        "calculation_log": [
+          "기본 A 70 : B 30",
+          "A 진로 변경 신호 불이행(견본) +10",
+          "최종 A 80 : B 20"
+        ],
+        "evidence": [],
+        "questions": [],
+        "checks": [
+          {
+            "layer": "evidence",
+            "passed": true,
+            "reasons": []
+          },
+          {
+            "layer": "rebuttal",
+            "passed": true,
+            "reasons": []
+          },
+          {
+            "layer": "calculation",
+            "passed": true,
+            "reasons": []
+          }
+        ],
+        "reasons": [
+          "견본 판단 — 실제 도표 · 과실비율이 아님"
+        ],
+        "base_fault_A": 70,
+        "modifiers": [
+          {
+            "modifier_id": "syn-m3",
+            "name": "진로 변경 신호 불이행(견본)",
+            "applies_to": "A",
+            "delta": 10,
+            "decision": "적용",
+            "evidence_fields": [
+              "movement_A"
+            ]
+          }
+        ],
+        "alternatives": []
+      },
+      "sections": [
+        {
+          "no": 1,
+          "title": "판정 상태",
+          "state": "filled",
+          "body": {
+            "상태": "초안 작성 가능",
+            "사유": [
+              "견본 판단 — 실제 도표 · 과실비율이 아님"
+            ],
+            "검증": [
+              {
+                "단계": "evidence",
+                "통과": true,
+                "사유": ""
+              },
+              {
+                "단계": "rebuttal",
+                "통과": true,
+                "사유": ""
+              },
+              {
+                "단계": "calculation",
+                "통과": true,
+                "사유": ""
+              }
+            ]
+          },
+          "evidence_ids": [],
+          "empty_reason": null
+        },
+        {
+          "no": 2,
+          "title": "확정 사실",
+          "state": "filled",
+          "body": {
+            "사고 일자": "2026-10-28T08:15:00+09:00",
+            "카드 버전": 3,
+            "확정": "synthetic-adjuster · 2026-11-05T11:00:00+09:00",
+            "사실 카드": [
+              {
+                "칸": "accident_type",
+                "값": "vehicle_to_vehicle",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              },
+              {
+                "칸": "location_type",
+                "값": "road",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              },
+              {
+                "칸": "movement_A",
+                "값": "lane_change",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              },
+              {
+                "칸": "movement_B",
+                "값": "straight",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              },
+              {
+                "칸": "relative_position",
+                "값": "same_direction_front",
+                "확인": "담당자 확인",
+                "담당자 수정": false,
+                "출처": "vision"
+              }
+            ],
+            "근거 키프레임": [
+              "SYN-2026-0110-f1@2400ms"
+            ],
+            "당사자": {
+              "촬영 차량": "synthetic-party-110-1",
+              "보험가입자": "synthetic-party-110-1",
+              "도표 A": "synthetic-party-110-2",
+              "도표 B": "synthetic-party-110-1"
+            }
+          },
+          "evidence_ids": [],
+          "empty_reason": null
+        },
+        {
+          "no": 3,
+          "title": "적용 도표",
+          "state": "filled",
+          "body": {
+            "도표": "SYN-견본-2",
+            "적용판": "견본",
+            "근거 원문": []
+          },
+          "evidence_ids": [
+            "SYN-견본-2"
+          ],
+          "empty_reason": null
+        },
+        {
+          "no": 4,
+          "title": "기본 과실",
+          "state": "filled",
+          "body": {
+            "A : B": "70 : 30"
+          },
+          "evidence_ids": [
+            "SYN-견본-2"
+          ],
+          "empty_reason": null
+        },
+        {
+          "no": 5,
+          "title": "수정요소",
+          "state": "filled",
+          "body": {
+            "목록": [
+              {
+                "수정요소": "진로 변경 신호 불이행(견본)",
+                "대상": "A",
+                "가감": "+10",
+                "판정": "적용",
+                "근거 칸": "movement_A"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "syn-m3"
+          ],
+          "empty_reason": null
+        },
+        {
+          "no": 6,
+          "title": "최종 과실비율(초안)",
+          "state": "filled",
+          "body": {
+            "A : B": "80 : 20",
+            "코드 계산 로그": [
+              "기본 A 70 : B 30",
+              "A 진로 변경 신호 불이행(견본) +10",
+              "최종 A 80 : B 20"
+            ]
+          },
+          "evidence_ids": [
+            "calculation_log"
+          ],
+          "empty_reason": null
+        },
+        {
+          "no": 7,
+          "title": "추가 확인 사항",
+          "state": "filled",
+          "body": {
+            "담당자 질문": [],
+            "미해결 반박·검증": [],
+            "유사 결정례": []
+          },
+          "evidence_ids": [],
+          "empty_reason": null
+        },
+        {
+          "no": 8,
+          "title": "손해액·보험금",
+          "state": "filled",
+          "body": {
+            "산정 상태": "약관 검토 필요",
+            "고객 차량 손해액": "1,500,000원",
+            "손해액 상태": "확정",
+            "손해액 출처": "견적서 PDF 자동 추출 (일련번호 SYN-EST-0001, 견본)",
+            "손해 구분": "분손",
+            "보상 인정 손해액": "1,500,000원",
+            "자기부담금": "200,000원",
+            "자차 보험금": "1,300,000원",
+            "부담 요약": {
+              "고객 부담(자기부담금)": "200,000원",
+              "보험사 지급(자차 보험금)": "1,300,000원",
+              "상대방 부담 예상액(지급 전 예상치)": "1,040,000원",
+              "보험사 최종 부담 예상액": "260,000원"
+            },
+            "계산식": {
+              "자차 보험금": "보상 인정 손해액 − 자기부담금"
+            },
+            "기본 가정": [
+              "자차 계약 정보 없음 — 가입 · 보험기간 · 운전자 범위 안으로 가정",
+              "면책 사실 미입력 — 해당 없음으로 가정"
+            ],
+            "산정 전 검증": [
+              {
+                "항목": "면책 사유(무면허 · 음주 · 고의)",
+                "결과": "기본 가정(미입력)",
+                "내용": "면책 사실 미입력 — 해당 없음으로 가정",
+                "판정": "code"
+              }
+            ],
+            "사유": [
+              "견본 산정 — 실제 약관 · 금액이 아님"
+            ],
+            "약관 적용판": "견본",
+            "규칙 버전": "example-2026-11",
+            "근거 상태": "예시 규칙 기준 — 약관 검수 전 초안",
+            "근거 조항": "연결 안 됨"
+          },
+          "evidence_ids": [
+            "SYN-est-1"
+          ],
+          "empty_reason": null
+        },
+        {
+          "no": 9,
+          "title": "구상",
+          "state": "filled",
+          "body": {
+            "구상 예정액(산정 보험금 × 상대 과실)": "1,040,000원",
+            "청구액(예정액 자동)": "1,040,000원",
+            "고객 자기부담금 검토액": "160,000원",
+            "협의 과실 / 변경 이유": "없음(판단 과실비율 기준)",
+            "주의": "1차 판정 초안 — 예정액은 단순 산식(원 미만 버림). 실제 청구·회수는 정산 조건 확인 후",
+            "근거 조항": "연결 안 됨",
+            "법령 근거": [
+              {
+                "조항": "상법 제682조(제3자에 대한 보험대위)"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "calculation",
+            "example-2026-11"
+          ],
+          "empty_reason": null
+        }
+      ],
+      "calculation": {
+        "versions": {
+          "case_id": "SYN-2026-0110",
+          "fact_card_version": 3,
+          "judgment_version": 2,
+          "report_version": 2
+        },
+        "status": "needs_contract_review",
+        "currency": "KRW",
+        "recognized_damage": 1500000,
+        "insurance_payment": 1300000,
+        "deductible": 200000,
+        "rule_version": "example-2026-11",
+        "source_document_ids": [
+          "SYN-est-1"
+        ],
+        "reasons": [
+          "견본 산정 — 실제 약관 · 금액이 아님"
+        ],
+        "counterparty_fault": 80,
+        "loss_type": "partial",
+        "assumptions": [
+          "자차 계약 정보 없음 — 가입 · 보험기간 · 운전자 범위 안으로 가정",
+          "면책 사실 미입력 — 해당 없음으로 가정"
+        ]
+      },
+      "recovery": {
+        "planned": 1040000,
+        "claimed": 1040000,
+        "recovered": null,
+        "customer_deductible_review": 160000
+      },
+      "approval_status": "approved",
+      "approved_by": "synthetic-adjuster",
+      "approved_at": "2026-11-06T16:00:00+09:00",
+      "created_at": "2026-11-06T15:30:00+09:00",
+      "party_mapping": {
+        "video_ego_party_id": "synthetic-party-110-1",
+        "insured_party_id": "synthetic-party-110-1",
+        "chart_party_A_id": "synthetic-party-110-2",
+        "chart_party_B_id": "synthetic-party-110-1"
+      }
+    }
+  ],
+  "claims": [
+    {
+      "case_id": "SYN-2026-0110",
+      "report_version": 2,
+      "package": {
+        "case_id": "SYN-2026-0110",
+        "package_version": 1,
+        "created_at": "2026-11-06T16:00:00+09:00",
+        "report_version": 2,
+        "counterparty": {
+          "vehicle_no": "00견0000",
+          "insurer": "견본 보험사",
+          "claim_no": "SYN-CLAIM-0001"
+        },
+        "counterparty_fault": 80,
+        "fault_change_reason": null,
+        "rows": [
+          {
+            "claim_no": "SYN-2026-0110-C1",
+            "insured_party_id": "synthetic-party-110-1",
+            "coverage": "자기차량손해",
+            "insurance_payment": 1300000,
+            "counterparty_fault": 80,
+            "planned_share": 1040000,
+            "evidence_count": 2
+          }
+        ],
+        "amounts": {
+          "planned": 1040000,
+          "claimed": 1040000,
+          "recovered": null
+        },
+        "basis": {
+          "근거 조항": [
+            "상법 제682조(제3자에 대한 보험대위)"
+          ],
+          "기본 가정": [
+            "자차 계약 정보 없음 — 가입 · 보험기간 · 운전자 범위 안으로 가정",
+            "면책 사실 미입력 — 해당 없음으로 가정"
+          ]
+        },
+        "evidence": [
+          {
+            "document_id": "ev-SYN-est-1",
+            "doc_type": "repair_estimate",
+            "title": "수리비 견적서(견본)"
+          },
+          {
+            "document_id": "SYN-ev-2",
+            "doc_type": "photo",
+            "title": "사고 장면 사진(견본)"
+          }
+        ],
+        "missing_evidence": [
+          "상대 차량 수리 내역(견본)"
+        ],
+        "confirmed_by": "synthetic-adjuster",
+        "confirmed_at": "2026-11-06T16:00:00+09:00",
+        "idempotency_key": "SYN-2026-0110-r2-p1",
+        "rule_version": "example-2026-11",
+        "rule_notice": "예시 규칙 기준 — 약관 검수 전 초안",
+        "assumptions": [
+          "자차 계약 정보 없음 — 가입 · 보험기간 · 운전자 범위 안으로 가정",
+          "면책 사실 미입력 — 해당 없음으로 가정"
+        ]
+      }
+    }
+  ]
+}
