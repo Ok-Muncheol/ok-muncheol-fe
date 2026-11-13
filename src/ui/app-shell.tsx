@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 /*
  * 앱 틀 — 데스크톱(lg 이상)은 왼쪽 얇은 메뉴(제품명 · 주 메뉴 · 아래 담당자)와 오른쪽 본문이다. 위에 붙는 머리글이 없어서
  * 본문 안 sticky 요소는 lg에서 top-0(또는 작은 여백)에 붙는다. 좁은 화면은 같은 메뉴를 위 56px 머리글 한 줄로 둔다(그때 sticky는 top-14).
- * 담당자 이름을 누르면 내 정보(/profile)로 간다. 로그인 전에는 개발 배포에서 합성 견본 이름을, 운영에서는
+ * 담당자 이름을 누르면 내 정보(/profile)로 간다. 로그인 전(accountName null)에는 그 자리가 로그인 버튼이다(지금 화면으로 돌아오게 ?next=). 로그인 전에는 개발 배포에서 합성 견본 이름을, 운영에서는
  * "보상 담당자"를 보인다(src/features/profile/profile-source.ts). 로그아웃 버튼은 내 정보에 있다. 로그인 화면은 틀 없이 본문만 쓴다.
  */
 
@@ -56,20 +56,30 @@ export function AppShell({ children, showDev, accountName }: { children: ReactNo
             );
           })}
         </nav>
-        <Link
-          href="/profile"
-          aria-current={onProfile ? "page" : undefined}
-          className={`mt-auto flex items-center gap-2.5 rounded-control px-3 py-2 transition-colors ${onProfile ? "bg-primary-soft" : "hover:bg-surface-muted"}`}
-        >
-          <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-surface-muted text-caption font-semibold text-ink-muted">
-            {name.slice(0, 1)}
-          </span>
-          <span className="min-w-0">
-            <span className="sr-only">내 정보: </span>
-            <span className="block truncate text-body font-semibold text-ink">{name}</span>
-            <span className="block text-caption text-ink-muted">보상 담당자</span>
-          </span>
-        </Link>
+        {/* 로그인 전(담당자 이름 없음)이면 담당자 자리가 로그인 버튼이다. */}
+        {accountName === null ? (
+          <Link
+            href={`/login?next=${encodeURIComponent(pathname)}`}
+            className="mt-auto flex h-10 items-center justify-center rounded-control bg-primary text-body font-semibold text-on-primary transition-colors hover:bg-primary-hover"
+          >
+            로그인
+          </Link>
+        ) : (
+          <Link
+            href="/profile"
+            aria-current={onProfile ? "page" : undefined}
+            className={`mt-auto flex items-center gap-2.5 rounded-control px-3 py-2 transition-colors ${onProfile ? "bg-primary-soft" : "hover:bg-surface-muted"}`}
+          >
+            <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-surface-muted text-caption font-semibold text-ink-muted">
+              {name.slice(0, 1)}
+            </span>
+            <span className="min-w-0">
+              <span className="sr-only">내 정보: </span>
+              <span className="block truncate text-body font-semibold text-ink">{name}</span>
+              <span className="block text-caption text-ink-muted">보상 담당자</span>
+            </span>
+          </Link>
+        )}
       </aside>
 
       {/* 좁은 화면 — 같은 메뉴를 위 한 줄로 */}
@@ -89,10 +99,16 @@ export function AppShell({ children, showDev, accountName }: { children: ReactNo
             </Link>
           ))}
         </nav>
-        <Link href="/profile" className="ml-auto text-caption font-semibold whitespace-nowrap text-ink-muted">
-          <span className="sr-only">내 정보: </span>
-          {name}
-        </Link>
+        {accountName === null ? (
+          <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="ml-auto text-caption font-semibold whitespace-nowrap text-primary-strong">
+            로그인
+          </Link>
+        ) : (
+          <Link href="/profile" className="ml-auto text-caption font-semibold whitespace-nowrap text-ink-muted">
+            <span className="sr-only">내 정보: </span>
+            {name}
+          </Link>
+        )}
       </header>
 
       <main className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 lg:px-10 lg:py-10">{children}</main>
