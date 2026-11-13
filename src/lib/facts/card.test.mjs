@@ -3,11 +3,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   buildCardPatch,
+  cardLabel,
   cardOptions,
   cardValueLabel,
   chartPartyName,
   groupFields,
   isRelevant,
+  parseOption,
   parseSeconds,
   pick,
   readableMessage,
@@ -97,4 +99,21 @@ test("withDefaultChart는 비어 있는 도표 A/B를 상대 차 · 블랙박스
   assert.equal(withDefaultChart(empty, undefined), empty, "당사자 목록이 없으면 그대로");
   const set = { ...empty, chart_party_A_id: "P1", chart_party_B_id: "P2" };
   assert.equal(withDefaultChart(set, parties), set, "이미 정한 매핑은 건드리지 않는다");
+});
+
+test("담당자 입력 칸(11/13)은 이름·보기가 있고 비보호 좌회전 표지는 참거짓으로 저장한다", () => {
+  assert.equal(cardLabel("collision_signal_B"), "블랙박스 차 충돌 순간 신호");
+  assert.equal(cardOptions("lane_marking_A").length, 6);
+  // 구분 질문이 걸리면 질문의 보기만 칩으로 남는다 — 보기가 없으면 「모르겠어요」만 남아 답할 수 없다
+  assert.deepEqual(cardOptions("lane_marking_B", ["left_only"]), [["left_only", "좌회전 전용"]]);
+  assert.deepEqual(cardOptions("collision_signal_A", ["flashing_red"]), [["flashing_red", "적색 점멸"]]);
+  assert.equal(cardValueLabel("signal_A", "flashing_yellow"), "황색 점멸");
+  assert.equal(parseOption("unprotected_left_sign", "true"), true);
+  assert.equal(parseOption("unprotected_left_sign", "false"), false);
+  assert.equal(parseOption("lane_marking_A", "none"), "none");
+  assert.equal(cardValueLabel("unprotected_left_sign", false), "없음");
+  assert.equal(isRelevant("collision_signal_A", "unsignalized_intersection"), false);
+  assert.equal(isRelevant("unprotected_left_sign", "signalized_intersection"), true);
+  assert.equal(isRelevant("lane_marking_A", "unsignalized_intersection"), true);
+  assert.equal(readableMessage("남은 칸: lane_marking_A, collision_signal_B"), "남은 칸: 상대 차 차로 노면표시, 블랙박스 차 충돌 순간 신호");
 });
