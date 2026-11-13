@@ -24,6 +24,7 @@ const FAULT = { agreed_counterparty_fault: 70, fault_change_reason: "상대 보�
 
 // [메서드, 인자, HTTP 메서드, 경로, 본문] — BE app/api/routes.py 순서
 const ROUTES = [
+  ["listCases", [], "GET", "/cases", undefined],
   ["createCase", [{ accident_date: "2026-11-01" }], "POST", "/cases", { accident_date: "2026-11-01" }],
   ["requestUpload", [CASE, "estimate", "application/pdf"], "POST", `/cases/${CASE}/uploads`, { kind: "estimate", content_type: "application/pdf" }],
   ["startAnalysis", [CASE, "videos/a.mp4", "analysis-key-1"], "POST", `/cases/${CASE}/analysis`, { storage_path: "videos/a.mp4" }],
@@ -63,9 +64,9 @@ function fakeClient({ respond = () => json(200, {}), ...options } = {}) {
 
 const failure = (promise) => promise.then(() => assert.fail("오류가 나야 한다"), (error) => error);
 
-test("메서드 18개가 BE 경로 18개와 1:1이다", () => {
+test("메서드 19개가 BE 경로 19개와 1:1이다", () => {
   const { client } = fakeClient();
-  assert.equal(ROUTES.length, 18);
+  assert.equal(ROUTES.length, 19);
   assert.deepEqual(Object.keys(client).sort(), ROUTES.map(([name]) => name).sort());
 });
 

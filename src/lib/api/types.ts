@@ -10,8 +10,8 @@ export type TaskView = {
   task_id: string; case_id: string; stage: string; status: TaskStatus; input_version: number;
 };
 export type ApiError = { code: string; message: string; retryable: boolean };
-/** 업로드 파일 종류. 형식은 BE가 검사한다 — estimate는 application/pdf, video는 mp4·mov·avi·webm·mkv(아니면 422 invalid_upload_type). */
-export type UploadKind = "estimate" | "video";
+/** 업로드 파일 종류. 형식은 BE가 검사한다 — estimate는 application/pdf, video는 mp4·mov·avi·webm·mkv, medical_document(대인 증빙 — 진단서·진료비 영수증)는 application/pdf·image/jpeg(아니면 422 invalid_upload_type). */
+export type UploadKind = "estimate" | "video" | "medical_document";
 /** POST /cases/{id}/uploads 응답(BE UploadTicket). upload_url에 키 없이 파일 본문과 Content-Type만 넣어 PUT하고, storage_path를 /estimates·/analysis에 보낸다. */
 /**
  * GET /cases/{id}/evidence — 최신 카드 근거 사진과 최신 완료 분석의 H.264 미리보기 영상을 보기용 서명 URL(expires_in초, 1시간)로 준다.
