@@ -5,6 +5,7 @@
  * - 맨 위 요약: 확인 상태와 핵심 숫자 셋(최종 과실 · 자차 보험금 · 구상 예정액). 모르는 값은 「—」.
  * - 과실 판단(1 · 3~7번): 판단 화면에서 본 내용이라 짧게. 확정 사실(2번)은 접어 둔다.
  * - 손해액 · 보험금(8번): 담당자가 넣는 곳 — 견적서 PDF, 면책 확인. 넣으면 BE가 다시 산정해 새 보고서 버전이 생기고 그 버전으로 옮긴다.
+ * - 대물 · 대인 1차 판정(8번 「대물·대인 1차 판정」, liability-block.tsx): 상대 차 견적서 · 대물 입력 · 다친 사람 · 진단서 첨부.
  * - 구상(9번): 구상 예정액 = 자차 보험금 × 상대 과실. 상대와 과실을 다르게 합의했으면 협의 과실(이유 필수)로 새 버전.
  * - 맨 아래 「확인 완료」 한 번(상대방 정보는 선택) — 청구서가 만들어지면 구상 청구서 화면으로, 못 만들면 사유 목록을 보인다.
  * 금액 · 비율은 BE 값 그대로다(FE가 계산하지 않는다). 견본 모드는 BE에 보내지 않고 결과만 흉내 낸다.
@@ -14,10 +15,11 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type ReactNode } from "react";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError } from "@/lib/api/client";
-import type { CaseFacts, PartyMapping, ReportSection, ReviewReport } from "@/lib/api/types";
+import type { CaseFacts, InjuredPersonDoc, PartyMapping, PropertyDamageInputDoc, ReportSection, ReviewReport } from "@/lib/api/types";
 import { cardLabel, cardValueLabel, chartPartyName } from "@/lib/facts/card";
 import { Button, ButtonLink, Input, Spinner } from "@/ui/controls";
 import { UploadError, uploadFile } from "@/features/cases/upload";
+import { LiabilityBlock, type MedicalKind } from "./liability-block";
 
 const dateTime = new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "Asia/Seoul" });
 const won = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${v.toLocaleString("ko-KR")}원`);
@@ -27,7 +29,7 @@ const list = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
 const LAYER: Record<string, string> = { evidence: "근거", rebuttal: "반박", calculation: "계산" };
 const EXCLUSIONS = ["무면허", "음주", "고의"] as const;
 
-type Busy = null | "estimate" | "facts" | "fault" | "confirm";
+type Busy = null | "estimate" | "facts" | "fault" | "confirm" | "liability";
 
 export function ReportView({ caseId, report, live, claimHref }: { caseId: string; report: ReviewReport; live: boolean; claimHref: string }) {
   const router = useRouter();
@@ -80,6 +82,32 @@ export function ReportView({ caseId, report, live, claimHref }: { caseId: string
       setProgress(0);
       await uploadFile(ticket.upload_url, file, "application/pdf", setProgress);
       goTo(await api.uploadEstimate(caseId, ticket.storage_path, partyId));
+    });
+
+  // 대물 · 대인 — 입력은 모두 addDocuments. 상대 차 견적서는 도표에서 가입자 반대쪽 당사자로 보낸다(BE가 그 party_id로 상대 차 수리비를 찾는다).
+  const saveLiability = (docs: (InjuredPersonDoc | PropertyDamageInputDoc)[]) =>
+    run("liability", async () => goTo(await createBrowserApiClient().addDocuments(caseId, docs)));
+
+  const uploadCounterEstimate = (file: File) =>
+    run("liability", async () => {
+      const counterparty =
+        mapping.insured_party_id === mapping.chart_party_A_id ? mapping.chart_party_B_id : mapping.insured_party_id === mapping.chart_party_B_id ? mapping.chart_party_A_id : null;
+      if (!counterparty) throw new Error("상대 차가 정해지지 않았어요. 판단 화면의 사실 카드에서 가입자와 도표 A/B를 정해 주세요.");
+      const api = createBrowserApiClient();
+      const ticket = await api.requestUpload(caseId, "estimate", "application/pdf");
+      await uploadFile(ticket.upload_url, file, "application/pdf", setProgress);
+      goTo(await api.uploadEstimate(caseId, ticket.storage_path, counterparty));
+    });
+
+  const attachMedical = (file: File, docType: MedicalKind) =>
+    run("liability", async () => {
+      const contentType = file.type === "image/jpeg" || /\.jpe?g$/i.test(file.name) ? "image/jpeg" : "application/pdf";
+      const api = createBrowserApiClient();
+      const ticket = await api.requestUpload(caseId, "medical_document", contentType);
+      await uploadFile(ticket.upload_url, file, contentType, setProgress);
+      const next = await api.addDocuments(caseId, [{ kind: "evidence", document_id: `medical-${crypto.randomUUID()}`, doc_type: docType, storage_path: ticket.storage_path }]);
+      setMessage({ tone: "info", text: `${docType === "medical_certificate" ? "진단서" : "진료비 영수증"}를 첨부했어요.` });
+      goTo(next);
     });
 
   const saveFacts = (facts: CaseFacts) => run("facts", async () => goTo(await createBrowserApiClient().addDocuments(caseId, [], facts)));
@@ -261,6 +289,11 @@ export function ReportView({ caseId, report, live, claimHref }: { caseId: string
           </>
         )}
       </Block>
+
+      {/* 대물 · 대인 — 8번 「대물·대인 1차 판정」 */}
+      {ready && (
+        <LiabilityBlock liability={report.liability} busy={busy === "liability"} onSave={saveLiability} onEstimate={uploadCounterEstimate} onMedical={attachMedical} />
+      )}
 
       {/* 구상 — 9번 */}
       <Block title="구상">

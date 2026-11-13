@@ -365,6 +365,87 @@
         "insured_party_id": "synthetic-party-109-1",
         "chart_party_A_id": "synthetic-party-109-2",
         "chart_party_B_id": "synthetic-party-109-1"
+      },
+      "liability": {
+        "insured_fault": 30,
+        "fault_source": "judgment",
+        "accident_date": "2026-10-30",
+        "property": {
+          "status": "draft",
+          "counterparty_id": "synthetic-party-109-2",
+          "repair_cost": 1000000,
+          "amount": 300000,
+          "limit_applied": false,
+          "formula": "상대 차 수리비 1,000,000원 × 우리 과실 30% = 300,000원(견본)",
+          "flags": [
+            {
+              "key": "depreciation",
+              "label": "시세하락손해",
+              "detail": "출고일 미입력 — 시세하락손해 확인 필요(견본)",
+              "clause_ids": []
+            }
+          ],
+          "assumptions": [
+            "대물 한도 미입력 — 한도 검사 생략(견본)"
+          ],
+          "reasons": [],
+          "clause_ids": [],
+          "source_document_ids": [
+            "SYN-est-2"
+          ]
+        },
+        "injuries": [
+          {
+            "status": "draft",
+            "person_id": "syn-person-1",
+            "label": "상대 운전자(견본)",
+            "grade": 12,
+            "treatment_cost": 800000,
+            "consolation": 150000,
+            "damage": 950000,
+            "after_offset": 285000,
+            "treatment_guarantee": true,
+            "bodily_1_limit": 1200000,
+            "bodily_1": 800000,
+            "bodily_2": 0,
+            "formula": "(치료관계비 800,000원 + 위자료 150,000원) × 30% = 285,000원 < 치료관계비 → 치료관계비 800,000원(견본)",
+            "flags": [
+              {
+                "key": "lost_income",
+                "label": "휴업손해",
+                "detail": "휴업손해는 계산하지 않음 — 확인 필요(견본)",
+                "clause_ids": []
+              }
+            ],
+            "assumptions": [
+              "간병비 0원, 입원 식대 미포함(견본)"
+            ],
+            "reasons": [],
+            "clause_ids": []
+          },
+          {
+            "status": "needs_input",
+            "person_id": "syn-person-2",
+            "label": "상대 동승자(견본)",
+            "grade": null,
+            "treatment_cost": null,
+            "consolation": null,
+            "damage": null,
+            "after_offset": null,
+            "treatment_guarantee": false,
+            "bodily_1_limit": null,
+            "bodily_1": null,
+            "bodily_2": null,
+            "formula": "",
+            "flags": [],
+            "assumptions": [],
+            "reasons": [
+              "상해 급수 · 치료관계비 미입력"
+            ],
+            "clause_ids": []
+          }
+        ],
+        "notice": "1차 판정 초안 — 견본 값이며 실제 약관 · 금액이 아님"
       }
     },
     {

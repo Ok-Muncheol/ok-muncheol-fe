@@ -193,6 +193,37 @@ export type ReviewReport = {
   approval_status: "draft" | "approved"; approved_by: string | null; approved_at: string | null;
   /** BE 보고서에 함께 오는 값(assembler) — 만든 시각, 그때의 당사자 매핑(도표 A/B 이름). 예전 보고서에는 없을 수 있다 */
   created_at?: string; party_mapping?: PartyMapping;
+  /** 대물·대인 1차 판정(BE #185) — 상대 견적서·대인·대물 입력이 있을 때만 온다 */
+  liability?: LiabilityResult | null;
+};
+/** 대물·대인 1차 판정 상태 — 초안 금액 있음 · 입력이 없어 금액 없음 · 규칙상 담당자 판단이 먼저(예: 우리 과실 0%). BE app/schemas/liability.py */
+export type LiabilityStatus = "draft" | "needs_input" | "needs_review";
+/** 계산하지 않고 담당자에게 알리는 「확인 필요」 항목 */
+export type LiabilityFlag = { key: string; label: string; detail: string; clause_ids: string[] };
+export type PropertyDamageResult = {
+  status: LiabilityStatus; counterparty_id: string; repair_cost: number | null; amount: number | null; limit_applied: boolean;
+  formula: string; flags: LiabilityFlag[]; assumptions: string[]; reasons: string[]; clause_ids: string[]; source_document_ids: string[];
+};
+export type InjuryResult = {
+  status: LiabilityStatus; person_id: string; label?: string | null; grade: number | null; treatment_cost: number | null;
+  consolation: number | null; damage: number | null; after_offset: number | null; treatment_guarantee: boolean;
+  bodily_1_limit: number | null; bodily_1: number | null; bodily_2: number | null;
+  formula: string; flags: LiabilityFlag[]; assumptions: string[]; reasons: string[]; clause_ids: string[];
+};
+/** 우리(보험가입자) 과실 %와 대물·대인 초안. 협의 과실이면 fault_source가 agreed(우리 과실 = 100 − 협의 상대 과실) */
+export type LiabilityResult = {
+  insured_fault: number | null; fault_source?: "judgment" | "agreed"; accident_date: string | null;
+  property: PropertyDamageResult | null; injuries: InjuryResult[]; notice: string;
+};
+/** 대인 1명 입력(BE InjuredPersonDoc) — addDocuments로 보낸다. 고칠 때는 새 document_id, 같은 person_id면 가장 늦은 received_at을 쓴다 */
+export type InjuredPersonDoc = {
+  kind: "injured_person"; document_id: string; person_id: string; label?: string | null;
+  grade: number | null; treatment_cost: number | null; is_driver?: boolean | null; received_at: string;
+};
+/** 대물 입력(BE PropertyDamageInputDoc, 모두 선택) — 상대 차 수리비는 견적서(party_id = 상대 차)로 따로 받는다 */
+export type PropertyDamageInputDoc = {
+  kind: "property_damage_input"; document_id: string; property_damage_limit?: number | null;
+  vehicle_value?: number | null; release_date?: string | null; received_at: string;
 };
 /** 보고서 항목 하나(BE ReportSection) — 1~9번. 비어 있으면 empty_reason에 이유가 있다. body 키는 BE app/reports/assembler.py 그대로다 */
 export type ReportSection = {
