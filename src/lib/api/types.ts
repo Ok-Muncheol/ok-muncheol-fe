@@ -191,6 +191,13 @@ export type ReviewReport = {
   versions: VersionRef; judgment: JudgmentResult; sections: Record<string, unknown>[];
   calculation: CalculationResult | null; recovery: RecoveryAmounts | null;
   approval_status: "draft" | "approved"; approved_by: string | null; approved_at: string | null;
+  /** BE 보고서에 함께 오는 값(assembler) — 만든 시각, 그때의 당사자 매핑(도표 A/B 이름). 예전 보고서에는 없을 수 있다 */
+  created_at?: string; party_mapping?: PartyMapping;
+};
+/** 보고서 항목 하나(BE ReportSection) — 1~9번. 비어 있으면 empty_reason에 이유가 있다. body 키는 BE app/reports/assembler.py 그대로다 */
+export type ReportSection = {
+  no: number; title: string; state: "filled" | "empty"; body: Record<string, unknown>;
+  evidence_ids: string[]; empty_reason: string | null;
 };
 /** D 보고서 경로(BE docs/d-claims-reports.md 「HTTP 경로」)의 요청·응답. BE app/schemas/reports.py 대응. */
 export type CounterpartyInfo = { vehicle_no: string; insurer: string; claim_no: string | null };
