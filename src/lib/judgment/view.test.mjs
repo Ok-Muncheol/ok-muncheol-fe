@@ -106,6 +106,11 @@ test("도표 칸 표기는 BE 값을 글자로 바꾸고 모르는 값은 그대
   assert.equal(optionLabel("night", "true"), "야간");
   assert.equal(optionLabel("signal_A", "flashing"), "flashing");
   assert.equal(optionLabel("signal_A", null), null);
+  // 11/13 카드 v1 담당자 입력 칸과 점멸 신호
+  assert.equal(fieldLabel("collision_signal_A"), "A 충돌 순간 신호");
+  assert.equal(optionLabel("collision_signal_B", "flashing_red"), "적색 점멸");
+  assert.equal(optionLabel("lane_marking_A", "straight_left"), "직진·좌회전");
+  assert.equal(optionLabel("unprotected_left_sign", "true"), "있음");
 });
 
 const question = (field_key, answer = null) => ({

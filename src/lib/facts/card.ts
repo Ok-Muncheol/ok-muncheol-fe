@@ -9,16 +9,25 @@ import type { FactCard, FactField, FactPatch, PartyMapping } from "../api/types"
 type Fields = Record<string, FactField>;
 type Value = FactField["value"];
 
-/** 화면 순서 — 장소 → 신호·도로 → 움직임 → 위치 → 그 밖. */
+/**
+ * 화면 순서 — 장소 → 신호·도로 → 움직임 → 위치 → 그 밖.
+ * 충돌 순간 신호·차로 노면표시·비보호 좌회전 표지(11/13)는 담당자 입력 칸이다 — 영상 카드는 비워(null + unverified) 보내고,
+ * 판단이 그 칸으로 갈리는 도표를 볼 때 구분 질문으로 묻는다(BE docs/contracts/fact-card-v1.md).
+ */
 export const CARD_FIELD_ORDER = [
   "accident_type",
   "location_type",
   "signal_A",
   "signal_B",
+  "collision_signal_A",
+  "collision_signal_B",
+  "unprotected_left_sign",
   "road_priority",
   "entry_order",
   "movement_A",
   "movement_B",
+  "lane_marking_A",
+  "lane_marking_B",
   "relative_position",
   "night",
   "collision_time_ms",
@@ -30,10 +39,15 @@ const LABELS: Record<string, string> = {
   location_type: "사고 장소",
   signal_A: "상대 차 신호",
   signal_B: "블랙박스 차 신호",
+  collision_signal_A: "상대 차 충돌 순간 신호",
+  collision_signal_B: "블랙박스 차 충돌 순간 신호",
+  unprotected_left_sign: "비보호 좌회전 표지",
   road_priority: "도로 관계",
   entry_order: "교차로에 먼저 들어온 차",
   movement_A: "상대 차 움직임",
   movement_B: "블랙박스 차 움직임",
+  lane_marking_A: "상대 차 차로 노면표시",
+  lane_marking_B: "블랙박스 차 차로 노면표시",
   relative_position: "상대 차가 온 쪽",
   night: "밤낮",
   collision_time_ms: "충돌 시각",
@@ -45,7 +59,26 @@ export function cardLabel(key: string): string {
 }
 
 const MOVEMENT = { straight: "직진", left_turn: "좌회전", right_turn: "우회전", u_turn: "유턴", lane_change: "진로 변경", other: "그 밖" };
-const SIGNAL = { green: "녹색", yellow: "황색", red: "적색", green_left_arrow: "녹색 좌회전", no_signal: "신호등 없음" };
+const SIGNAL = {
+  green: "녹색",
+  yellow: "황색",
+  red: "적색",
+  green_left_arrow: "녹색 좌회전",
+  flashing_yellow: "황색 점멸",
+  flashing_red: "적색 점멸",
+  no_signal: "신호등 없음",
+};
+/** 그 차가 있던 차로의 방향 화살표. */
+const LANE_MARKING = {
+  left_only: "좌회전 전용",
+  straight_left: "직진·좌회전",
+  straight_only: "직진 전용",
+  straight_right: "직진·우회전",
+  right_only: "우회전 전용",
+  none: "표시 없음",
+};
+/** 참거짓 칸 — 보기는 "true"/"false" 글자지만 카드 값은 bool이다(BE 카드 수정이 글자를 거절한다). */
+const BOOL_KEYS: readonly string[] = ["night", "unprotected_left_sign"];
 
 /** 칸별 보기(BE 값 → 화면 글자). 목록이 없는 칸(충돌 시각·사고 설명)은 없다. */
 const OPTIONS: Record<string, Record<string, string>> = {
@@ -60,6 +93,9 @@ const OPTIONS: Record<string, Record<string, string>> = {
   },
   signal_A: SIGNAL,
   signal_B: SIGNAL,
+  collision_signal_A: SIGNAL,
+  collision_signal_B: SIGNAL,
+  unprotected_left_sign: { true: "있음", false: "없음" },
   road_priority: {
     same_width: "폭이 같음",
     major_A: "상대 차 쪽이 대로",
@@ -72,6 +108,8 @@ const OPTIONS: Record<string, Record<string, string>> = {
   entry_order: { first: "상대 차", second: "블랙박스 차", simultaneous: "동시에", none: "해당 없음" },
   movement_A: MOVEMENT,
   movement_B: MOVEMENT,
+  lane_marking_A: LANE_MARKING,
+  lane_marking_B: LANE_MARKING,
   relative_position: {
     left: "왼쪽에서",
     right: "오른쪽에서",
@@ -95,9 +133,9 @@ export function cardValueLabel(key: string, value: Value): string {
   return OPTIONS[key]?.[String(value)] ?? String(value);
 }
 
-/** 보기 값(문자열) → 카드 값. 밤낮은 참거짓이다. */
+/** 보기 값(문자열) → 카드 값. 밤낮·비보호 좌회전 표지는 참거짓이다. */
 export function parseOption(key: string, raw: string): Value {
-  if (key === "night") return raw === "true";
+  if (BOOL_KEYS.includes(key)) return raw === "true";
   return raw;
 }
 
@@ -114,13 +152,15 @@ export function parseSeconds(text: string): number | null {
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 1000) : null;
 }
 
+const SIGNALIZED_ONLY: readonly string[] = ["signal_A", "signal_B", "collision_signal_A", "collision_signal_B", "unprotected_left_sign"];
+
 /**
- * 이 사고에 쓰이는 칸인지 — 신호는 신호 있는 교차로에서만, 도로 관계·먼저 들어온 차는 신호 없는 교차로에서만 본다.
- * 장소를 모르면 모두 쓰는 칸으로 본다.
+ * 이 사고에 쓰이는 칸인지 — 신호(진입·충돌 순간)·비보호 좌회전 표지는 신호 있는 교차로에서만, 도로 관계·먼저 들어온 차는
+ * 신호 없는 교차로에서만 본다. 장소를 모르면 모두 쓰는 칸으로 본다.
  */
 export function isRelevant(key: string, locationType: Value): boolean {
   if (locationType === null) return true;
-  if (key === "signal_A" || key === "signal_B") return locationType === "signalized_intersection";
+  if (SIGNALIZED_ONLY.includes(key)) return locationType === "signalized_intersection";
   if (key === "road_priority" || key === "entry_order") return locationType === "unsignalized_intersection";
   return true;
 }
@@ -225,5 +265,8 @@ export function setInsured(mapping: PartyMapping, insuredIsEgo: boolean): PartyM
 
 /** BE 메시지 속 카드 칸 이름(movement_A 등)을 화면 이름으로 바꾼다. */
 export function readableMessage(message: string): string {
-  return message.replace(/\b(accident_type|location_type|signal_[AB]|road_priority|entry_order|movement_[AB]|relative_position|night|collision_time_ms|narrative)\b/g, (key) => cardLabel(key));
+  return message.replace(
+    /\b(accident_type|location_type|signal_[AB]|collision_signal_[AB]|unprotected_left_sign|road_priority|entry_order|movement_[AB]|lane_marking_[AB]|relative_position|night|collision_time_ms|narrative)\b/g,
+    (key) => cardLabel(key),
+  );
 }

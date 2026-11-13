@@ -3,6 +3,8 @@
  * 도표 선택 칸(app/schemas/chart_scope.py, docs/contracts/mvp-chart-scope.md) 대응 — 칸과 허용값, 그 화면 표기.
  * 2026-11-11부터 도표 선택 값도 v1 값이다. 사실 카드(정지원)·구분 질문(구준휘) 화면이 같은 표기를 쓰고,
  * 사실 카드 편집 선택지는 OPTION_LABELS 값 그대로다(BE 카드 수정이 받는 값과 같아야 한다).
+ * 2026-11-13 카드 v1에 담당자 입력 칸 5개(충돌 순간 신호·차로 노면표시·비보호 좌회전 표지)와 점멸 신호가 더해졌다(BE #160).
+ * 영상 카드는 이 칸을 비워(null + unverified) 보내고, 판단이 그 칸으로 갈리는 도표를 볼 때 구분 질문으로 묻는다.
  * 런타임 import는 두지 않는다 — 테스트(*.test.mjs)에서 Node가 타입만 지우고 그대로 실행한다.
  */
 
@@ -15,8 +17,13 @@ export const CHART_FIELD_KEYS = [
   "movement_B",
   "signal_A",
   "signal_B",
+  "collision_signal_A",
+  "collision_signal_B",
+  "lane_marking_A",
+  "lane_marking_B",
   "relative_position",
   "entry_order",
+  "unprotected_left_sign",
   "night",
 ] as const;
 export type ChartFieldKey = (typeof CHART_FIELD_KEYS)[number];
@@ -27,10 +34,15 @@ export const FIELD_LABELS: Record<ChartFieldKey, string> = {
   road_priority: "도로 관계",
   movement_A: "A 진행 방향",
   movement_B: "B 진행 방향",
-  signal_A: "A 신호",
-  signal_B: "B 신호",
+  signal_A: "A 진입 신호",
+  signal_B: "B 진입 신호",
+  collision_signal_A: "A 충돌 순간 신호",
+  collision_signal_B: "B 충돌 순간 신호",
+  lane_marking_A: "A 차로 노면표시",
+  lane_marking_B: "B 차로 노면표시",
   relative_position: "상대 위치",
   entry_order: "진입 순서",
+  unprotected_left_sign: "비보호 좌회전 표지",
   night: "야간 여부",
 };
 
@@ -42,7 +54,25 @@ const MOVEMENT = {
   lane_change: "진로 변경",
   other: "기타",
 };
-const SIGNAL = { green: "녹색", yellow: "황색", red: "적색", green_left_arrow: "녹색 좌회전 화살표", no_signal: "신호등 없음" };
+/** 진입 신호(signal_*)는 교차로에 들어갈 때, 충돌 순간 신호(collision_signal_*)는 부딪칠 때의 그 차 신호다. 값은 같다. */
+const SIGNAL = {
+  green: "녹색",
+  yellow: "황색",
+  red: "적색",
+  green_left_arrow: "녹색 좌회전 화살표",
+  flashing_yellow: "황색 점멸",
+  flashing_red: "적색 점멸",
+  no_signal: "신호등 없음",
+};
+/** 그 차가 있던 차로의 방향 화살표(차11-x 교차로 노면 표시 위반). 실선·점선이 아니다. */
+const LANE_MARKING = {
+  left_only: "좌회전 전용",
+  straight_left: "직진·좌회전",
+  straight_only: "직진 전용",
+  straight_right: "직진·우회전",
+  right_only: "우회전 전용",
+  none: "표시 없음",
+};
 
 /**
  * BE 값 → 화면 글자. A/B는 카드 v1 2절대로 카드의 A(상대 차량)·B(촬영 차량)다.
@@ -72,6 +102,10 @@ export const OPTION_LABELS: Record<ChartFieldKey, Record<string, string>> = {
   movement_B: MOVEMENT,
   signal_A: SIGNAL,
   signal_B: SIGNAL,
+  collision_signal_A: SIGNAL,
+  collision_signal_B: SIGNAL,
+  lane_marking_A: LANE_MARKING,
+  lane_marking_B: LANE_MARKING,
   relative_position: {
     same_direction_front: "같은 방향 앞",
     same_direction_rear: "같은 방향 뒤",
@@ -80,6 +114,7 @@ export const OPTION_LABELS: Record<ChartFieldKey, Record<string, string>> = {
     right: "오른쪽",
   },
   entry_order: { first: "A 먼저", second: "B 먼저", simultaneous: "동시", none: "해당 없음" },
+  unprotected_left_sign: { true: "있음", false: "없음" },
   night: { true: "야간", false: "주간" },
 };
 
