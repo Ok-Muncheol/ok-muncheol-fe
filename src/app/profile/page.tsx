@@ -41,7 +41,7 @@ export default async function ProfilePage() {
   const summary = summarizeBoard(await listCases());
   const counts = [
     { term: "전체", value: summary.total },
-    { term: "손댈 차례", value: summary.attention, note: "확인·답변·승인 대기" },
+    { term: "확인 필요", value: summary.attention, note: "확인·답변·승인 대기" },
     { term: "처리 중", value: summary.running, note: "분석·판단 진행" },
     { term: "실패", value: summary.failed, note: "다시 시작 필요" },
     { term: "승인", value: summary.approved, note: "보고서 승인 완료" },

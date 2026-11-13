@@ -138,7 +138,7 @@ test("boardStatus는 단계마다 할 일과 상태를 가른다", async () => {
   assert.equal(boardStatus(make({ stage: "judgment", task_status: "waiting_for_confirmation", open_questions: 2 })).label, "질문 2건");
   assert.equal(boardStatus(make({ stage: "judgment", task_status: "completed", judgment_status: "deferred" })).tone, "turn");
   assert.equal(boardStatus(make({ stage: "report", approval_status: "approved" })).tone, "done");
-  assert.equal(boardStatus(make({ stage: "report", approval_status: "draft" })).tone, "turn");
+  assert.equal(boardStatus(make({ stage: "report", approval_status: "draft" })).tone, "approval");
 });
 
 test("보드 보기는 주소에서 읽고, 걸러 정렬하고, 고정한 사건을 위에 둔다", async () => {
@@ -168,6 +168,7 @@ test("승인한 사건은 담당 사건 보드에서 빠지고 완료 사건에�
   const done = make({ case_id: "DONE", stage: "report", approval_status: "approved" });
   const all = boardRows([open, done], DEFAULT_VIEW);
   assert.deepEqual(all.rows.map((c) => c.case_id), ["OPEN"]);
+  assert.deepEqual(boardRows([open, done], { ...DEFAULT_VIEW, turn: true }).rows.map((c) => c.case_id), ["OPEN"], "승인 대기는 확인 필요만에 남는다");
   assert.equal(all.counts.report, 1);
   assert.equal(all.done, 1);
   assert.deepEqual(boardRows([open, done], { ...DEFAULT_VIEW, stage: "done" }).rows.map((c) => c.case_id), ["DONE"]);

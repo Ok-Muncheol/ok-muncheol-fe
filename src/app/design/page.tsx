@@ -270,7 +270,7 @@ export default function DesignPage() {
           </p>
           <StatStrip>
             <Stat label="담당 사건" value={2} />
-            <Stat label="손댈 차례" value={1} tone="warning" />
+            <Stat label="확인 필요" value={1} tone="warning" />
             <Stat label="처리 중" value={0} tone="info" />
             <Stat label="승인" value={1} tone="success" />
           </StatStrip>

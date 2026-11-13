@@ -2,9 +2,9 @@
  * B 통합: 담당 사건 보드. 사건마다 한 줄이고, 줄은 접수 → 판단 → 검토 보고서 세 열을 지나는 진행 선이다.
  * 점은 칸 가운데다. 지나온 열은 채운 점과 실선(글 없음), 지금 열은 색 점과 짧은 상태 알약(「질문 1건」), 남은 열은 빈 점과 점선이다.
  * 위아래로 훑으면 사건들이 어디까지 왔는지, 옆으로 읽으면 한 사건이 어디서 멈췄는지 보인다(상태 문구는 src/lib/cases/stages.ts boardStatus).
- * 점 색은 뜻으로 고른다 — 손댈 차례 warning · 실패 danger, 나머지는 회색이다. 처리 중은 도는 표시다.
+ * 점 색은 뜻으로 고른다 — 확인 필요 warning · 승인 대기 primary · 실패 danger · 승인 완료 success, 나머지는 회색이다. 처리 중은 도는 표시다.
  * 보고서를 승인한 사건은 완료 탭에만 보인다.
- * 위 도구 줄의 단계 탭 · 손댈 차례만 · 정렬로 거르고 줄 세운다(src/lib/cases/stages.ts boardRows). 고정한 사건은 묶음 표시 없이 맨 위에 둔다(고정은 담당자 브라우저 쿠키 — src/lib/cases/pins.ts).
+ * 위 도구 줄의 단계 탭 · 확인 필요만 · 정렬로 거르고 줄 세운다(src/lib/cases/stages.ts boardRows). 고정한 사건은 묶음 표시 없이 맨 위에 둔다(고정은 담당자 브라우저 쿠키 — src/lib/cases/pins.ts).
  * 서버 컴포넌트다 — 고정 버튼만 클라이언트(pin-button.tsx)이고 폼으로 Server Action(pin-actions.ts)을 부른다.
  * pinned를 넘기지 않으면 고정 버튼 없이 그린다(/dev 미리보기).
  */
@@ -48,7 +48,7 @@ function shortDay(iso: string): string {
 const GRID = "grid grid-cols-[15rem_repeat(2,minmax(10rem,1fr))_minmax(9rem,0.7fr)]";
 
 /**
- * view는 /cases 주소에서 읽은 보기(단계 탭 · 정렬 · 손댈 차례만)다. 넘기지 않으면 기본 보기이고 탭·정렬을 그리지 않는다(/dev 미리보기).
+ * view는 /cases 주소에서 읽은 보기(단계 탭 · 정렬 · 확인 필요만)다. 넘기지 않으면 기본 보기이고 탭·정렬을 그리지 않는다(/dev 미리보기).
  * aside는 도구 줄 오른쪽에 둔다(/cases의 견본 배지).
  */
 export function CaseBoard({ cases, pinned, view, aside }: { cases: readonly CaseSummary[]; pinned?: readonly string[]; view?: BoardView; aside?: ReactNode }) {
@@ -89,8 +89,8 @@ export function CaseBoard({ cases, pinned, view, aside }: { cases: readonly Case
   );
 }
 
-/** 도구 줄 — 왼쪽은 단계 탭(건수가 곧 요약), 오른쪽은 손댈 차례만 · 정렬. */
-/** 완료 사건 화면(view.stage가 done)에서는 단계 탭과 손댈 차례만 없이 정렬만 둔다. */
+/** 도구 줄 — 왼쪽은 단계 탭(건수가 곧 요약), 오른쪽은 확인 필요만 · 정렬. */
+/** 완료 사건 화면(view.stage가 done)에서는 단계 탭과 확인 필요만 없이 정렬만 둔다. */
 function Toolbar({ view, total, counts, aside }: { view: BoardView; total: number; counts: Record<BoardColumnKey, number>; aside?: ReactNode }) {
   const tabs: { key: BoardStage; label: string; count: number }[] = [
     { key: "all", label: "전체", count: total },
@@ -146,7 +146,7 @@ function Toolbar({ view, total, counts, aside }: { view: BoardView; total: numbe
                 </svg>
               )}
             </span>
-            손댈 차례만
+            확인 필요만
           </Link>
         )}
         <SortMenu
@@ -212,9 +212,10 @@ function Segment({ className, solid }: { className: string; solid: boolean }) {
 
 const NOW_DOT: Record<BoardTone, string> = {
   turn: "bg-warning ring-warning-soft",
+  approval: "bg-primary-strong ring-primary-soft",
   running: "",
   failed: "bg-danger ring-danger-soft",
-  done: "bg-ink-muted ring-surface-muted",
+  done: "bg-success ring-success-soft",
   idle: "bg-ink-muted ring-surface-muted",
 };
 
@@ -225,12 +226,16 @@ function Node({ place, tone }: { place: "past" | "now" | "next"; tone: BoardTone
   return <span className={`block size-2.5 rounded-full ring-4 ${NOW_DOT[tone]}`} />;
 }
 
-/** 상태 알약 — 주황은 내 차례, 빨강은 실패, 나머지는 회색이다. */
+/**
+ * 상태 알약 — 주황은 확인 필요, 진한 옥색은 마지막 승인 차례, 옅은 옥색(검토 보고서 열 머리 색)은 처리 중,
+ * 빨강은 실패, 초록은 승인 완료, 회색은 그 밖(판단 완료처럼 다음 단계로 넘길 일만 남은 상태)이다.
+ */
 const PILL: Record<BoardTone, string> = {
   turn: "bg-warning-soft text-on-warning-soft",
-  running: "bg-surface-muted text-ink-muted",
+  approval: "bg-primary text-on-primary",
+  running: "bg-stage-report text-on-primary-soft",
   failed: "bg-danger-soft text-on-danger-soft",
-  done: "bg-surface-muted text-ink-muted",
+  done: "bg-success-soft text-on-success-soft",
   idle: "bg-surface-muted text-ink-muted",
 };
 

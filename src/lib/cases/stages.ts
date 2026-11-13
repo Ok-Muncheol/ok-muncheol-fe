@@ -134,8 +134,17 @@ export function listByIntake(cases: readonly CaseSummary[], pinned: readonly str
   return { pinned: ordered.filter((c) => pins.has(c.case_id)), rest: ordered.filter((c) => !pins.has(c.case_id)) };
 }
 
-/** 보드 한 줄의 지금 상태 — 손댈 차례(turn) · 처리 중(running) · 실패(failed) · 끝(done) · 그 밖(idle). 점 색과 글 굵기를 가른다. */
-export type BoardTone = "turn" | "running" | "failed" | "done" | "idle";
+/**
+ * 보드 한 줄의 지금 상태 — 점과 알약 색을 가른다.
+ * 확인 필요(turn) · 승인 대기(approval) · 처리 중(running) · 실패(failed) · 승인 완료(done) · 그 밖(idle).
+ * turn과 approval이 담당자 차례다(isTurnTone, 「확인 필요만」이 이 둘을 남긴다).
+ */
+export type BoardTone = "turn" | "approval" | "running" | "failed" | "done" | "idle";
+
+/** 담당자가 손을 대야 넘어가는 상태 — 「확인 필요만」 거르기 기준이다. */
+export function isTurnTone(tone: BoardTone): boolean {
+  return tone === "turn" || tone === "approval";
+}
 /** label은 짧은 상태명이다(「승인 대기」「질문 1건」). */
 export type BoardStatus = { label: string; tone: BoardTone };
 
@@ -164,7 +173,7 @@ export function boardStatus(c: CaseSummary): BoardStatus {
       return { label: "판단 완료", tone: "idle" };
     case "report":
       if (c.approval_status === "approved") return { label: "승인 완료", tone: "done" };
-      return { label: "승인 대기", tone: "turn" };
+      return { label: "승인 대기", tone: "approval" };
   }
 }
 
@@ -177,7 +186,7 @@ export const BOARD_SORTS: readonly { key: BoardSort; label: string }[] = [
 ];
 
 /**
- * 보드 보기 — 단계 탭, 정렬, 손댈 차례만. 주소(?stage=&sort=&turn=1)에 남는다.
+ * 보드 보기 — 단계 탭, 정렬, 확인 필요만. 주소(?stage=&sort=&turn=1)에 남는다.
  * 단계 탭의 all(전체)은 진행 중인 사건 전부다. done은 보고서를 승인한 사건만 보는 완료 사건 화면(/done)이고, 승인한 사건은 담당 사건 보드에 보이지 않는다.
  */
 export type BoardStage = BoardColumnKey | "all" | "done";
@@ -224,14 +233,14 @@ export function isDone(c: Pick<CaseSummary, "stage" | "approval_status">): boole
 }
 
 /**
- * 보드에 보일 줄 — 완료한 사건을 떼어 두고, 손댈 차례만 거른 뒤 단계 탭으로 거르고, 정렬해서 고정한 사건을 맨 위에 둔다.
- * total · counts · done은 탭에 적는 수다(손댈 차례만은 반영하고 단계 탭은 반영하지 않는다). 완료 탭에서는 손댈 차례만을 보지 않는다.
+ * 보드에 보일 줄 — 완료한 사건을 떼어 두고, 확인 필요 사건만 거른 뒤 단계 탭으로 거르고, 정렬해서 고정한 사건을 맨 위에 둔다.
+ * total · counts · done은 탭에 적는 수다(확인 필요만은 반영하고 단계 탭은 반영하지 않는다). 완료 탭에서는 확인 필요만을 보지 않는다.
  */
 export function boardRows(cases: readonly CaseSummary[], view: BoardView, pinned: readonly string[] = []) {
   const pins = new Set(pinned);
   const done = cases.filter(isDone);
   const active = cases.filter((c) => !isDone(c));
-  const pool = view.turn ? active.filter((c) => boardStatus(c).tone === "turn") : active;
+  const pool = view.turn ? active.filter((c) => isTurnTone(boardStatus(c).tone)) : active;
   const shown = view.stage === "done" ? done : view.stage === "all" ? pool : pool.filter((c) => boardColumnOf(c.stage).key === view.stage);
   const sorted = [...shown].sort((a, b) => ORDER[view.sort](a, b) || a.case_id.localeCompare(b.case_id));
   return {
