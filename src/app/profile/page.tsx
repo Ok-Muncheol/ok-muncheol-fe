@@ -4,7 +4,7 @@ import { listCases } from "@/features/cases/case-source";
 import { getCurrentProfile, isSampleProfile } from "@/features/profile/profile-source";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { summarizeBoard } from "@/lib/cases/stages";
-import { Badge, Button, ButtonLink, Card, DescriptionList, DescriptionRow, Notice, PageHeader } from "@/ui/controls";
+import { Badge, Button, ButtonLink, Card, DescriptionList, DescriptionRow, PageHeader } from "@/ui/controls";
 
 const SAMPLE_NOTE = "로그인하지 않아 src/fixtures/profile.json의 합성 담당자를 보여 준다. 운영 배포에서는 비어 있다.";
 
@@ -26,7 +26,13 @@ export default async function ProfilePage() {
     return (
       <>
         <PageHeader title="내 정보" />
-        <Notice tone="info">로그인하지 않아 담당자 정보가 없다. 로그인하면 소속·계정과 담당 사건 수를 보여 준다.</Notice>
+        <div className="flex max-w-xl flex-col items-start gap-4 rounded-card border border-line bg-surface px-6 py-5">
+          <div>
+            <p className="font-semibold text-ink">로그인하지 않았어요</p>
+            <p className="mt-1 text-body text-ink-muted">로그인하면 소속 · 계정과 담당 사건 수를 볼 수 있어요.</p>
+          </div>
+          <ButtonLink href="/login?next=/profile">로그인</ButtonLink>
+        </div>
       </>
     );
   }

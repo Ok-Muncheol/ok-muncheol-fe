@@ -2,11 +2,17 @@
 /**
  * B 통합·A 인증: 보상 담당자 로그인(Supabase 이메일·비밀번호). 세션은 쿠키에 남아(@supabase/ssr) 서버·브라우저 API
  * 클라이언트가 같은 access token을 BE에 보낸다(src/lib/api/server.ts·browser.ts). 계정은 Supabase 대시보드에서 만든다.
+ * 로그인하면 ?next=로 받은 화면(사건 화면이 로그인이 필요해 보낸 곳)으로, 없으면 담당 사건으로 간다. next는 이 사이트 안 경로만 받는다.
  */
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button, Card, Field, Input } from "@/ui/controls";
+
+/** 로그인 뒤 갈 곳 — "/"로 시작하는 이 사이트 안 경로만 받는다("//host"나 바깥 주소는 담당 사건으로). */
+function safeNext(next: string | null): string {
+  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login") ? next : "/cases";
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,7 +36,7 @@ export default function LoginPage() {
       setError("이메일 또는 비밀번호가 맞지 않습니다.");
       return;
     }
-    router.replace("/cases");
+    router.replace(safeNext(new URLSearchParams(window.location.search).get("next")));
     router.refresh();
   }
 

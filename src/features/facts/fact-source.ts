@@ -6,6 +6,7 @@
 import { isSampleSource } from "@/features/cases/case-source";
 import drafts from "@/fixtures/fact-cards.json";
 import judged from "@/fixtures/judgment.json";
+import { redirect } from "next/navigation";
 import { ApiRequestError } from "@/lib/api/client";
 import { createServerApiClient } from "@/lib/api/server";
 import type { EvidenceView, FactCard } from "@/lib/api/types";
@@ -20,6 +21,8 @@ export async function getFactCard(caseId: string): Promise<FactCard | null> {
     return await createServerApiClient().getFactCard(caseId);
   } catch (error) {
     if (error instanceof ApiRequestError && (error.status === 404 || error.status === 403)) return null;
+    // 로그인하지 않았거나 세션이 끝났다 — 로그인 화면으로 보내고, 로그인하면 이 사건의 판단 화면으로 돌아온다.
+    if (error instanceof ApiRequestError && error.status === 401) redirect(`/login?next=${encodeURIComponent(`/cases/${encodeURIComponent(caseId)}/judgment`)}`);
     throw error;
   }
 }
