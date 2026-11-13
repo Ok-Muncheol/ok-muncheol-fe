@@ -33,7 +33,7 @@ test("isRelevant는 장소에 따라 신호·도로 관계 칸을 가른다", ()
   assert.equal(isRelevant("movement_A", "highway"), true);
 });
 
-test("groupFields는 확인 필요·질문 칸을 위로, 상관없는 칸을 따로 둔다", () => {
+test("groupFields는 확인 필요·질문 칸을 묶음 안 앞에 두고, 상관없는 칸을 따로 둔다", () => {
   const fields = {
     location_type: f("signalized_intersection"),
     signal_A: f(null, "needs_review"),
@@ -43,8 +43,27 @@ test("groupFields는 확인 필요·질문 칸을 위로, 상관없는 칸을 �
   };
   const groups = groupFields(fields, fields, ["movement_B"]);
   assert.deepEqual(groups.review, ["signal_A", "movement_B"]);
-  assert.deepEqual(groups.rest, ["location_type", "movement_A"]);
+  assert.deepEqual(groups.rest, ["signal_A", "movement_B", "location_type", "movement_A"], "확인할 칸이 묶음 안에서 앞, 그 안은 카드 칸 순서");
   assert.deepEqual(groups.unused, ["road_priority"]);
+});
+
+test("groupFields는 영상 카드의 담당자 입력 칸을 따로 묶고, 질문이 오면 표시한다", () => {
+  const manual = (value) => ({ ...f(value), source: "manual", model_value: null, model_confidence: null });
+  const fields = {
+    location_type: f("signalized_intersection"),
+    movement_A: f("straight"),
+    collision_signal_A: manual(null),
+    lane_marking_A: manual(null),
+  };
+  const groups = groupFields(fields, fields);
+  assert.deepEqual(groups.rest, ["location_type", "movement_A"]);
+  assert.deepEqual(groups.manual, ["collision_signal_A", "lane_marking_A"]);
+  const asked = groupFields(fields, fields, ["lane_marking_A"]);
+  assert.deepEqual(asked.review, ["lane_marking_A"], "판단이 물은 칸은 확인할 칸");
+  assert.deepEqual(asked.manual, ["lane_marking_A", "collision_signal_A"], "물은 칸은 담당자 입력 묶음 안에서 앞");
+  // 직접 입력 사건은 모든 칸이 manual이라 따로 묶지 않는다
+  const typed = { movement_A: manual("straight"), lane_marking_A: manual(null) };
+  assert.deepEqual(groupFields(typed, typed).manual, []);
 });
 
 test("pick은 같은 값을 골라도 확인함으로 만들고 모델 원값은 둔다", () => {

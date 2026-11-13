@@ -9,11 +9,10 @@
  * TODO(D): GET /cases/{id}/reports/{version}로 본문·승인 상태를 읽고 버전 비교·담당자 승인을 붙인다.
  */
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CaseStatusBadge } from "@/features/cases/case-board";
 import { getCaseSummary, isSampleSource } from "@/features/cases/case-source";
-import { CaseStepper } from "@/features/cases/case-stepper";
+import { CaseHeader } from "@/features/cases/case-header";
 import { getLatestJudgmentRun } from "@/features/judgment/judgment-source";
 import { QA_PANEL_COOKIE, QaIcon, QaSide } from "@/features/qa/qa-side";
 import { latestJudgment, qaSlot } from "@/lib/qa/view";
@@ -54,32 +53,21 @@ export default async function ReportPage(props: PageProps<"/cases/[id]/reports/[
 
   return (
     <>
-      {summary && (
-        <div className="mb-4">
-          <CaseStepper summary={summary} viewing="report" />
-        </div>
-      )}
-      <PageHeader
-        eyebrow={
-          <>
-            담당 사건 ·{" "}
-            <Link href={base} className="font-mono text-primary-strong underline-offset-4 hover:underline">
-              {id}
-            </Link>
-          </>
-        }
-        title={
-          <>
-            검토 보고서 <Version n={reportVersion} />
-            {approval && (
-              <span className="ml-2 inline-flex align-middle">
-                <CaseStatusBadge status={{ kind: "approval", status: approval }} />
-              </span>
-            )}
-          </>
-        }
-        description="판정 · 근거 · 과실비율 초안을 확인하고 승인한다. 근거 질의응답에서 근거를 묻거나 가정해 볼 수 있고, 가정 결과는 보고서를 바꾸지 않는다."
-      />
+      {/* 머리는 접수 · 판단 화면과 같은 모양이다(CaseHeader). 이 아래는 보고서 영역이다. */}
+      <CaseHeader info={{ caseId: id, accidentDate: summary?.accident_date, assignedAt: summary?.created_at }} progress={summary} viewing="report" />
+      <div className="mb-4">
+        <h2 className="flex flex-wrap items-center gap-2 text-heading font-semibold">
+          검토 보고서 <Version n={reportVersion} />
+          {approval && (
+            <span className="ml-2 inline-flex align-middle">
+              <CaseStatusBadge status={{ kind: "approval", status: approval }} />
+            </span>
+          )}
+        </h2>
+        <p className="mt-1 text-caption text-ink-muted">
+          {"판정 · 근거 · 과실비율 초안을 확인하고 승인한다. 근거 질의응답에서 근거를 묻거나 가정해 볼 수 있고, 가정 결과는 보고서를 바꾸지 않는다."}
+        </p>
+      </div>
       <SidePanelLayout
         id="report-qa"
         label="근거 질의응답"

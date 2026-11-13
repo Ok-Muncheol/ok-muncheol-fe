@@ -8,7 +8,7 @@ import drafts from "@/fixtures/fact-cards.json";
 import judged from "@/fixtures/judgment.json";
 import { ApiRequestError } from "@/lib/api/client";
 import { createServerApiClient } from "@/lib/api/server";
-import type { FactCard } from "@/lib/api/types";
+import type { EvidenceView, FactCard } from "@/lib/api/types";
 
 // 카드마다 칸 구성이 달라 TS가 JSON을 칸별 합집합으로 추론한다(없는 칸은 undefined). 견본 모양은 src/fixtures/*.test.mjs가 본다.
 const CARDS = [...drafts.fact_cards, ...judged.fact_cards] as unknown as FactCard[];
@@ -20,6 +20,20 @@ export async function getFactCard(caseId: string): Promise<FactCard | null> {
     return await createServerApiClient().getFactCard(caseId);
   } catch (error) {
     if (error instanceof ApiRequestError && (error.status === 404 || error.status === 403)) return null;
+    throw error;
+  }
+}
+
+/**
+ * 근거 사진 · 미리보기 영상 보기 주소(BE GET /cases/{id}/evidence). 주소가 1시간 뒤 만료되므로 화면을 열 때마다 새로 읽는다.
+ * 견본 모드는 파일이 없어 null이다. 못 읽으면(권한 · 연결 · BE 오류) 화면을 막지 않고 null — 영상 · 사진 자리만 비운다.
+ */
+export async function getEvidence(caseId: string): Promise<EvidenceView | null> {
+  if (isSampleSource()) return null;
+  try {
+    return await createServerApiClient().getEvidence(caseId);
+  } catch (error) {
+    if (error instanceof ApiRequestError) return null;
     throw error;
   }
 }

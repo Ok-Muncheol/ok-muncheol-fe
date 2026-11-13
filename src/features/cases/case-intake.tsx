@@ -5,16 +5,18 @@
  * 같은 자리가 「영상 분석 중이에요」로 바뀐다. 사건이 생기면 주소만 /cases/{id}로 바꿔(history.replaceState — 화면은 다시 그리지 않아
  * 업로드가 끊기지 않는다) 새로고침해도 사건 화면이 같은 상태를 서버에서 다시 읽어 그린다. 분석이 끝나면 판단 화면으로 넘어간다.
  * 사건 이름은 사고 날짜다(caseTitle). 영상 없는 사건(직접 입력)은 아직 받지 않는다.
+ * 배정된 사건(/cases/[id])은 단계와 상관없이 늘 이 화면이 접수 화면이다 — 머리(CaseHeader)는 사건 화면이 그리고, 여기는
+ * 위에서부터 영상(올리기 칸 · 고른 영상 · 올린 영상) → 상태 한 줄(분석 시작 · 올리는 중 · 분석 중 · 실패 · 분석 완료와 다음 단계) → 사건 정보 상자다.
  * 견본 모드는 BE에 보내지 않고 진행만 흉내 낸 뒤 견본 사건의 판단 화면으로 간다.
  */
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
-import type { ApiError, CaseStage, TaskStatus } from "@/lib/api/types";
+import type { ApiError, CaseStage, TaskStatus, VersionRef } from "@/lib/api/types";
 import { caseTitle, isBeforeCard, todayInKorea, videoContentType, videoProblem } from "@/lib/cases/intake";
-import { Button, Input, Spinner } from "@/ui/controls";
+import { stageHref } from "@/lib/cases/stages";
+import { Button, ButtonLink, Input, Spinner } from "@/ui/controls";
 import { UploadError, uploadFile } from "./upload";
 
 /**
@@ -28,8 +30,10 @@ export type ExistingCase = {
   assignedAt?: string | null;
   taskStatus: TaskStatus | null;
   error?: ApiError | null;
-  /** 머리줄 오른쪽의 진행 단계 한 줄(CaseStepper) */
-  trail?: ReactNode;
+  inputPath: "video" | "manual";
+  updatedAt: string;
+  /** 다음 단계 버튼이 가는 곳(검토 보고서 버전)을 정한다 */
+  versions: VersionRef;
   /** 올린 영상의 재생 주소 — BE가 주기 전까지는 없다. */
   videoUrl?: string | null;
 };
@@ -52,16 +56,51 @@ function friendly(error: ApiError): string {
   return error.message;
 }
 
-const dayFormat = new Intl.DateTimeFormat("ko-KR", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-  timeZone: "Asia/Seoul",
-});
-/** 사건 정보 줄의 날짜 — "2026년 11월 8일". */
-function koreanDay(iso: string): string {
-  const date = new Date(iso.length === 10 ? `${iso}T00:00:00+09:00` : iso);
-  return Number.isNaN(date.getTime()) ? iso : dayFormat.format(date);
+const dateTime = new Intl.DateTimeFormat("ko-KR", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Seoul" });
+const dateOnly = new Intl.DateTimeFormat("ko-KR", { dateStyle: "long", timeZone: "Asia/Seoul" });
+/** 사건 정보 상자의 일시 — "2026년 11월 8일 오전 9:00". 날짜만 온 값은 날짜만. */
+function when(iso: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return dateOnly.format(new Date(`${iso}T00:00:00+09:00`));
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? iso : dateTime.format(date);
+}
+
+/** 분석이 끝난 사건의 다음 단계 버튼 글. */
+const NEXT_LABEL: Partial<Record<CaseStage, string>> = {
+  facts: "사실 카드 확인하기",
+  judgment: "과실 판단 보기",
+  report: "검토 보고서 보기",
+};
+
+/**
+ * 사건 정보 상자 — 지금 BE 사건 요약에 있는 값만 보인다(버전 번호 같은 개발 정보는 두지 않는다).
+ * TODO(A): 사고 장소 · 고객 · 차량번호 · 접수 경로처럼 접수 때 들어오는 정보는 BE 사건에 칸이 생기면 여기에 더한다.
+ */
+function CaseInfo({ existing, analysis }: { existing: ExistingCase; analysis: string }) {
+  const rows: [string, ReactNode][] = [
+    ["사건번호", <span key="id" className="font-mono tabular-nums">{existing.caseId}</span>],
+    ["사고 일시", existing.accidentDate ? when(existing.accidentDate) : "모름"],
+    ["배정 일시", existing.assignedAt ? when(existing.assignedAt) : "모름"],
+    ["입력 경로", existing.inputPath === "video" ? "블랙박스 영상" : "사실 카드 직접 입력"],
+    ["영상 분석", analysis],
+    ["최근 변경", when(existing.updatedAt)],
+  ];
+  // 작은 글자 한 줄씩(이름은 옅게, 값은 보통) — 화면의 주인공(영상 · 상태)보다 앞에 나서지 않게 한다.
+  return (
+    <section aria-labelledby="case-info-title" className="rounded-card border border-line bg-surface">
+      <h2 id="case-info-title" className="border-b border-line px-5 py-3 text-body font-semibold">
+        사건 정보
+      </h2>
+      <dl className="grid gap-x-10 px-5 py-3 sm:grid-cols-2">
+        {rows.map(([term, value]) => (
+          <div key={term} className="flex items-baseline gap-4 py-1.5 text-caption">
+            <dt className="w-16 shrink-0 text-ink-muted">{term}</dt>
+            <dd className="min-w-0 text-ink">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
 }
 
 function sizeText(bytes: number): string {
@@ -113,7 +152,7 @@ function UploadedVideo({ src }: { src: string | null }) {
   }
   return (
     <div className="flex aspect-video w-full items-center justify-center rounded-card border border-line bg-surface-muted">
-      <p className="text-caption text-ink-muted">올린 영상</p>
+      <p className="text-caption text-ink-muted">영상 미리보기가 아직 없어요</p>
     </div>
   );
 }
@@ -160,7 +199,21 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const title = hasCase || phase.kind !== "form" ? caseTitle(date || existing?.accidentDate) : "새 사건";
+  const title = hasCase || phase.kind !== "form" ? caseTitle(date) : "새 사건";
+  // 분석이 끝난 사건(사실 카드 · 판단 · 검토 보고서 단계)과 영상 없이 들어온 사건은 올리기 대신 올린 영상과 다음 단계 버튼을 보인다.
+  const settled = existing !== undefined && (existing.inputPath === "manual" || !isBeforeCard(existing.stage));
+  const analysis =
+    existing?.inputPath === "manual"
+      ? "해당 없음"
+      : settled
+        ? "완료"
+        : phase.kind === "uploading"
+          ? "영상 올리는 중"
+          : phase.kind === "analyzing"
+            ? "분석 중"
+            : error
+              ? "실패"
+              : "영상 대기";
 
   // 영상 미리보기 주소는 바꾸거나 떠나면 브라우저 메모리를 돌려준다.
   useEffect(
@@ -292,26 +345,39 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
     }
   }
 
-  return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <div>
-        {existing && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <Link href="/cases" className="text-caption text-ink-muted hover:text-ink">
-              ← 담당 사건
-            </Link>
-            {existing.trail}
-          </div>
-        )}
-        <h1 className={`text-title font-bold tracking-tight break-keep ${existing ? "mt-3" : ""}`}>{title}</h1>
-        {existing && (
-          <p className="mt-1 text-caption text-ink-muted">
-            <span className="font-mono tabular-nums">{existing.caseId}</span>
-            {existing.accidentDate && <> · 사고 {koreanDay(existing.accidentDate)}</>}
-            {existing.assignedAt && <> · {koreanDay(existing.assignedAt)} 배정</>}
+  if (existing && settled) {
+    const next = NEXT_LABEL[existing.stage];
+    return (
+      <div className="flex w-full max-w-3xl flex-col gap-6">
+        {existing.inputPath === "video" && <UploadedVideo src={existing.videoUrl ?? null} />}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="flex items-center gap-2 text-heading font-semibold">
+            {existing.inputPath === "video" ? (
+              <>
+                <svg aria-hidden viewBox="0 0 16 16" className="size-4 text-primary-strong" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m3.5 8.5 3 3 6-7" />
+                </svg>
+                영상 분석 완료
+              </>
+            ) : (
+              "사실 카드를 직접 입력한 사건"
+            )}
           </p>
-        )}
+          {next && (
+            <ButtonLink href={stageHref({ case_id: existing.caseId, stage: existing.stage, versions: existing.versions })} className="h-10 px-6">
+              {next} →
+            </ButtonLink>
+          )}
+        </div>
+        <CaseInfo existing={existing} analysis={analysis} />
       </div>
+    );
+  }
+
+  return (
+    // 새 사건(/cases/new)은 가운데, 배정된 사건은 머리(CaseHeader)에 맞춰 왼쪽에 붙인다.
+    <div className={`flex w-full flex-col gap-6 ${existing ? "max-w-3xl" : "mx-auto max-w-2xl"}`}>
+      {!existing && <h1 className="text-title font-bold tracking-tight break-keep">{title}</h1>}
 
       {phase.kind === "form" && !hasCase && (
         <div className="flex flex-col gap-1.5">
@@ -426,6 +492,8 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
           </Button>
         </div>
       )}
+
+      {existing && <CaseInfo existing={existing} analysis={analysis} />}
     </div>
   );
 }

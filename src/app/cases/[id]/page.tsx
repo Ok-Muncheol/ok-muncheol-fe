@@ -1,17 +1,15 @@
 /**
- * B: 사건 개요 — 보드 접수 열 카드가 여기로 온다. 맨 위에 진행 단계 한 줄(사실 카드·판단·검토 보고서 화면과 같은 자리),
- * 제목 옆에 현재 상태, 아래에 손댈 일 안내와 사건 요약. 다른 단계 화면으로는 진행 단계 한 줄로 가고 머리글에 이동 버튼을 두지 않는다.
- * TODO: GET /cases/{id}로 복원(Realtime은 변경 알림만), 확인 질문 요약.
+ * A: 사건의 접수 화면 — 진행 단계 한 줄의 「접수」와 보드의 접수 열 사건이 여기로 온다. 단계와 상관없이 늘 같은 화면이다.
+ * 머리(CaseHeader — 판단 · 검토 보고서 화면과 같은 모양) 아래에 영상 → 상태 한 줄 → 사건 정보 상자(CaseIntake)를 둔다.
+ * 아직 영상 단계면 올리기 · 분석 중 · 실패이고, 분석이 끝난 사건은 올린 영상과 다음 단계 버튼이다.
+ * 사건 요약은 견본 또는 BE GET /cases/{id}(case-source)로 읽어 새로고침해도 같은 상태로 그린다.
  */
-import { CaseStatusBadge } from "@/features/cases/case-board";
+import Link from "next/link";
+import { CaseHeader } from "@/features/cases/case-header";
 import { CaseIntake } from "@/features/cases/case-intake";
 import { getCaseSummary, isSampleSource } from "@/features/cases/case-source";
-import { CaseStepper } from "@/features/cases/case-stepper";
+import { getEvidence } from "@/features/facts/fact-source";
 import { isBeforeCard } from "@/lib/cases/intake";
-import { STAGES, currentStatus, stageIndex } from "@/lib/cases/stages";
-import { ButtonLink, Card, DescriptionList, DescriptionRow, Empty, Notice, PageHeader } from "@/ui/controls";
-
-const dateTime = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Seoul" });
 
 export default async function CasePage(props: PageProps<"/cases/[id]">) {
   const { id } = await props.params;
@@ -19,21 +17,24 @@ export default async function CasePage(props: PageProps<"/cases/[id]">) {
 
   if (!summary) {
     return (
-      <>
-        <PageHeader eyebrow="담당 사건" title={<span className="font-mono">{id}</span>} />
-        <Notice tone="warning" title="사건을 찾지 못했다">
-          담당 사건 목록에 없는 번호이거나 조회 API가 아직 연결되지 않았다.{" "}
-          <ButtonLink href="/cases" variant="quiet" size="sm">
-            목록으로
-          </ButtonLink>
-        </Notice>
-      </>
+      <div className="max-w-3xl">
+        <Link href="/cases" className="text-caption text-ink-muted hover:text-ink">
+          ← 담당 사건
+        </Link>
+        <h1 className="mt-3 text-title font-bold tracking-tight">사건을 찾지 못했어요</h1>
+        <p className="mt-2 text-body text-ink-muted">
+          담당 사건 목록에서 다시 골라 주세요. <span className="font-mono tabular-nums">{id}</span>
+        </p>
+      </div>
     );
   }
 
-  // A: 카드가 나오기 전의 영상 사건은 새 사건 화면과 같은 화면이다 — 새로고침·다시 들어와도 「영상 분석 중이에요」나 다시 올리기가 보인다.
-  if (summary.input_path === "video" && isBeforeCard(summary.stage)) {
-    return (
+  // 분석이 끝난 영상 사건은 올린 영상 자리에 분석이 만든 미리보기 영상을 둔다(보기 주소 1시간 — 열 때마다 새로 읽는다).
+  const evidence = summary.input_path === "video" && !isBeforeCard(summary.stage) ? await getEvidence(summary.case_id) : null;
+
+  return (
+    <>
+      <CaseHeader info={{ caseId: summary.case_id, accidentDate: summary.accident_date, assignedAt: summary.created_at }} progress={summary} viewing="intake" />
       <CaseIntake
         sample={isSampleSource()}
         existing={{
@@ -42,62 +43,13 @@ export default async function CasePage(props: PageProps<"/cases/[id]">) {
           accidentDate: summary.accident_date,
           assignedAt: summary.created_at,
           taskStatus: summary.task_status,
-          trail: <CaseStepper summary={summary} viewing="intake" />,
           error: summary.analysis?.error ?? null,
+          inputPath: summary.input_path,
+          updatedAt: summary.updated_at,
+          versions: summary.versions,
+          videoUrl: evidence?.preview_url ?? null,
         }}
       />
-    );
-  }
-
-  const stage = STAGES[stageIndex(summary.stage)];
-  const { versions } = summary;
-
-  return (
-    <>
-      <div className="mb-4">
-        <CaseStepper summary={summary} viewing="intake" />
-      </div>
-      <PageHeader
-        eyebrow="담당 사건"
-        title={
-          <>
-            <span className="font-mono">{summary.case_id}</span>
-            <span className="ml-2 inline-flex align-middle">
-              <CaseStatusBadge status={currentStatus(summary)} />
-            </span>
-          </>
-        }
-        description={`현재 단계: ${stage.label} — ${stage.description}`}
-      />
-      <div className="flex max-w-4xl flex-col gap-6">
-        {summary.open_questions > 0 && (
-          <Notice tone="warning" title="추가 확인 필요">
-            답하지 않은 구분 질문이 <span className="font-mono tabular-nums">{summary.open_questions}</span>건 있다. 답하면 카드를 다시 확정하고 판단을 재개한다.
-          </Notice>
-        )}
-        {summary.task_status === "failed" && (
-          <Notice tone="danger" title="작업 실패">
-            마지막 작업이 실패했다. 실패 이유를 확인한 뒤 다시 시작한다.
-          </Notice>
-        )}
-        <Card title="사건 요약">
-          <DescriptionList>
-            <DescriptionRow term="사고 일시">{dateTime.format(new Date(summary.accident_date))}</DescriptionRow>
-            <DescriptionRow term="접수">{dateTime.format(new Date(summary.created_at))}</DescriptionRow>
-            <DescriptionRow term="입력 경로">{summary.input_path === "video" ? "영상 업로드" : "사실 카드 직접 입력"}</DescriptionRow>
-            <DescriptionRow term="사실 카드">
-              {versions.fact_card_version > 0 ? <span className="font-mono tabular-nums">v{versions.fact_card_version}</span> : <Empty>없음</Empty>}
-            </DescriptionRow>
-            <DescriptionRow term="판단">
-              {versions.judgment_version === null ? <Empty>없음</Empty> : <span className="font-mono tabular-nums">v{versions.judgment_version}</span>}
-            </DescriptionRow>
-            <DescriptionRow term="보고서">
-              {versions.report_version === null ? <Empty>없음</Empty> : <span className="font-mono tabular-nums">v{versions.report_version}</span>}
-            </DescriptionRow>
-            <DescriptionRow term="최근 변경">{dateTime.format(new Date(summary.updated_at))}</DescriptionRow>
-          </DescriptionList>
-        </Card>
-      </div>
     </>
   );
 }
