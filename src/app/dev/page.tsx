@@ -31,7 +31,7 @@ export default function DevPage() {
       />
       <h2 className="mb-1 text-heading font-semibold">담당 사건 보드</h2>
       <p className="mb-3 text-caption text-ink-muted">
-        사건마다 한 줄(접수 순)이고 카드는 그 사건이 있는 열(접수·판단·검토 보고서) 칸에만 놓인다. 카드의 굵은 글자는 그 안의 단계, 배지는 그 단계 안의 상태다(src/lib/cases/stages.ts). 손댈 사건은 카드 왼쪽 선이 warning이다. 고정 버튼은 /cases에만 있다. 견본은 src/fixtures/case-board.json.
+        사건마다 한 줄(접수 순)이고 카드는 그 사건이 있는 열(접수·판단·검토 보고서) 칸에만 놓인다. 카드의 굵은 글자는 그 안의 단계, 배지는 그 단계 안의 상태다(src/lib/cases/stages.ts). 확인 필요 사건은 카드 왼쪽 선이 warning이다. 고정 버튼은 /cases에만 있다. 견본은 src/fixtures/case-board.json.
       </p>
       <CaseBoard cases={sample.cases as CaseSummary[]} />
     </>

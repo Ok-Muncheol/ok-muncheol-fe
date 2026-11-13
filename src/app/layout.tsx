@@ -4,6 +4,7 @@ import { IBM_Plex_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import { getCurrentProfile } from "@/features/profile/profile-source";
 import { AppShell } from "@/ui/app-shell";
+import { SIDEBAR_SCRIPT } from "@/ui/sidebar";
 import "./globals.css";
 
 // 본문 글꼴은 Pretendard 하나다(가변 굵기 45~920). 숫자는 tabular-nums로 자릿수를 맞춘다.
@@ -26,7 +27,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   // 머리글 오른쪽 담당자 이름. 로그인 전에는 개발 배포의 합성 견본만 있다.
   const profile = await getCurrentProfile();
   return (
-    <html lang="ko" className={`${pretendard.variable} ${ibmPlexMono.variable}`}>
+    // data-sidebar는 첫 그림 전에 SIDEBAR_SCRIPT가 붙인다(왼쪽 메뉴 접힘) — 서버 HTML과 달라도 되는 속성이라 경고를 끈다.
+    <html lang="ko" className={`${pretendard.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SIDEBAR_SCRIPT }} />
+      </head>
       <body className="min-h-dvh bg-page font-sans text-body text-ink antialiased">
         <AppShell showDev={showDev} accountName={profile?.name ?? null}>
           {children}
