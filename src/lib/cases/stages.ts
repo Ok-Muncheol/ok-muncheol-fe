@@ -133,3 +133,111 @@ export function listByIntake(cases: readonly CaseSummary[], pinned: readonly str
   const ordered = [...cases].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at) || a.case_id.localeCompare(b.case_id));
   return { pinned: ordered.filter((c) => pins.has(c.case_id)), rest: ordered.filter((c) => !pins.has(c.case_id)) };
 }
+
+/** 보드 한 줄의 지금 상태 — 손댈 차례(turn) · 처리 중(running) · 실패(failed) · 끝(done) · 그 밖(idle). 점 색과 글 굵기를 가른다. */
+export type BoardTone = "turn" | "running" | "failed" | "done" | "idle";
+/** label은 짧은 상태명이다(「승인 대기」「질문 1건」). */
+export type BoardStatus = { label: string; tone: BoardTone };
+
+/**
+ * 보드 줄의 지금 단계 칸에 적는 짧은 상태명 — 업무 도구라 문장이 아니라 상태 이름이다.
+ * 접수 열은 영상 업로드·분석, 판단 열은 사실 확인·과실 판단, 검토 보고서 열은 승인이다.
+ */
+export function boardStatus(c: CaseSummary): BoardStatus {
+  const t = c.task_status;
+  switch (c.stage) {
+    case "intake":
+      if (t === "failed") return { label: "분석 실패", tone: "failed" };
+      return { label: c.input_path === "video" ? "영상 업로드 대기" : "입력 대기", tone: "turn" };
+    case "analysis":
+      if (t === "failed") return { label: "분석 실패", tone: "failed" };
+      return { label: "영상 분석 중", tone: "running" };
+    case "facts":
+      return { label: "사실 확인 대기", tone: "turn" };
+    case "judgment":
+      if (t === "failed") return { label: "판단 실패", tone: "failed" };
+      if (t === "running" || t === "queued") return { label: "판단 중", tone: "running" };
+      if (c.open_questions > 0) return { label: `질문 ${c.open_questions}건`, tone: "turn" };
+      if (c.judgment_status === "needs_confirmation") return { label: "추가 확인 필요", tone: "turn" };
+      if (c.judgment_status === "deferred") return { label: "판단 보류", tone: "turn" };
+      if (t === "waiting_for_confirmation") return { label: "확인 대기", tone: "turn" };
+      return { label: "판단 완료", tone: "idle" };
+    case "report":
+      if (c.approval_status === "approved") return { label: "승인 완료", tone: "done" };
+      return { label: "승인 대기", tone: "turn" };
+  }
+}
+
+export type BoardSort = "assigned" | "recent" | "accident" | "stale";
+export const BOARD_SORTS: readonly { key: BoardSort; label: string }[] = [
+  { key: "assigned", label: "배정 오래된 순" },
+  { key: "recent", label: "배정 최신 순" },
+  { key: "accident", label: "사고일 순" },
+  { key: "stale", label: "오래 멈춘 순" },
+];
+
+/**
+ * 보드 보기 — 단계 탭, 정렬, 손댈 차례만. 주소(?stage=&sort=&turn=1)에 남는다.
+ * 단계 탭의 all(전체)은 진행 중인 사건 전부다. done은 보고서를 승인한 사건만 보는 완료 사건 화면(/done)이고, 승인한 사건은 담당 사건 보드에 보이지 않는다.
+ */
+export type BoardStage = BoardColumnKey | "all" | "done";
+export type BoardView = { stage: BoardStage; sort: BoardSort; turn: boolean };
+export const DEFAULT_VIEW: BoardView = { stage: "all", sort: "assigned", turn: false };
+
+type Params = Record<string, string | string[] | undefined>;
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+/** 주소 검색어를 보드 보기로 — 모르는 값은 기본값이다. */
+export function parseBoardView(params: Params): BoardView {
+  const stage = first(params.stage);
+  const sort = first(params.sort);
+  return {
+    stage: stage === "done" || BOARD_COLUMNS.some((c) => c.key === stage) ? (stage as BoardStage) : "all",
+    sort: BOARD_SORTS.some((s) => s.key === sort) ? (sort as BoardSort) : "assigned",
+    turn: first(params.turn) === "1",
+  };
+}
+
+/** 보기 일부를 바꾼 주소 — 담당 사건은 /cases, 완료 사건은 /done. 기본값은 주소에서 뺀다. */
+export function boardHref(view: BoardView, patch: Partial<BoardView>): string {
+  const next = { ...view, ...patch };
+  const q = new URLSearchParams();
+  if (next.stage !== "all" && next.stage !== "done") q.set("stage", next.stage);
+  if (next.sort !== DEFAULT_VIEW.sort) q.set("sort", next.sort);
+  if (next.turn) q.set("turn", "1");
+  const text = q.toString();
+  const base = next.stage === "done" ? "/done" : "/cases";
+  return text ? `${base}?${text}` : base;
+}
+
+const time = (iso: string) => Date.parse(iso);
+const ORDER: Record<BoardSort, (a: CaseSummary, b: CaseSummary) => number> = {
+  assigned: (a, b) => time(a.created_at) - time(b.created_at),
+  recent: (a, b) => time(b.created_at) - time(a.created_at),
+  accident: (a, b) => time(a.accident_date) - time(b.accident_date),
+  stale: (a, b) => time(a.updated_at) - time(b.updated_at),
+};
+
+/** 보고서를 승인해 끝난 사건 — 완료 사건 화면(/done)에만 보인다. */
+export function isDone(c: Pick<CaseSummary, "stage" | "approval_status">): boolean {
+  return c.stage === "report" && c.approval_status === "approved";
+}
+
+/**
+ * 보드에 보일 줄 — 완료한 사건을 떼어 두고, 손댈 차례만 거른 뒤 단계 탭으로 거르고, 정렬해서 고정한 사건을 맨 위에 둔다.
+ * total · counts · done은 탭에 적는 수다(손댈 차례만은 반영하고 단계 탭은 반영하지 않는다). 완료 탭에서는 손댈 차례만을 보지 않는다.
+ */
+export function boardRows(cases: readonly CaseSummary[], view: BoardView, pinned: readonly string[] = []) {
+  const pins = new Set(pinned);
+  const done = cases.filter(isDone);
+  const active = cases.filter((c) => !isDone(c));
+  const pool = view.turn ? active.filter((c) => boardStatus(c).tone === "turn") : active;
+  const shown = view.stage === "done" ? done : view.stage === "all" ? pool : pool.filter((c) => boardColumnOf(c.stage).key === view.stage);
+  const sorted = [...shown].sort((a, b) => ORDER[view.sort](a, b) || a.case_id.localeCompare(b.case_id));
+  return {
+    rows: [...sorted.filter((c) => pins.has(c.case_id)), ...sorted.filter((c) => !pins.has(c.case_id))],
+    total: pool.length,
+    counts: countByColumn(pool),
+    done: done.length,
+  };
+}

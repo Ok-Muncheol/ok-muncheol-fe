@@ -129,3 +129,48 @@ test("사건 목록은 고정한 사건을 따로 위에 두고 둘 다 접수 �
   assert.deepEqual(pinned.map((c) => c.case_id), ["B-FIRST", "C-THIRD"], "고정한 사건도 접수 순");
   assert.deepEqual(rest.map((c) => c.case_id), ["A-SECOND"]);
 });
+
+test("boardStatus는 단계마다 할 일과 상태를 가른다", async () => {
+  const { boardStatus } = await import("./stages.ts");
+  assert.deepEqual(boardStatus(make({ stage: "intake" })), { label: "영상 업로드 대기", tone: "turn" });
+  assert.equal(boardStatus(make({ stage: "analysis", task_status: "running" })).tone, "running");
+  assert.equal(boardStatus(make({ stage: "analysis", task_status: "failed" })).tone, "failed");
+  assert.equal(boardStatus(make({ stage: "judgment", task_status: "waiting_for_confirmation", open_questions: 2 })).label, "질문 2건");
+  assert.equal(boardStatus(make({ stage: "judgment", task_status: "completed", judgment_status: "deferred" })).tone, "turn");
+  assert.equal(boardStatus(make({ stage: "report", approval_status: "approved" })).tone, "done");
+  assert.equal(boardStatus(make({ stage: "report", approval_status: "draft" })).tone, "turn");
+});
+
+test("보드 보기는 주소에서 읽고, 걸러 정렬하고, 고정한 사건을 위에 둔다", async () => {
+  const { parseBoardView, boardHref, boardRows, DEFAULT_VIEW } = await import("./stages.ts");
+  assert.deepEqual(parseBoardView({}), DEFAULT_VIEW);
+  assert.deepEqual(parseBoardView({ stage: "judgment", sort: "stale", turn: "1" }), { stage: "judgment", sort: "stale", turn: true });
+  assert.deepEqual(parseBoardView({ stage: "nope", sort: ["recent"] }), { stage: "all", sort: "recent", turn: false });
+  assert.equal(boardHref(DEFAULT_VIEW, {}), "/cases");
+  assert.equal(boardHref(DEFAULT_VIEW, { stage: "report", turn: true }), "/cases?stage=report&turn=1");
+
+  const a = make({ case_id: "A", stage: "intake", created_at: "2026-11-01T00:00:00Z" });
+  const b = make({ case_id: "B", stage: "analysis", task_status: "running", created_at: "2026-11-03T00:00:00Z" });
+  const c = make({ case_id: "C", stage: "facts", created_at: "2026-11-02T00:00:00Z" });
+  const ids = (r) => r.rows.map((x) => x.case_id);
+  assert.deepEqual(ids(boardRows([a, b, c], DEFAULT_VIEW)), ["A", "C", "B"]);
+  assert.deepEqual(ids(boardRows([a, b, c], { ...DEFAULT_VIEW, sort: "recent" })), ["B", "C", "A"]);
+  assert.deepEqual(ids(boardRows([a, b, c], DEFAULT_VIEW, ["B"])), ["B", "A", "C"]);
+  assert.deepEqual(ids(boardRows([a, b, c], { ...DEFAULT_VIEW, stage: "intake" })), ["A", "B"]);
+  const turn = boardRows([a, b, c], { ...DEFAULT_VIEW, turn: true });
+  assert.deepEqual(ids(turn), ["A", "C"], "처리 중인 B는 빠진다");
+  assert.deepEqual(turn.counts, { intake: 1, judgment: 1, report: 0 });
+});
+
+test("승인한 사건은 담당 사건 보드에서 빠지고 완료 사건에만 보인다", async () => {
+  const { boardRows, boardHref, DEFAULT_VIEW, parseBoardView } = await import("./stages.ts");
+  const open = make({ case_id: "OPEN", stage: "report", approval_status: "draft" });
+  const done = make({ case_id: "DONE", stage: "report", approval_status: "approved" });
+  const all = boardRows([open, done], DEFAULT_VIEW);
+  assert.deepEqual(all.rows.map((c) => c.case_id), ["OPEN"]);
+  assert.equal(all.counts.report, 1);
+  assert.equal(all.done, 1);
+  assert.deepEqual(boardRows([open, done], { ...DEFAULT_VIEW, stage: "done" }).rows.map((c) => c.case_id), ["DONE"]);
+  assert.equal(boardHref({ ...DEFAULT_VIEW, stage: "done" }, { sort: "recent" }), "/done?sort=recent");
+  assert.equal(parseBoardView({ stage: "done" }).stage, "done");
+});

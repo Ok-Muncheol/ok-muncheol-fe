@@ -1,12 +1,14 @@
 /** B 통합: 루트 레이아웃. 글꼴 · 색 토큰(globals.css) · 앱 틀(머리글)을 붙인다. TODO: 인증 상태 · 오류 경계. */
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Noto_Sans_KR } from "next/font/google";
+import { IBM_Plex_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { getCurrentProfile } from "@/features/profile/profile-source";
 import { AppShell } from "@/ui/app-shell";
 import "./globals.css";
 
-const notoSansKr = Noto_Sans_KR({ subsets: ["latin"], variable: "--font-noto-sans-kr" });
-// 사건 ID · 금액 · 버전처럼 자릿수를 맞춰 읽는 값에 쓴다.
+// 본문 글꼴은 Pretendard 하나다(가변 굵기 45~920). 숫자는 tabular-nums로 자릿수를 맞춘다.
+const pretendard = localFont({ src: "../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2", weight: "45 920", variable: "--font-pretendard", display: "swap" });
+// 사건 번호에만 쓴다.
 const ibmPlexMono = IBM_Plex_Mono({ weight: ["400", "600"], subsets: ["latin"], variable: "--font-ibm-plex-mono" });
 
 export const metadata: Metadata = {
@@ -24,7 +26,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   // 머리글 오른쪽 담당자 이름. 로그인 전에는 개발 배포의 합성 견본만 있다.
   const profile = await getCurrentProfile();
   return (
-    <html lang="ko" className={`${notoSansKr.variable} ${ibmPlexMono.variable}`}>
+    <html lang="ko" className={`${pretendard.variable} ${ibmPlexMono.variable}`}>
       <body className="min-h-dvh bg-page font-sans text-body text-ink antialiased">
         <AppShell showDev={showDev} accountName={profile?.name ?? null}>
           {children}

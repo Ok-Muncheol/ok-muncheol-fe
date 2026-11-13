@@ -2,6 +2,8 @@
  * B 통합: 담당 사건 보드·상세가 읽는 사건 요약. 지금은 비식별 합성 견본이고, BE GET /cases·GET /cases/{id}가 생기면
  * ApiClient(src/lib/api/client.ts)로 바꾼다. 운영 배포에서는 견본을 보여 주지 않는다(/dev와 같은 기준).
  */
+import { ApiRequestError } from "@/lib/api/client";
+import { createServerApiClient } from "@/lib/api/server";
 import type { CaseSummary } from "@/lib/api/types";
 import sample from "@/fixtures/case-board.json";
 
@@ -22,7 +24,17 @@ export async function listCases(): Promise<CaseSummary[]> {
   return isSampleSource() ? SAMPLE : [];
 }
 
+/**
+ * 사건 하나. API 모드는 BE GET /cases/{id}(A, 담당자 토큰 — 남의 사건·없는 사건은 null)를 읽는다. 새로고침 복구는 이 조회가 맡는다.
+ * BE 응답에 created_at이 아직 없으면 updated_at으로 채운다.
+ */
 export async function getCaseSummary(caseId: string): Promise<CaseSummary | null> {
-  // TODO: createServerApiClient().getCase(caseId) — 새로고침 복구는 이 조회가 맡고 Realtime은 변경 알림만 준다.
-  return (await listCases()).find((c) => c.case_id === caseId) ?? null;
+  if (isSampleSource()) return SAMPLE.find((c) => c.case_id === caseId) ?? null;
+  try {
+    const raw = (await createServerApiClient().getCase(caseId)) as unknown as CaseSummary;
+    return { ...raw, created_at: raw.created_at ?? raw.updated_at };
+  } catch (error) {
+    if (error instanceof ApiRequestError && (error.status === 404 || error.status === 403)) return null;
+    throw error;
+  }
 }

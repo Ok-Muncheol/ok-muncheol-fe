@@ -23,12 +23,14 @@ type ButtonSize = "md" | "sm";
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize };
 
 const BUTTON_BASE =
-  "inline-flex items-center justify-center gap-1.5 rounded-control font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex items-center justify-center gap-1.5 rounded-control font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed";
+// 주 버튼은 누를 수 없으면(disabled · aria-disabled) 회색 면이 된다 — 흐린 옥색은 누를 수 있는 버튼과 헷갈린다.
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-on-primary hover:bg-primary-hover",
-  secondary: "border border-line-strong bg-control text-ink hover:bg-surface-muted",
-  quiet: "text-primary-strong hover:bg-primary-soft",
-  danger: "border border-danger bg-control text-danger hover:bg-danger-soft",
+  primary:
+    "bg-primary text-on-primary hover:bg-primary-hover disabled:bg-surface-muted disabled:text-ink-faint aria-disabled:bg-surface-muted aria-disabled:text-ink-faint aria-disabled:hover:bg-surface-muted",
+  secondary: "border border-line-strong bg-control text-ink hover:bg-surface-muted disabled:opacity-40",
+  quiet: "text-primary-strong hover:bg-primary-soft disabled:opacity-40",
+  danger: "border border-danger bg-control text-danger hover:bg-danger-soft disabled:opacity-40",
 };
 const BUTTON_SIZES: Record<ButtonSize, string> = {
   md: "h-9 px-4 text-body",
@@ -324,13 +326,13 @@ export function Stat({ label, value, tone = "neutral", title }: { label: ReactNo
 /**
  * 단계 줄 표(스윔레인) — 항목마다 한 줄이고 열이 단계다. 왼쪽 칸은 항목 이름(행 머리), 오른쪽 열(lanes)은 단계이고
  * 항목 카드는 그 항목이 있는 단계 칸에만 놓는다(LaneRow). 표라서 한 줄의 칸은 높이가 같다.
- * 데스크톱(lg)에서는 머리줄이 앱 머리글(56px) 아래에 붙는다. 그래서 감싼 상자를 lg에서 overflow: clip으로 둔다 —
+ * 데스크톱(lg)에서는 머리줄이 화면 맨 위에 붙는다(앱 메뉴가 왼쪽이라 위 머리글이 없다). 그래서 감싼 상자를 lg에서 overflow: clip으로 둔다 —
  * hidden·auto는 스크롤 상자가 돼 머리줄이 화면에 붙지 않는다. 좁은 화면에서는 표를 가로로 밀고 행 머리 칸이 왼쪽에 붙는다.
  */
 /** tint는 단계 열 머리 바탕의 토큰 클래스다(예: bg-stage-intake). 없으면 bg-surface. 머리줄이 화면에 붙으므로 불투명해야 한다. */
 export type LaneHead = { key: string; title: ReactNode; description?: ReactNode; count: number; tint?: string };
 
-const LANE_HEAD_CELL = "border-b border-line px-3 py-2.5 text-left align-top font-normal lg:sticky lg:top-14 lg:z-20";
+const LANE_HEAD_CELL = "border-b border-line px-3 py-2.5 text-left align-top font-normal lg:sticky lg:top-0 lg:z-20";
 
 export function LaneTable({ caption, head, lanes, children }: { caption: string; head: LaneHead; lanes: readonly LaneHead[]; children: ReactNode }) {
   return (

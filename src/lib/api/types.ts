@@ -35,12 +35,16 @@ export type CaseSummary = {
   approval_status: "draft" | "approved" | null;
   open_questions: number;
   versions: VersionRef; updated_at: string;
+  /** 최신 영상 분석 작업(A). 실패하면 error에 이유가 있다. BE가 싣기 전에는 없다 */
+  analysis?: { status: TaskStatus; error: ApiError | null } | null;
 };
 export type FactField = {
   value: string | number | boolean | null; model_value: string | number | boolean | null;
   source: "vision" | "manual" | "statement"; model_confidence: number | null;
   verification_status: "unverified" | "needs_review" | "human_confirmed";
   evidence_frame_ids: string[]; source_document_ids: string[];
+  /** 영상 분석 칸만(카드 v1 6절): 모델별 의견·내부 값·칸별 평가 정확도(eval.accuracy). 담당자가 고쳐도 바뀌지 않는다 */
+  vision_detail?: Record<string, unknown>;
 };
 export type PartyMapping = {
   video_ego_party_id: string | null; insured_party_id: string | null;
@@ -51,6 +55,8 @@ export type FactCard = {
   fields: Record<string, FactField>; party_mapping: PartyMapping;
   evidence_frames: { frame_id: string; timestamp_ms: number; storage_path: string }[];
   status: "draft" | "confirmed"; confirmed_by: string | null; confirmed_at: string | null;
+  /** 카드 v1 1절: 당사자 목록(P1 촬영 차량, P2 상대 차량). 예전 카드에는 없다 */
+  parties?: { party_id: string; role: string; track_id: number | null }[];
 };
 export type FactPatch = {
   expected_version: number; fields: Record<string, FactField>; party_mapping: PartyMapping; reason: string;
