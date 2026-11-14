@@ -141,7 +141,10 @@ export function AppShell({ children, showDev, account }: { children: ReactNode; 
         )}
       </aside>
 
-      {/* 좁은 화면 — 같은 메뉴를 위 한 줄로 */}
+      {/*
+        좁은 화면 — 같은 메뉴를 위 한 줄로. 제품명은 줄지 않고, 계정 이름은 제품명과 메뉴가 쓰고 남은 칸만 쓴다 —
+        이름이 비어 이메일이 나오는 계정도 이메일이 말줄임으로 줄 뿐 메뉴는 가려지지 않는다. 그래도 모자라면(개발 미리보기까지 셋) 메뉴가 옆으로 스크롤된다.
+      */}
       <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-line bg-surface px-4 lg:hidden print:hidden">
         <Brand />
         <nav aria-label="주 메뉴" className="flex h-full min-w-0 items-stretch gap-1 overflow-x-auto">
@@ -163,7 +166,9 @@ export function AppShell({ children, showDev, account }: { children: ReactNode; 
             로그인
           </Link>
         ) : (
-          <Link href="/profile" className="ml-auto text-caption font-semibold whitespace-nowrap text-ink-muted">
+          // 남은 칸만 쓴다(basis-0 grow, 넓어도 글자 폭까지 — max-w-max) — 크기를 0에서 시작해 메뉴와 같이 줄지 않는다.
+          // 최소 폭(min-w-12)은 메뉴가 셋일 때도 내 정보로 가는 자리를 남긴다. 그보다 짧은 이름은 오른쪽에 붙인다(text-right).
+          <Link href="/profile" className="ml-auto min-w-12 max-w-max grow basis-0 truncate text-right text-caption font-semibold text-ink-muted">
             <span className="sr-only">내 정보: </span>
             {account.name}
           </Link>
@@ -175,9 +180,10 @@ export function AppShell({ children, showDev, account }: { children: ReactNode; 
   );
 }
 
+/** 제품명 — 줄지도 줄바꿈되지도 않는다. 한글은 글자 사이에서 줄을 바꿀 수 있어서, 줄어들면 좁은 화면 머리글에서 「OK문 / 철」로 꺾였다. */
 function Brand({ className = "" }: { className?: string }) {
   return (
-    <Link href="/" className={`flex items-center gap-2 text-heading font-bold tracking-tight text-ink ${className}`}>
+    <Link href="/" className={`flex shrink-0 items-center gap-2 text-heading font-bold tracking-tight whitespace-nowrap text-ink ${className}`}>
       <span aria-hidden className="flex size-7 items-center justify-center rounded-control bg-primary text-caption font-bold text-on-primary">
         OK
       </span>
