@@ -96,20 +96,13 @@ export function currentStatus(c: CaseSummary): CurrentStatus {
   return { kind: "none" };
 }
 
-/**
- * 확인 필요 — 담당자가 확인·답변·입력해야 다음으로 넘어가는 사건. 보드의 주황 알약(영상 업로드 대기·사실 확인 대기·질문 N건·
- * 추가 확인 필요·판단 보류·확인 대기)이고, 보드의 「확인 필요만」과 내 정보의 「확인 필요」 수가 같이 쓴다. 승인 대기·처리 중·실패는 따로 센다.
- * 작업 상태가 아니라 단계로 가른다(boardStatus) — BE는 접수·사실 카드 단계에 task_status를 주지 않는다(app/api/cases.py summarize).
- */
-export function needsAttention(c: CaseSummary): boolean {
-  return boardStatus(c).tone === "turn";
-}
-
 export type BoardSummary = { total: number; attention: number; approval: number; running: number; failed: number; approved: number };
 
 /**
  * 담당 사건 요약 수치(내 정보) — 보드 줄의 상태(boardStatus)로 세서 보드와 수가 같다. 건수라서 FE에서 센다(과실·금액은 BE 값만 그린다는 원칙과 무관).
- * attention은 확인 필요, approval은 승인 대기, approved는 승인 완료다.
+ * attention은 확인 필요 — 담당자가 확인·답변·입력해야 다음으로 넘어가는 사건으로, 보드의 주황 알약(영상 업로드 대기·사실 확인 대기·질문 N건·
+ * 추가 확인 필요·판단 보류·확인 대기)이다. approval은 승인 대기, approved는 승인 완료다. 판단 완료(idle)는 전체에만 든다.
+ * 작업 상태가 아니라 단계로 가른다(boardStatus) — BE는 접수·사실 카드 단계에 task_status를 주지 않는다(app/api/cases.py summarize).
  */
 export function summarizeBoard(cases: readonly CaseSummary[]): BoardSummary {
   const tones = cases.map((c) => boardStatus(c).tone);
@@ -145,7 +138,6 @@ export function listByIntake(cases: readonly CaseSummary[], pinned: readonly str
  * 보드 한 줄의 지금 상태 — 점과 알약 색을 가른다.
  * 확인 필요(turn — 영상 업로드 대기·사실 확인 대기·질문 N건·추가 확인 필요·판단 보류·확인 대기) · 승인 대기(approval) ·
  * 처리 중(running) · 실패(failed) · 승인 완료(done) · 그 밖(idle).
- * 「확인 필요만」은 이름 그대로 확인 필요(turn — needsAttention)만 남긴다. 승인 대기는 색과 이름이 다른 묶음이라 빼고, 검토 보고서 탭에서 본다.
  */
 export type BoardTone = "turn" | "approval" | "running" | "failed" | "done" | "idle";
 
@@ -190,12 +182,12 @@ export const BOARD_SORTS: readonly { key: BoardSort; label: string }[] = [
 ];
 
 /**
- * 보드 보기 — 단계 탭, 정렬, 확인 필요만. 주소(?stage=&sort=&turn=1)에 남는다.
+ * 보드 보기 — 단계 탭과 정렬. 주소(?stage=&sort=)에 남는다.
  * 단계 탭의 all(전체)은 진행 중인 사건 전부다. done은 보고서를 승인한 사건만 보는 완료 사건 화면(/done)이고, 승인한 사건은 담당 사건 보드에 보이지 않는다.
  */
 export type BoardStage = BoardColumnKey | "all" | "done";
-export type BoardView = { stage: BoardStage; sort: BoardSort; turn: boolean };
-export const DEFAULT_VIEW: BoardView = { stage: "all", sort: "assigned", turn: false };
+export type BoardView = { stage: BoardStage; sort: BoardSort };
+export const DEFAULT_VIEW: BoardView = { stage: "all", sort: "assigned" };
 
 type Params = Record<string, string | string[] | undefined>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
@@ -207,7 +199,6 @@ export function parseBoardView(params: Params): BoardView {
   return {
     stage: stage === "done" || BOARD_COLUMNS.some((c) => c.key === stage) ? (stage as BoardStage) : "all",
     sort: BOARD_SORTS.some((s) => s.key === sort) ? (sort as BoardSort) : "assigned",
-    turn: first(params.turn) === "1",
   };
 }
 
@@ -217,7 +208,6 @@ export function boardHref(view: BoardView, patch: Partial<BoardView>): string {
   const q = new URLSearchParams();
   if (next.stage !== "all" && next.stage !== "done") q.set("stage", next.stage);
   if (next.sort !== DEFAULT_VIEW.sort) q.set("sort", next.sort);
-  if (next.turn) q.set("turn", "1");
   const text = q.toString();
   const base = next.stage === "done" ? "/done" : "/cases";
   return text ? `${base}?${text}` : base;
@@ -237,21 +227,19 @@ export function isDone(c: Pick<CaseSummary, "stage" | "approval_status">): boole
 }
 
 /**
- * 보드에 보일 줄 — 완료한 사건을 떼어 두고, 확인 필요 사건만 거른 뒤 단계 탭으로 거르고, 정렬해서 고정한 사건을 맨 위에 둔다.
- * total · counts · done은 탭에 적는 수다(확인 필요만은 반영하고 단계 탭은 반영하지 않는다). 완료 탭에서는 확인 필요만을 보지 않는다.
+ * 보드에 보일 줄 — 완료한 사건을 떼어 두고 단계 탭으로 거른 뒤, 정렬해서 고정한 사건을 맨 위에 둔다.
+ * total · counts · done은 탭에 적는 수다(단계 탭은 반영하지 않는다).
  */
 export function boardRows(cases: readonly CaseSummary[], view: BoardView, pinned: readonly string[] = []) {
   const pins = new Set(pinned);
   const done = cases.filter(isDone);
   const active = cases.filter((c) => !isDone(c));
-  // 확인 필요만 — 주황 알약(needsAttention)만 남긴다. 승인 대기·처리 중·실패·판단 완료는 뺀다.
-  const pool = view.turn ? active.filter(needsAttention) : active;
-  const shown = view.stage === "done" ? done : view.stage === "all" ? pool : pool.filter((c) => boardColumnOf(c.stage).key === view.stage);
+  const shown = view.stage === "done" ? done : view.stage === "all" ? active : active.filter((c) => boardColumnOf(c.stage).key === view.stage);
   const sorted = [...shown].sort((a, b) => ORDER[view.sort](a, b) || a.case_id.localeCompare(b.case_id));
   return {
     rows: [...sorted.filter((c) => pins.has(c.case_id)), ...sorted.filter((c) => !pins.has(c.case_id))],
-    total: pool.length,
-    counts: countByColumn(pool),
+    total: active.length,
+    counts: countByColumn(active),
     done: done.length,
   };
 }

@@ -14,7 +14,7 @@ export default async function DonePage(props: PageProps<"/done">) {
   const [cases, pinned, params, profile] = await Promise.all([listCases(), getPinnedCaseIds(), props.searchParams, getCurrentProfile()]);
   // 관리자에게는 사건이 배정되지 않아(BE는 담당자에게만 배정한다) 늘 빈다 — 사건 관제로 보낸다.
   if (profile?.staffRole === "admin") redirect("/admin");
-  const view = { ...parseBoardView(params), stage: "done" as const, turn: false };
+  const view = { ...parseBoardView(params), stage: "done" as const };
   return (
     <>
       <h1 className="mb-6 text-title font-bold tracking-tight">완료 사건</h1>

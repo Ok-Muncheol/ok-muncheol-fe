@@ -4,7 +4,7 @@
  * 위아래로 훑으면 사건들이 어디까지 왔는지, 옆으로 읽으면 한 사건이 어디서 멈췄는지 보인다(상태 문구는 src/lib/cases/stages.ts boardStatus).
  * 점 색은 뜻으로 고른다 — 확인 필요 warning · 승인 대기 primary · 실패 danger · 승인 완료 success, 나머지는 회색이다. 처리 중은 도는 표시다.
  * 보고서를 승인한 사건은 완료 탭에만 보인다.
- * 위 도구 줄의 단계 탭 · 확인 필요만 · 정렬로 거르고 줄 세운다(src/lib/cases/stages.ts boardRows). 고정한 사건은 묶음 표시 없이 맨 위에 둔다(고정은 담당자 브라우저 쿠키 — src/lib/cases/pins.ts).
+ * 위 도구 줄의 단계 탭 · 정렬로 거르고 줄 세운다(src/lib/cases/stages.ts boardRows). 고정한 사건은 묶음 표시 없이 맨 위에 둔다(고정은 담당자 브라우저 쿠키 — src/lib/cases/pins.ts).
  * 서버 컴포넌트다 — 고정 버튼만 클라이언트(pin-button.tsx)이고 폼으로 Server Action(pin-actions.ts)을 부른다.
  * pinned를 넘기지 않으면 고정 버튼 없이 그린다(/dev 미리보기).
  */
@@ -48,7 +48,7 @@ function shortDay(iso: string): string {
 const GRID = "grid grid-cols-[15rem_repeat(2,minmax(10rem,1fr))_minmax(9rem,0.7fr)]";
 
 /**
- * view는 /cases 주소에서 읽은 보기(단계 탭 · 정렬 · 확인 필요만)다. 넘기지 않으면 기본 보기이고 탭·정렬을 그리지 않는다(/dev 미리보기).
+ * view는 /cases 주소에서 읽은 보기(단계 탭 · 정렬)다. 넘기지 않으면 기본 보기이고 탭·정렬을 그리지 않는다(/dev 미리보기).
  * aside는 도구 줄 오른쪽에 둔다(/cases의 견본 배지).
  */
 export function CaseBoard({ cases, pinned, view, aside }: { cases: readonly CaseSummary[]; pinned?: readonly string[]; view?: BoardView; aside?: ReactNode }) {
@@ -89,8 +89,8 @@ export function CaseBoard({ cases, pinned, view, aside }: { cases: readonly Case
   );
 }
 
-/** 도구 줄 — 왼쪽은 단계 탭(건수가 곧 요약), 오른쪽은 확인 필요만 · 정렬. */
-/** 완료 사건 화면(view.stage가 done)에서는 단계 탭과 확인 필요만 없이 정렬만 둔다. */
+/** 도구 줄 — 왼쪽은 단계 탭(건수가 곧 요약), 오른쪽은 정렬. */
+/** 완료 사건 화면(view.stage가 done)에서는 단계 탭 없이 정렬만 둔다. */
 function Toolbar({ view, total, counts, aside }: { view: BoardView; total: number; counts: Record<BoardColumnKey, number>; aside?: ReactNode }) {
   const tabs: { key: BoardStage; label: string; count: number }[] = [
     { key: "all", label: "전체", count: total },
@@ -128,27 +128,6 @@ function Toolbar({ view, total, counts, aside }: { view: BoardView; total: numbe
       )}
       <div className="flex items-center gap-1">
         {aside}
-        {view.stage !== "done" && (
-          <Link
-            href={boardHref(view, { turn: !view.turn })}
-            scroll={false}
-            role="checkbox"
-            aria-checked={view.turn}
-            className="inline-flex h-8 items-center gap-2 rounded-control px-2.5 text-caption text-ink-muted hover:bg-surface-muted hover:text-ink"
-          >
-            <span
-              aria-hidden
-              className={`flex size-3.5 items-center justify-center rounded-[4px] border ${view.turn ? "border-primary-strong bg-primary-strong text-on-primary" : "border-line-strong bg-surface"}`}
-            >
-              {view.turn && (
-                <svg viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m3.5 8.5 3 3 6-7" />
-                </svg>
-              )}
-            </span>
-            확인 필요만
-          </Link>
-        )}
         <SortMenu
           current={sort.label}
           options={BOARD_SORTS.map((s) => ({
