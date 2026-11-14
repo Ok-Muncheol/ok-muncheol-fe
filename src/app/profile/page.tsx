@@ -39,7 +39,7 @@ export default async function ProfilePage() {
   }
 
   // 관리자에게는 사건이 배정되지 않아(BE는 담당자에게만 배정한다) 담당 사건 카드를 두지 않는다.
-  // 수는 담당 사건 보드의 줄 상태와 같은 규칙으로 센다 — 확인 필요는 보드의 「확인 필요만」과 같은 사건이다(src/lib/cases/stages.ts).
+  // 수는 담당 사건 보드의 줄 상태와 같은 규칙으로 센다 — 확인 필요는 보드에서 주황 알약인 사건이다(src/lib/cases/stages.ts summarizeBoard).
   const summary = profile.staffRole === "admin" ? null : summarizeBoard(await listCases());
   const counts = summary && [
     { term: "전체", value: summary.total },
