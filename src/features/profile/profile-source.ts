@@ -43,3 +43,16 @@ async function sessionUser(): Promise<ReviewerProfile | null> {
     role: text("role") || "보상 담당자",
   };
 }
+
+/**
+ * 로그인한 사람이 관리자인지 — 검증한 토큰의 app_metadata.staff_role이 admin일 때만 참이다.
+ * app_metadata는 서버 키로만 바꿀 수 있다(사용자가 고칠 수 있는 user_metadata는 보지 않는다).
+ * 여기서는 메뉴를 보일지만 정한다. 실제 차단은 BE가 한다(/admin 경로는 관리자가 아니면 403).
+ */
+export async function isCurrentAdmin(): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return false;
+  const { data } = await supabase.auth.getClaims();
+  const meta = data?.claims?.app_metadata as Record<string, unknown> | undefined;
+  return meta?.staff_role === "admin";
+}
