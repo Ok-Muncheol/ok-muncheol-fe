@@ -1,5 +1,5 @@
 /**
- * B 통합: BE HTTP 클라이언트. 메서드는 BE app/api/routes.py 경로와 1:1(17개)이다. BE tests/api/test_app.py가 경로 수를 대조한다.
+ * B 통합: BE HTTP 클라이언트. 메서드는 BE app/api/routes.py 경로와 1:1(24개 — 사건 19 + 관리자 5)이다. BE tests/api/test_app.py가 경로 수를 대조한다.
  *
  * - 주소: NEXT_PUBLIC_BACKEND_URL(끝에 / 없이). 비우면 로컬 BE(LOCAL_BACKEND_URL)를 쓴다(.env.example).
  * - 인증: getAccessToken이 준 Supabase 세션 토큰을 Authorization: Bearer로 보낸다. 담당자(actor_id)는 BE가 토큰에서만 정한다.
@@ -13,8 +13,9 @@
  * 런타임 import는 두지 않는다 — 테스트(client.test.mjs)가 Node로 이 파일을 바로 읽는다.
  */
 import type {
-  AgreedFaultInput, AnswerResult, ApiError, CaseFacts, CaseSummary, ClaimResult, ConfirmResult, CounterpartyInfo,
-  EvidenceView, FactCard, FactPatch, JudgmentRunView, JudgmentTaskView, QaAnswer, QuestionAnswer, ReviewReport, UploadKind, UploadTicket,
+  AdminOverview, AgreedFaultInput, AnswerResult, ApiError, AssignmentInput, CaseFacts, CaseSummary, ClaimResult, ConfirmResult, CounterpartyInfo,
+  EvidenceView, FactCard, FactPatch, IntakeDetail, IntakeFilter, IntakeInput, IntakeView, JudgmentRunView, JudgmentTaskView, QaAnswer,
+  QuestionAnswer, ReviewReport, UploadKind, UploadTicket,
 } from "./types";
 
 export interface ApiClient {
@@ -53,6 +54,16 @@ export interface ApiClient {
   uploadEstimate(caseId: string, storagePath: string, partyId: string): Promise<ReviewReport | null>;
   /** PATCH /cases/{id}/agreed-fault — 협의 과실 입력·해제 → 새 보고서(다시 확인 완료 필요) */
   setAgreedFault(caseId: string, input: AgreedFaultInput): Promise<ReviewReport>;
+  /** GET /admin/overview — 담당자 목록(업무량)과 현황 숫자. 관리자가 아니면 403, 접수·배정 표가 없으면 503 dispatch_db_not_ready */
+  getAdminOverview(): Promise<AdminOverview>;
+  /** GET /admin/intakes — 접수 건 목록(최근 접수 순). 다음 쪽은 마지막 건의 received_at을 before로 넘긴다 */
+  listAdminIntakes(filter?: IntakeFilter): Promise<IntakeView[]>;
+  /** POST /admin/intakes — 201. 접수 등록 → 배정 에이전트가 바로 배정한 결과. 2~4초 걸린다 */
+  registerAdminIntake(input: IntakeInput): Promise<IntakeView>;
+  /** GET /admin/intakes/{id} — 접수 건 하나와 배정 이력 */
+  getAdminIntake(intakeId: string): Promise<IntakeDetail>;
+  /** POST /admin/intakes/{id}/assignments — 직접 배정·이관. 잘못된 배정이면 422 invalid_assignment, 종결된 건이면 409 intake_closed */
+  assignAdminIntake(intakeId: string, input: AssignmentInput): Promise<IntakeDetail>;
 }
 
 export type ApiClientOptions = {
@@ -179,6 +190,16 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     uploadEstimate: (caseId, storagePath, partyId) =>
       request("POST", `${caseUrl(caseId)}/estimates`, { body: { storage_path: storagePath, party_id: partyId } }),
     setAgreedFault: (caseId, input) => request("PATCH", `${caseUrl(caseId)}/agreed-fault`, { body: input }),
+    getAdminOverview: () => request("GET", "/admin/overview"),
+    listAdminIntakes: (filter = {}) => {
+      const query = new URLSearchParams();
+      for (const [key, value] of Object.entries(filter)) if (value !== undefined && value !== "") query.set(key, String(value));
+      const text = query.toString();
+      return request("GET", text ? `/admin/intakes?${text}` : "/admin/intakes");
+    },
+    registerAdminIntake: (input) => request("POST", "/admin/intakes", { body: input }),
+    getAdminIntake: (intakeId) => request("GET", `/admin/intakes/${seg(intakeId)}`),
+    assignAdminIntake: (intakeId, input) => request("POST", `/admin/intakes/${seg(intakeId)}/assignments`, { body: input }),
   };
 }
 

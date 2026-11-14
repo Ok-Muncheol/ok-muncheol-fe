@@ -260,3 +260,45 @@ export type CaseFacts = Partial<Record<"무면허" | "음주" | "고의", boolea
 export type AgreedFaultInput = {
   agreed_counterparty_fault?: number | null; fault_change_reason?: string | null; clear?: boolean;
 };
+
+/* ---------- 관리자(사건 관제) — BE app/schemas/admin.py ---------- */
+
+export type StaffRole = "adjuster" | "admin";
+/** 담당 분야. property는 대물, injury는 대인 */
+export type Coverage = "property" | "injury";
+export type IntakeStatus = "received" | "assigned" | "unassigned" | "closed";
+export type AssignmentMethod = "agent" | "rule" | "manual" | "transfer";
+/** 관제 화면의 진행 단계. unassigned는 담당자를 기다리는 접수, done은 종결 */
+export type IntakeStage = "unassigned" | "intake" | "analysis" | "facts" | "judgment" | "report" | "done";
+export type StaffMember = {
+  user_id: string; email: string | null; name: string | null;
+  staff_role: StaffRole; coverage: Coverage | null; region: string | null;
+  /** false면 자동 배정에서 뺀 계정(시연·테스트). 관리자가 직접 줄 수는 있다 */
+  auto_assign: boolean;
+  cases: { open: number; closed: number };
+};
+export type AssignmentNote = { method: AssignmentMethod; reason: string; created_at: string };
+export type IntakeView = {
+  intake_id: string; received_at: string; accident_at: string | null;
+  location: string; description: string; injured_count: number;
+  region: string | null; status: IntakeStatus; stage: IntakeStage;
+  property_assignee_id: string | null; injury_assignee_id: string | null;
+  unassigned_reason: string | null;
+  /** 실제 접수가 배정되면 생기는 사건. 가상 접수는 null */
+  case_id: string | null; simulated: boolean; closed_at: string | null;
+  /** 대물 담당자를 정한 가장 최근 배정 */
+  assignment: AssignmentNote | null;
+};
+export type AssignmentRecord = {
+  coverage: Coverage; from_assignee_id: string | null; to_assignee_id: string;
+  method: AssignmentMethod; reason: string; decided_by: string | null; created_at: string;
+};
+export type IntakeDetail = IntakeView & { assignments: AssignmentRecord[] };
+export type AdminOverview = {
+  staff: StaffMember[];
+  summary: { open: number; unassigned: number; received_today: number; closed_today: number; by_stage: Record<string, number> };
+  generated_at: string;
+};
+export type IntakeInput = { location: string; description: string; injured_count?: number; accident_at?: string | null };
+export type IntakeFilter = { state?: "open" | "unassigned" | "closed"; assignee_id?: string; region?: string; before?: string; limit?: number };
+export type AssignmentInput = { coverage: Coverage; assignee_id: string; reason: string };

@@ -36,19 +36,21 @@ function PanelIcon() {
  * 주 메뉴. 「사건 접수」 탭은 두지 않는다 — 현업에서는 사건이 담당자에게 배정된 뒤 워크플로우가 시작되므로
  * 보상 담당자가 사건을 만들지 않는다. 접수 화면(/cases/new, 정지원)은 경로로만 남는다.
  */
-const NAV: { href: string; label: string; icon: ReactNode; devOnly?: boolean }[] = [
+const NAV: { href: string; label: string; icon: ReactNode; devOnly?: boolean; adminOnly?: boolean }[] = [
   { href: "/cases", label: "담당 사건", icon: <path d="M3 5.5h14M3 10h14M3 14.5h9" /> },
   { href: "/done", label: "완료 사건", icon: <path d="m4 10.5 4 4 8-9" /> },
+  // 관리자에게만 보인다. 화면과 API도 관리자가 아니면 막힌다(src/app/admin/page.tsx · BE /admin)
+  { href: "/admin", label: "사건 관제", icon: <path d="M3 16V9m4.7 7V4m4.6 12v-5M17 16V7" />, adminOnly: true },
   { href: "/dev", label: "개발 미리보기", icon: <path d="m7 6-4 4 4 4M13 6l4 4-4 4" />, devOnly: true },
 ];
 
 const BARE_PATHS = ["/login"];
 
-export function AppShell({ children, showDev, accountName }: { children: ReactNode; showDev: boolean; accountName: string | null }) {
+export function AppShell({ children, showDev, showAdmin = false, accountName }: { children: ReactNode; showDev: boolean; showAdmin?: boolean; accountName: string | null }) {
   const pathname = usePathname();
   if (BARE_PATHS.includes(pathname)) return <>{children}</>;
   const onProfile = pathname === "/profile";
-  const items = NAV.filter((item) => !item.devOnly || showDev);
+  const items = NAV.filter((item) => (!item.devOnly || showDev) && (!item.adminOnly || showAdmin));
   // 하위 경로도 그 메뉴다 — /cases/[id]/… 는 담당 사건, /dev/corpora는 개발 미리보기.
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const name = accountName ?? "보상 담당자";
