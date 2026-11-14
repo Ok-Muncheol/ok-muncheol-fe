@@ -57,26 +57,31 @@ test("currentStatus는 승인 → 진행 중 작업 → 판정 → 완료 순으
   assert.deepEqual(currentStatus(make({})), { kind: "none" });
 });
 
-test("needsAttention은 사람이 봐야 넘어가는 사건만 고른다", () => {
-  assert.equal(needsAttention(make({ task_status: "waiting_for_confirmation" })), true);
-  assert.equal(needsAttention(make({ judgment_status: "needs_confirmation" })), true);
-  assert.equal(needsAttention(make({ judgment_status: "deferred" })), true);
-  assert.equal(needsAttention(make({ open_questions: 1 })), true);
-  assert.equal(needsAttention(make({ stage: "report", approval_status: "draft" })), true);
+// 아래 두 테스트는 BE가 실제로 주는 모양이다 — 접수·사실 카드·검토 보고서 단계는 task_status가 없고, 작업 상태는 영상 분석·판단 단계에만 있다(app/api/cases.py summarize).
+test("needsAttention은 확인·답변·입력해야 넘어가는 사건(보드의 주황 알약)만 고른다", () => {
+  assert.equal(needsAttention(make({ stage: "intake" })), true, "영상 업로드 대기");
+  assert.equal(needsAttention(make({ stage: "facts" })), true, "사실 확인 대기 — 작업 상태가 없어도 센다");
+  assert.equal(needsAttention(make({ stage: "judgment", task_status: "waiting_for_confirmation", open_questions: 1 })), true);
+  assert.equal(needsAttention(make({ stage: "judgment", task_status: "completed", judgment_status: "needs_confirmation" })), true);
+  assert.equal(needsAttention(make({ stage: "judgment", task_status: "completed", judgment_status: "deferred" })), true);
+  assert.equal(needsAttention(make({ stage: "report", approval_status: "draft" })), false, "승인 대기는 따로 센다");
   assert.equal(needsAttention(make({ stage: "report", approval_status: "approved" })), false);
-  assert.equal(needsAttention(make({ task_status: "running" })), false);
-  assert.equal(needsAttention(make({ task_status: "failed" })), false, "실패는 따로 센다");
+  assert.equal(needsAttention(make({ stage: "analysis", task_status: "running" })), false);
+  assert.equal(needsAttention(make({ stage: "judgment", task_status: "failed" })), false, "실패는 따로 센다");
+  assert.equal(needsAttention(make({ stage: "judgment", task_status: "completed", judgment_status: "draft_ready" })), false, "판단 완료");
 });
 
-test("summarizeBoard는 다섯 수치를 센다", () => {
+test("summarizeBoard는 보드 줄 상태로 여섯 수치를 센다", () => {
   const cases = [
-    make({ task_status: "queued" }),
-    make({ task_status: "running" }),
-    make({ task_status: "failed" }),
-    make({ stage: "facts", task_status: "waiting_for_confirmation" }),
+    make({ stage: "analysis", task_status: "queued" }),
+    make({ stage: "judgment", task_status: "running" }),
+    make({ stage: "analysis", task_status: "failed" }),
+    make({ stage: "facts" }),
+    make({ stage: "intake" }),
+    make({ stage: "report", approval_status: "draft" }),
     make({ stage: "report", approval_status: "approved" }),
   ];
-  assert.deepEqual(summarizeBoard(cases), { total: 5, attention: 1, running: 2, failed: 1, approved: 1 });
+  assert.deepEqual(summarizeBoard(cases), { total: 7, attention: 2, approval: 1, running: 2, failed: 1, approved: 1 });
 });
 
 test("보드 열은 접수(접수·영상 분석)·판단(사실 카드·판단)·검토 보고서 셋이고 모든 단계가 열 하나에만 들어간다", () => {
@@ -162,13 +167,39 @@ test("보드 보기는 주소에서 읽고, 걸러 정렬하고, 고정한 사�
   assert.deepEqual(turn.counts, { intake: 1, judgment: 1, report: 0 });
 });
 
+test("확인 필요만은 주황 확인 필요 사건만 남긴다 — 승인 대기·처리 중·실패·판단 완료는 뺀다", async () => {
+  const { boardRows, boardStatus, DEFAULT_VIEW } = await import("./stages.ts");
+  // BE가 실제로 주는 모양 — 접수·사실 카드 단계는 task_status가 없다(app/api/cases.py summarize)
+  const kept = [
+    make({ case_id: "UPLOAD", stage: "intake" }),
+    make({ case_id: "FACTS", stage: "facts" }),
+    make({ case_id: "QUESTION", stage: "judgment", task_status: "waiting_for_confirmation", open_questions: 1 }),
+    make({ case_id: "CONFIRM", stage: "judgment", task_status: "completed", judgment_status: "needs_confirmation" }),
+    make({ case_id: "DEFER", stage: "judgment", task_status: "completed", judgment_status: "deferred" }),
+    make({ case_id: "WAIT", stage: "judgment", task_status: "waiting_for_confirmation" }),
+  ];
+  const dropped = [
+    make({ case_id: "APPROVAL", stage: "report", approval_status: "draft" }),
+    make({ case_id: "ANALYSIS", stage: "analysis", task_status: "running" }),
+    make({ case_id: "JUDGING", stage: "judgment", task_status: "queued" }),
+    make({ case_id: "FAILED", stage: "judgment", task_status: "failed" }),
+    make({ case_id: "DECIDED", stage: "judgment", task_status: "completed", judgment_status: "draft_ready" }),
+  ];
+  for (const c of kept) assert.equal(boardStatus(c).tone, "turn", c.case_id);
+  const turn = boardRows([...kept, ...dropped], { ...DEFAULT_VIEW, turn: true });
+  assert.deepEqual(turn.rows.map((c) => c.case_id).sort(), kept.map((c) => c.case_id).sort());
+  assert.equal(turn.total, kept.length);
+  assert.deepEqual(turn.counts, { intake: 1, judgment: 5, report: 0 }, "탭 수도 확인 필요만 센다");
+  assert.equal(boardRows([...kept, ...dropped], DEFAULT_VIEW).total, kept.length + dropped.length, "끄면 모두 보인다");
+});
+
 test("승인한 사건은 담당 사건 보드에서 빠지고 완료 사건에만 보인다", async () => {
   const { boardRows, boardHref, DEFAULT_VIEW, parseBoardView } = await import("./stages.ts");
   const open = make({ case_id: "OPEN", stage: "report", approval_status: "draft" });
   const done = make({ case_id: "DONE", stage: "report", approval_status: "approved" });
   const all = boardRows([open, done], DEFAULT_VIEW);
   assert.deepEqual(all.rows.map((c) => c.case_id), ["OPEN"]);
-  assert.deepEqual(boardRows([open, done], { ...DEFAULT_VIEW, turn: true }).rows.map((c) => c.case_id), ["OPEN"], "승인 대기는 확인 필요만에 남는다");
+  assert.deepEqual(boardRows([open, done], { ...DEFAULT_VIEW, turn: true }).rows.map((c) => c.case_id), [], "승인 대기는 확인 필요가 아니라 확인 필요만에서 빠진다");
   assert.equal(all.counts.report, 1);
   assert.equal(all.done, 1);
   assert.deepEqual(boardRows([open, done], { ...DEFAULT_VIEW, stage: "done" }).rows.map((c) => c.case_id), ["DONE"]);
