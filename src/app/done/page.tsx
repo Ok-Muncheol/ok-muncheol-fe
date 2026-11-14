@@ -2,14 +2,18 @@
  * B 통합: 완료 사건 — 검토 보고서를 승인해 끝난 사건만 모아 본다. 담당 사건 보드(/cases)에는 승인한 사건이 보이지 않는다.
  * 보드와 같은 진행 선(src/features/cases/case-board.tsx)이고, 도구 줄에는 정렬만 있다(?sort=).
  */
+import { redirect } from "next/navigation";
 import { CaseBoard } from "@/features/cases/case-board";
 import { isSampleSource, listCases } from "@/features/cases/case-source";
 import { getPinnedCaseIds } from "@/features/cases/pin-source";
+import { getCurrentProfile } from "@/features/profile/profile-source";
 import { parseBoardView } from "@/lib/cases/stages";
 import { Badge } from "@/ui/controls";
 
 export default async function DonePage(props: PageProps<"/done">) {
-  const [cases, pinned, params] = await Promise.all([listCases(), getPinnedCaseIds(), props.searchParams]);
+  const [cases, pinned, params, profile] = await Promise.all([listCases(), getPinnedCaseIds(), props.searchParams, getCurrentProfile()]);
+  // 관리자에게는 사건이 배정되지 않아(BE는 담당자에게만 배정한다) 늘 빈다 — 사건 관제로 보낸다.
+  if (profile?.staffRole === "admin") redirect("/admin");
   const view = { ...parseBoardView(params), stage: "done" as const, turn: false };
   return (
     <>

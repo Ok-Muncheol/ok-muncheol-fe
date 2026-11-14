@@ -2,8 +2,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  DEFAULT_POLICY, EMPTY_DETAILS_DRAFT, adminHref, assignable, detailFlags, detailSummary, detailsInput, hasDetails, highValueFor, intakeFilter,
-  needsInjuryAdjuster, parseAdminView, shortTime, specialtyLabels, staffName, staffOptionLabel, won,
+  DEFAULT_POLICY, EMPTY_DETAILS_DRAFT, accountRole, adminHref, assignable, detailFlags, detailSummary, detailsInput, hasDetails, highValueFor,
+  intakeFilter, needsInjuryAdjuster, parseAdminView, shortTime, specialtyLabels, staffName, staffOptionLabel, won,
 } from "./view.ts";
 
 const ID = "11111111-1111-4111-8111-111111111111";
@@ -148,4 +148,15 @@ test("담당자 속성 — 전문 분야 이름, 고르기 목록의 한 줄", (
     staffOptionLabel(member({ region: null, high_value: true, away: true, auto_assign: false })),
     "김대물 · 지역 없음 · 진행 중 3건 · 경력 7년 · 고액 권한 · 부재 · 자동 배정 제외",
   );
+});
+
+test("계정 역할은 토큰 app_metadata로 가린다 — 관리자, 대물·대인 담당자, 그 밖은 역할 없음", () => {
+  assert.deepEqual(accountRole({ staff_role: "admin" }), { staffRole: "admin", label: "관리자" });
+  assert.deepEqual(accountRole({ staff_role: "admin", coverage: "property" }), { staffRole: "admin", label: "관리자" });
+  assert.deepEqual(accountRole({ staff_role: "adjuster", coverage: "property", region: "서울" }), { staffRole: "adjuster", label: "대물 담당자" });
+  assert.deepEqual(accountRole({ staff_role: "adjuster", coverage: "injury" }), { staffRole: "adjuster", label: "대인 담당자" });
+  assert.deepEqual(accountRole({ staff_role: "adjuster" }), { staffRole: "adjuster", label: "보상 담당자" });
+  for (const meta of [undefined, null, "admin", {}, { staff_role: "ADMIN" }, { staff_role: ["admin"] }, { coverage: "property" }]) {
+    assert.deepEqual(accountRole(meta), { staffRole: null, label: "보상 담당자" });
+  }
 });

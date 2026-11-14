@@ -1,10 +1,11 @@
 /**
  * B 통합: 사건 관제 화면의 표시 규칙 — 단계·배정 방식·분야의 이름과 톤, 시각 표기, 주소 검색어, 배정 참고 정보(금액 표기·표식)와 담당자 속성.
+ * 로그인한 계정의 역할(accountRole)도 여기서 가린다.
  * 런타임 import는 두지 않는다 — 테스트(view.test.mjs)가 Node로 이 파일을 바로 읽는다.
  */
 import type {
   AssignmentMethod, Coverage, InjurySeverity, IntakeDetails, IntakeDetailsInput, IntakeFilter, IntakeStage, IntakeView, PersonalInjuryCover, Policy,
-  Policyholder, Specialty, StaffMember, VehicleType,
+  Policyholder, Specialty, StaffMember, StaffRole, VehicleType,
 } from "../api/types";
 
 type Tone = "neutral" | "info" | "success" | "warning" | "danger" | "model";
@@ -94,6 +95,18 @@ export function staffName(member: Pick<StaffMember, "name" | "email" | "user_id"
   if (!userId) return "";
   if (!member) return userId.slice(0, 8);
   return member.name || member.email?.split("@")[0] || member.user_id.slice(0, 8);
+}
+
+/**
+ * 로그인한 계정의 역할 — 토큰 app_metadata의 staff_role(관리자·담당자)과 coverage(대물·대인). 주 메뉴·첫 화면과 역할 이름을 가른다.
+ * app_metadata는 서버 키로만 바뀐다(BE docs/contracts/README.md). 값이 없거나 모양이 다르면 역할 없음(null)이고 이름은 보상 담당자다.
+ */
+export function accountRole(appMetadata: unknown): { staffRole: StaffRole | null; label: string } {
+  const meta = typeof appMetadata === "object" && appMetadata !== null ? (appMetadata as Record<string, unknown>) : {};
+  if (meta.staff_role === "admin") return { staffRole: "admin", label: "관리자" };
+  if (meta.staff_role !== "adjuster") return { staffRole: null, label: "보상 담당자" };
+  const coverage = meta.coverage === "property" || meta.coverage === "injury" ? meta.coverage : null;
+  return { staffRole: "adjuster", label: coverage ? `${COVERAGE_LABELS[coverage]} 담당자` : "보상 담당자" };
 }
 
 /** 그 분야에 줄 수 있는 담당자 — 접수 지역이 같은 사람을 앞에, 그 안에서는 진행 중 사건이 적은 순 */
