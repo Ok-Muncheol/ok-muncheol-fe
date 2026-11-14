@@ -7,7 +7,7 @@ import Link from "next/link";
 import { IntakeForm } from "@/features/admin/intake-form";
 import { IntakeTable } from "@/features/admin/intake-table";
 import { PAGE_SIZE, loadAdmin } from "@/features/admin/admin-source";
-import { COVERAGE_LABELS, INTAKE_TABS, OPEN_STAGES, REGIONS, STAGE_VIEW, adminHref, parseAdminView, shortTime, staffName } from "@/lib/admin/view";
+import { COVERAGE_LABELS, INTAKE_TABS, OPEN_STAGES, REGIONS, STAGE_VIEW, adminHref, parseAdminView, shortTime, specialtyLabels, staffName } from "@/lib/admin/view";
 import { Badge, ButtonLink, Card, Notice, PageHeader, Stat, StatStrip, Table, Td, Th } from "@/ui/controls";
 
 export default async function AdminPage(props: PageProps<"/admin">) {
@@ -131,13 +131,18 @@ export default async function AdminPage(props: PageProps<"/admin">) {
           <h2 id="staff-heading" className="mb-3 text-heading font-semibold">
             담당자 <span className="font-mono text-body font-normal tabular-nums text-ink-muted">{adjusters.length}명</span>
           </h2>
+          <p className="mb-3 text-caption break-keep text-ink-muted">
+            부재인 담당자는 자동 배정에서 빠지지만 직접 배정·이관으로는 줄 수 있습니다. 고액 사건(예상 손해액 3,000만 원 이상, 중상·사망)은 고액 권한이 있는 담당자에게만 자동 배정합니다.
+          </p>
           <Table>
-            <caption className="sr-only">담당자별 업무량 — 지역, 분야 순</caption>
+            <caption className="sr-only">담당자별 업무량과 경력·전문 분야 — 지역, 분야 순</caption>
             <thead>
               <tr>
                 <Th>담당자</Th>
                 <Th>지역</Th>
                 <Th>분야</Th>
+                <Th className="text-right">경력</Th>
+                <Th>전문 분야</Th>
                 <Th className="text-right">진행 중</Th>
                 <Th className="text-right">종결</Th>
                 <Th>
@@ -157,10 +162,22 @@ export default async function AdminPage(props: PageProps<"/admin">) {
                   <tr key={member.user_id}>
                     <Td>
                       <span className="font-semibold">{staffName(member, member.user_id)}</span>
+                      {member.away && (
+                        <Badge tone="warning" className="ml-2">
+                          부재
+                        </Badge>
+                      )}
+                      {member.high_value && (
+                        <Badge tone="info" className="ml-2">
+                          고액 권한
+                        </Badge>
+                      )}
                       {!member.auto_assign && <Badge className="ml-2">자동 배정 제외</Badge>}
                     </Td>
                     <Td>{member.region ?? <span className="text-ink-faint">없음</span>}</Td>
                     <Td>{member.coverage ? COVERAGE_LABELS[member.coverage] : ""}</Td>
+                    <Td className="text-right font-mono whitespace-nowrap tabular-nums">{member.career_years != null ? `${member.career_years}년` : ""}</Td>
+                    <Td>{specialtyLabels(member).join(" · ") || <span className="text-ink-faint">없음</span>}</Td>
                     <Td className="text-right font-mono tabular-nums">{member.cases.open}</Td>
                     <Td className="text-right font-mono tabular-nums text-ink-muted">{member.cases.closed}</Td>
                     <Td className="text-right">
