@@ -2,7 +2,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono } from "next/font/google";
 import localFont from "next/font/local";
-import { getCurrentProfile, isCurrentAdmin } from "@/features/profile/profile-source";
+import { getCurrentProfile } from "@/features/profile/profile-source";
 import { AppShell } from "@/ui/app-shell";
 import { SIDEBAR_SCRIPT } from "@/ui/sidebar";
 import "./globals.css";
@@ -24,8 +24,9 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   // /dev 메뉴는 운영 배포(VERCEL_ENV=production)에서 감춘다 — 페이지 자체도 notFound()다(src/app/dev/page.tsx).
   const showDev = process.env.VERCEL_ENV !== "production";
-  // 머리글 오른쪽 담당자 이름. 로그인 전에는 개발 배포의 합성 견본만 있다.
-  const [profile, showAdmin] = await Promise.all([getCurrentProfile(), isCurrentAdmin()]);
+  // 계정 자리(이름 · 역할 이름)와 주 메뉴 — 토큰의 역할(관리자 · 담당자)이 메뉴를 고른다. 로그인 전에는 개발 배포의 합성 견본만 있다.
+  const profile = await getCurrentProfile();
+  const account = profile && { name: profile.name, role: profile.role, staffRole: profile.staffRole };
   return (
     // data-sidebar는 첫 그림 전에 SIDEBAR_SCRIPT가 붙인다(왼쪽 메뉴 접힘) — 서버 HTML과 달라도 되는 속성이라 경고를 끈다.
     <html lang="ko" className={`${pretendard.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
@@ -33,7 +34,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <script dangerouslySetInnerHTML={{ __html: SIDEBAR_SCRIPT }} />
       </head>
       <body className="min-h-dvh bg-page font-sans text-body text-ink antialiased">
-        <AppShell showDev={showDev} showAdmin={showAdmin} accountName={profile?.name ?? null}>
+        <AppShell showDev={showDev} account={account}>
           {children}
         </AppShell>
       </body>

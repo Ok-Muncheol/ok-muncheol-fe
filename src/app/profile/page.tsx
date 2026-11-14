@@ -1,4 +1,4 @@
-/** B 통합: 내 정보 — 로그인한 보상 담당자의 소속·계정, 담당 사건 수, 로그아웃(Supabase 세션 종료). */
+/** B 통합: 내 정보 — 로그인한 계정의 소속·역할·계정, 담당 사건 수(담당자만), 로그아웃(Supabase 세션 종료). */
 import { RedirectType, redirect } from "next/navigation";
 import { listCases } from "@/features/cases/case-source";
 import { getCurrentProfile, isSampleProfile } from "@/features/profile/profile-source";
@@ -10,12 +10,13 @@ const SAMPLE_NOTE = "로그인하지 않아 src/fixtures/profile.json의 합성 
 
 /**
  * 로그아웃 — 폼 POST(Server Action)로 둔다. 링크(GET)는 Next가 미리 불러올 수 있어 로그아웃에 쓰지 않는다.
- * Supabase 세션을 끝내고(쿠키 삭제) 로그인 화면으로 보낸다. replace라 뒤로 가기가 로그아웃 전 화면으로 돌아오지 않는다.
+ * 이 브라우저의 Supabase 세션만 끝내고(scope local — 쿠키 삭제) 로그인 화면으로 보낸다. 기본값(global)은 그 계정의 다른 기기 세션까지 끊어,
+ * 여럿이 같이 쓰는 시연 계정에서 한 사람의 로그아웃이 남의 세션을 끊는다. replace라 뒤로 가기가 로그아웃 전 화면으로 돌아오지 않는다.
  */
 async function logout() {
   "use server";
   const supabase = await createSupabaseServerClient();
-  await supabase?.auth.signOut();
+  await supabase?.auth.signOut({ scope: "local" });
   redirect("/login", RedirectType.replace);
 }
 
@@ -37,9 +38,10 @@ export default async function ProfilePage() {
     );
   }
 
+  // 관리자에게는 사건이 배정되지 않아(BE는 담당자에게만 배정한다) 담당 사건 카드를 두지 않는다.
   // 수는 사건 보드 요약 줄과 같은 규칙으로 센다(src/lib/cases/stages.ts).
-  const summary = summarizeBoard(await listCases());
-  const counts = [
+  const summary = profile.staffRole === "admin" ? null : summarizeBoard(await listCases());
+  const counts = summary && [
     { term: "전체", value: summary.total },
     { term: "확인 필요", value: summary.attention, note: "확인·답변·승인 대기" },
     { term: "처리 중", value: summary.running, note: "분석·판단 진행" },
@@ -83,23 +85,25 @@ export default async function ProfilePage() {
             </DescriptionRow>
           </DescriptionList>
         </Card>
-        <Card
-          title="담당 사건"
-          aside={
-            // 버튼(32px)이 머리줄을 키우지 않게 위아래 여백을 겹친다 — 옆 카드의 배지 머리줄과 구분선 높이가 같아진다.
-            <ButtonLink href="/cases" variant="quiet" size="sm" className="-my-1">
-              보드 열기
-            </ButtonLink>
-          }
-        >
-          <DescriptionList>
-            {counts.map((count) => (
-              <DescriptionRow key={count.term} term={count.term} note={count.note}>
-                <span className="font-mono tabular-nums">{count.value}</span>건
-              </DescriptionRow>
-            ))}
-          </DescriptionList>
-        </Card>
+        {counts && (
+          <Card
+            title="담당 사건"
+            aside={
+              // 버튼(32px)이 머리줄을 키우지 않게 위아래 여백을 겹친다 — 옆 카드의 배지 머리줄과 구분선 높이가 같아진다.
+              <ButtonLink href="/cases" variant="quiet" size="sm" className="-my-1">
+                보드 열기
+              </ButtonLink>
+            }
+          >
+            <DescriptionList>
+              {counts.map((count) => (
+                <DescriptionRow key={count.term} term={count.term} note={count.note}>
+                  <span className="font-mono tabular-nums">{count.value}</span>건
+                </DescriptionRow>
+              ))}
+            </DescriptionList>
+          </Card>
+        )}
       </div>
     </>
   );
