@@ -21,7 +21,10 @@ const PATCH = {
 };
 const ANSWER = { question_id: QUESTION, expected_card_version: 3, value: null, unknown: true };
 const FAULT = { agreed_counterparty_fault: 70, fault_change_reason: "상대 보험사와 협의" };
-const INTAKE = { location: "서울 강남구 테헤란로", description: "교차로 접촉", injured_count: 1 };
+const INTAKE = {
+  location: "서울 강남구 테헤란로", description: "교차로 접촉", injured_count: 1,
+  details: { estimated_damage: 35_000_000, vehicle_type: "imported", vehicle_count: 3, injury_severity: "serious" },
+};
 const ASSIGNMENT = { coverage: "property", assignee_id: QUESTION, reason: "담당자 부재" };
 
 // [메서드, 인자, HTTP 메서드, 경로, 본문] — BE app/api/routes.py 순서

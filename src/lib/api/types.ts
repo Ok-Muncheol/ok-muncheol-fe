@@ -275,7 +275,63 @@ export type StaffMember = {
   staff_role: StaffRole; coverage: Coverage | null; region: string | null;
   /** false면 자동 배정에서 뺀 계정(시연·테스트). 관리자가 직접 줄 수는 있다 */
   auto_assign: boolean;
+  /** 경력(년) */
+  career_years: number;
+  specialties: Specialty[];
+  /** 고액 사건 처리 권한 — 고액 사건은 권한 있는 담당자에게만 자동 배정된다 */
+  high_value: boolean;
+  /** 휴가·부재. 자동 배정 후보가 아니다(관리자의 직접 배정·이관은 된다) */
+  away: boolean;
   cases: { open: number; closed: number };
+};
+/** 전문 분야 — 수입차 · 중상해 · 다중 추돌 */
+export type Specialty = "imported" | "serious_injury" | "multi_vehicle";
+/** 우리 계약 차량의 차종 — 승용차 · 수입차 · 화물차 · 이륜차 */
+export type VehicleType = "passenger" | "imported" | "truck" | "motorcycle";
+/** 다친 정도 — 경상 · 중상 · 사망 */
+export type InjurySeverity = "minor" | "serious" | "fatal";
+/** 자기신체 담보 — 미가입 · 자기신체사고 · 자동차상해 */
+export type PersonalInjuryCover = "none" | "self_injury" | "auto_injury";
+/** 가입 담보. 요청에서 칸을 빼면 서버 기본값(true, 2억, true, self_injury, true)이 들어간다 */
+export type Policy = {
+  /** 대인배상Ⅱ */
+  bodily_injury_ii: boolean;
+  /** 대물 한도(원). 2천만 ~ 20억 */
+  property_limit: number;
+  /** 자기차량손해 */
+  own_damage: boolean;
+  personal_injury: PersonalInjuryCover;
+  /** 무보험차상해 */
+  uninsured_motorist: boolean;
+};
+/** 계약자 이력 */
+export type Policyholder = {
+  /** 최근 3년 사고 횟수 0~20 */
+  accidents_3y: number;
+  /** 민원 횟수 0~20 */
+  complaints: number;
+  /** 장기 고객(5년 이상) */
+  long_term: boolean;
+};
+/**
+ * 접수 건의 배정 참고 정보. 사람을 특정하는 정보(이름·연락처·차량 번호)는 받지 않는다.
+ * 응답에는 항상 온다 — 값이 없던 접수 건은 모든 칸이 null이다.
+ */
+export type IntakeDetails = {
+  /** 예상 손해액(원) 0 ~ 100억. 3,000만 원 이상이면 고액 대물 사건이다 */
+  estimated_damage: number | null;
+  vehicle_type: VehicleType | null;
+  /** 관련 차량 수 1~20 */
+  vehicle_count: number | null;
+  /** 중상·사망이면 고액 대인 사건이다. 다친 사람 수가 0인데 보내면 422 invalid_intake */
+  injury_severity: InjurySeverity | null;
+  policy: Policy | null;
+  policyholder: Policyholder | null;
+};
+/** 요청의 details — 값이 없는 칸은 빼거나 null로 보낸다. 계약에 없는 키는 422다 */
+export type IntakeDetailsInput = Partial<Omit<IntakeDetails, "policy" | "policyholder">> & {
+  policy?: Partial<Policy> | null;
+  policyholder?: Policyholder | null;
 };
 export type AssignmentNote = { method: AssignmentMethod; reason: string; created_at: string };
 export type IntakeView = {
@@ -288,6 +344,7 @@ export type IntakeView = {
   case_id: string | null; simulated: boolean; closed_at: string | null;
   /** 대물 담당자를 정한 가장 최근 배정 */
   assignment: AssignmentNote | null;
+  details: IntakeDetails;
 };
 export type AssignmentRecord = {
   coverage: Coverage; from_assignee_id: string | null; to_assignee_id: string;
@@ -299,6 +356,6 @@ export type AdminOverview = {
   summary: { open: number; unassigned: number; received_today: number; closed_today: number; by_stage: Record<string, number> };
   generated_at: string;
 };
-export type IntakeInput = { location: string; description: string; injured_count?: number; accident_at?: string | null };
+export type IntakeInput = { location: string; description: string; injured_count?: number; accident_at?: string | null; details?: IntakeDetailsInput };
 export type IntakeFilter = { state?: "open" | "unassigned" | "closed"; assignee_id?: string; region?: string; before?: string; limit?: number };
 export type AssignmentInput = { coverage: Coverage; assignee_id: string; reason: string };
