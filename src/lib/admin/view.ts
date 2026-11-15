@@ -4,8 +4,8 @@
  * 런타임 import는 두지 않는다 — 테스트(view.test.mjs)가 Node로 이 파일을 바로 읽는다.
  */
 import type {
-  AssignmentMethod, Coverage, InjurySeverity, IntakeDetails, IntakeDetailsInput, IntakeFilter, IntakeStage, IntakeView, PersonalInjuryCover, Policy,
-  Policyholder, Specialty, StaffMember, StaffRole, VehicleType,
+  AssignmentMethod, Coverage, InjurySeverity, IntakeDetails, IntakeFilter, IntakeStage, IntakeView, PersonalInjuryCover, Specialty, StaffMember, StaffRole,
+  VehicleType,
 } from "../api/types";
 
 type Tone = "neutral" | "info" | "success" | "warning" | "danger" | "model";
@@ -135,11 +135,6 @@ export const SPECIALTY_LABELS: Record<Specialty, string> = { imported: "수입�
 
 /** 예상 손해액이 이 값(원) 이상이면 고액 대물 사건이다 — BE 배정 규칙과 같은 값 */
 export const HIGH_VALUE_DAMAGE = 30_000_000;
-/** 접수 폼에서 고르는 대물 한도(원). 서버 기본값은 2억이다 */
-export const PROPERTY_LIMITS = [20_000_000, 50_000_000, 100_000_000, 200_000_000, 300_000_000, 500_000_000, 1_000_000_000, 2_000_000_000];
-/** 서버가 가입 담보·계약자 이력에 넣는 기본값 — 접수 폼이 같은 값으로 시작한다 */
-export const DEFAULT_POLICY: Policy = { bodily_injury_ii: true, property_limit: 200_000_000, own_damage: true, personal_injury: "self_injury", uninsured_motorist: true };
-export const DEFAULT_POLICYHOLDER: Policyholder = { accidents_3y: 0, complaints: 0, long_term: false };
 
 /** "1억 2,000만 원" · "3,500만 원" · "5,000원" — 억/만 원 표기. 만 원 아래는 만 원이 안 될 때만 보인다. 값이 없으면 빈 글자 */
 export function won(amount: number | null | undefined): string {
@@ -190,38 +185,6 @@ export function detailSummary(details: IntakeDetails | null | undefined): string
   ]
     .filter(Boolean)
     .join(" · ");
-}
-
-/** 접수 폼이 쥐는 참고 정보 — 숫자 칸은 입력 글자 그대로 둔다(빈 칸 = 모름) */
-export type DetailsDraft = {
-  /** 예상 손해액(만 원) */
-  damageManwon: string;
-  vehicleType: VehicleType | "";
-  vehicleCount: string;
-  severity: InjurySeverity | "";
-  policy: Policy;
-  accidents3y: string;
-  complaints: string;
-  longTerm: boolean;
-};
-
-export const EMPTY_DETAILS_DRAFT: DetailsDraft = {
-  damageManwon: "", vehicleType: "passenger", vehicleCount: "2", severity: "", policy: DEFAULT_POLICY, accidents3y: "0", complaints: "0", longTerm: false,
-};
-
-const whole = (text: string): number | null => (text.trim() === "" || !Number.isFinite(Number(text)) ? null : Math.round(Number(text)));
-
-/** 폼 값 → 요청 details. 만 원을 원으로 바꾸고, 빈 칸은 null로, 다친 사람이 없으면 다친 정도는 보내지 않는다(서버가 422로 막는다) */
-export function detailsInput(draft: DetailsDraft, injuredCount: number): IntakeDetailsInput {
-  const damage = whole(draft.damageManwon);
-  return {
-    estimated_damage: damage == null ? null : damage * 10_000,
-    vehicle_type: draft.vehicleType || null,
-    vehicle_count: whole(draft.vehicleCount),
-    injury_severity: injuredCount > 0 ? draft.severity || null : null,
-    policy: draft.policy,
-    policyholder: { accidents_3y: whole(draft.accidents3y) ?? 0, complaints: whole(draft.complaints) ?? 0, long_term: draft.longTerm },
-  };
 }
 
 /* ---------- 담당자 속성 ---------- */

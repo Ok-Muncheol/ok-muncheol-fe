@@ -2,8 +2,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  DEFAULT_POLICY, EMPTY_DETAILS_DRAFT, accountRole, adminHref, assignable, detailFlags, detailSummary, detailsInput, hasDetails, highValueFor,
-  intakeFilter, needsInjuryAdjuster, parseAdminView, shortTime, specialtyLabels, staffName, staffOptionLabel, won,
+  accountRole, adminHref, assignable, detailFlags, detailSummary, hasDetails, highValueFor, intakeFilter, needsInjuryAdjuster, parseAdminView, shortTime,
+  specialtyLabels, staffName, staffOptionLabel, won,
 } from "./view.ts";
 
 const ID = "11111111-1111-4111-8111-111111111111";
@@ -67,6 +67,8 @@ test("다친 사람이 있는데 대인 담당자가 없는 진행 중 접수를
 
 const NONE = { estimated_damage: null, vehicle_type: null, vehicle_count: null, injury_severity: null, policy: null, policyholder: null };
 const details = (over) => ({ ...NONE, ...over });
+/** 서버가 가입 담보에 넣는 기본값과 같은 모양 — 대인배상Ⅱ 가입 */
+const POLICY = { bodily_injury_ii: true, property_limit: 200_000_000, own_damage: true, personal_injury: "self_injury", uninsured_motorist: true };
 
 test("금액은 억/만 원으로 적는다", () => {
   assert.equal(won(35_000_000), "3,500만 원");
@@ -108,8 +110,8 @@ test("표식 — 고액 사건, 수입차, 다중 추돌, 대인배상Ⅱ 미가
   assert.deepEqual(keys(details({ injury_severity: "serious", estimated_damage: 50_000_000 })), ["high_value"]); // 둘 다여도 표식은 하나
   assert.deepEqual(keys(details({ vehicle_type: "imported", vehicle_count: 2 })), ["imported"]);
   assert.deepEqual(keys(details({ vehicle_type: "truck", vehicle_count: 3 })), ["multi_vehicle"]);
-  assert.deepEqual(keys(details({ policy: DEFAULT_POLICY, policyholder: { accidents_3y: 5, complaints: 1, long_term: true } })), []);
-  const flags = detailFlags(details({ policy: { ...DEFAULT_POLICY, bodily_injury_ii: false }, policyholder: { accidents_3y: 0, complaints: 2, long_term: false } }));
+  assert.deepEqual(keys(details({ policy: POLICY, policyholder: { accidents_3y: 5, complaints: 1, long_term: true } })), []);
+  const flags = detailFlags(details({ policy: { ...POLICY, bodily_injury_ii: false }, policyholder: { accidents_3y: 0, complaints: 2, long_term: false } }));
   assert.deepEqual(flags.map((flag) => flag.label), ["대인배상Ⅱ 미가입", "민원 2회"]);
   assert.ok(flags.every((flag) => flag.tone === "warning"));
 });
@@ -118,26 +120,7 @@ test("목록 한 줄 요약은 있는 값만 잇는다", () => {
   assert.equal(detailSummary(details({ estimated_damage: 35_000_000, vehicle_type: "imported", vehicle_count: 3, injury_severity: "serious" })), "예상 3,500만 원 · 수입차 3대 · 중상");
   assert.equal(detailSummary(details({ vehicle_count: 2 })), "차량 2대");
   assert.equal(detailSummary(details({ vehicle_type: "motorcycle" })), "이륜차");
-  assert.equal(detailSummary(details({ policy: DEFAULT_POLICY })), "");
-});
-
-test("폼 값을 요청 details로 바꾼다 — 만 원을 원으로, 빈 칸은 null, 다친 사람이 없으면 다친 정도를 뺀다", () => {
-  assert.deepEqual(detailsInput(EMPTY_DETAILS_DRAFT, 0), {
-    estimated_damage: null, vehicle_type: "passenger", vehicle_count: 2, injury_severity: null,
-    policy: { bodily_injury_ii: true, property_limit: 200_000_000, own_damage: true, personal_injury: "self_injury", uninsured_motorist: true },
-    policyholder: { accidents_3y: 0, complaints: 0, long_term: false },
-  });
-  const draft = { ...EMPTY_DETAILS_DRAFT, damageManwon: "3500", vehicleType: "", vehicleCount: "", severity: "serious", accidents3y: "2", complaints: "", longTerm: true };
-  const sent = detailsInput(draft, 1);
-  assert.equal(sent.estimated_damage, 35_000_000);
-  assert.equal(sent.vehicle_type, null);
-  assert.equal(sent.vehicle_count, null);
-  assert.equal(sent.injury_severity, "serious");
-  assert.deepEqual(sent.policyholder, { accidents_3y: 2, complaints: 0, long_term: true });
-  assert.equal(detailsInput(draft, 0).injury_severity, null);
-  assert.equal(detailsInput({ ...draft, damageManwon: "0" }, 1).estimated_damage, 0);
-  // 계약에 있는 키만 보낸다(서버는 모르는 키를 422로 막는다)
-  assert.deepEqual(Object.keys(sent).sort(), ["estimated_damage", "injury_severity", "policy", "policyholder", "vehicle_count", "vehicle_type"]);
+  assert.equal(detailSummary(details({ policy: POLICY })), "");
 });
 
 test("담당자 속성 — 전문 분야 이름, 고르기 목록의 한 줄", () => {

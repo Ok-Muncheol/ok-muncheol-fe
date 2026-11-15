@@ -1,14 +1,15 @@
 /**
- * B 통합: 사건 관제 — 관리자가 접수를 등록하고, 담당자별 업무량과 접수 건의 진행을 보고, 필요하면 직접 배정·이관한다.
+ * B 통합: 사건 관제 — 관리자가 담당자별 업무량과 접수 건의 진행을 보고, 필요하면 직접 배정·이관한다.
+ * 접수를 등록하는 폼은 두지 않는다 — 접수는 고객이 앱·전화로 하고, 들어온 건을 배정 에이전트가 배정한다. 관리자는 그 결과를 보고 바로잡는다.
+ * (BE `POST /admin/intakes`와 ApiClient.registerAdminIntake는 남아 있다.)
  * 관리자만 들어온다. 메뉴는 관리자에게만 보이고(레이아웃), 화면은 BE가 403을 주면 없는 화면이 된다(admin-source.ts).
  * 보기(탭·지역·담당자·쪽)는 주소 검색어다 — 새로고침·뒤로 가기에도 같은 목록이 나온다.
  */
 import Link from "next/link";
-import { IntakeForm } from "@/features/admin/intake-form";
 import { IntakeTable } from "@/features/admin/intake-table";
 import { PAGE_SIZE, loadAdmin } from "@/features/admin/admin-source";
 import { COVERAGE_LABELS, INTAKE_TABS, OPEN_STAGES, REGIONS, STAGE_VIEW, adminHref, parseAdminView, shortTime, specialtyLabels, staffName } from "@/lib/admin/view";
-import { Badge, ButtonLink, Card, Notice, PageHeader, Stat, StatStrip, Table, Td, Th } from "@/ui/controls";
+import { Badge, ButtonLink, Notice, PageHeader, Stat, StatStrip, Table, Td, Th } from "@/ui/controls";
 
 export default async function AdminPage(props: PageProps<"/admin">) {
   const view = parseAdminView(await props.searchParams);
@@ -55,10 +56,6 @@ export default async function AdminPage(props: PageProps<"/admin">) {
       </StatStrip>
 
       <div className="flex flex-col gap-6">
-        <Card title="접수 등록">
-          <IntakeForm staff={staff} />
-        </Card>
-
         <section aria-labelledby="intakes-heading">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h2 id="intakes-heading" className="text-heading font-semibold">
