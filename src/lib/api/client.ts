@@ -58,7 +58,7 @@ export interface ApiClient {
   getAdminOverview(): Promise<AdminOverview>;
   /** GET /admin/intakes — 접수 건 목록(최근 접수 순). 다음 쪽은 마지막 건의 received_at을 before로 넘긴다 */
   listAdminIntakes(filter?: IntakeFilter): Promise<IntakeView[]>;
-  /** POST /admin/intakes — 201. 접수 등록 → 배정 에이전트가 바로 배정한 결과. 2~4초 걸린다 */
+  /** POST /admin/intakes — 201. 접수 등록 → 배정 에이전트가 바로 배정한 결과. 2~4초 걸린다. 화면에서는 부르지 않는다(관제 화면에 접수 폼을 두지 않는다 — src/app/admin/page.tsx) */
   registerAdminIntake(input: IntakeInput): Promise<IntakeView>;
   /** GET /admin/intakes/{id} — 접수 건 하나와 배정 이력 */
   getAdminIntake(intakeId: string): Promise<IntakeDetail>;
