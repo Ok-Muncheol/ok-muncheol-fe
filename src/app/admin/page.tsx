@@ -8,6 +8,7 @@
  * 두 칸은 화면 폭이 아니라 본문 폭(컨테이너 쿼리 @5xl, 64rem 이상)으로 가른다. 접수 건 표는 최소 700px쯤 필요해서, 본문이 1120px(1440px 화면,
  * 또는 왼쪽 메뉴를 접은 1280px)이면 두 칸(접수 건 760px), 960px(메뉴를 펼친 1280px)이면 지도 · 접수 건 순으로 쌓는다.
  * 담당자 표는 늘 아래 전체 폭이다. BE가 지역별 수를 주기 전 응답이면 지도 없이 접수 건이 전체 폭이다.
+ * 접수 건 칸은 보이는 제목 없이 탭부터 시작한다. 제목 「접수 건」은 화면 낭독기용 숨은 제목(sr-only)으로만 둔다(지도 카드의 「오늘 지역별 접수」도 같다).
  */
 import Link from "next/link";
 import { IntakeTable } from "@/features/admin/intake-table";
@@ -65,25 +66,23 @@ export default async function AdminPage(props: PageProps<"/admin">) {
           {today && <RegionMap today={today} selected={view.region} hrefFor={(region) => adminHref(view, { region })} />}
 
           <section aria-labelledby="intakes-heading" className="min-w-0">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <h2 id="intakes-heading" className="text-heading font-semibold">
-                접수 건
-              </h2>
-              <nav aria-label="접수 건 보기" className="flex flex-wrap gap-1">
-                {INTAKE_TABS.map((tab) => (
-                  <Link
-                    key={tab.key || "all"}
-                    href={adminHref(view, { state: tab.key })}
-                    aria-current={view.state === tab.key ? "page" : undefined}
-                    className={`flex h-8 items-center rounded-control px-3 text-caption font-semibold ${
-                      view.state === tab.key ? "bg-primary-soft text-on-primary-soft" : "text-ink-muted hover:bg-surface-muted hover:text-ink"
-                    }`}
-                  >
-                    {tab.label}
-                  </Link>
-                ))}
-              </nav>
-            </div>
+            <h2 id="intakes-heading" className="sr-only">
+              접수 건
+            </h2>
+            <nav aria-label="접수 건 보기" className="mb-3 flex flex-wrap gap-1">
+              {INTAKE_TABS.map((tab) => (
+                <Link
+                  key={tab.key || "all"}
+                  href={adminHref(view, { state: tab.key })}
+                  aria-current={view.state === tab.key ? "page" : undefined}
+                  className={`flex h-8 items-center rounded-control px-3 text-caption font-semibold ${
+                    view.state === tab.key ? "bg-primary-soft text-on-primary-soft" : "text-ink-muted hover:bg-surface-muted hover:text-ink"
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              ))}
+            </nav>
 
             <nav aria-label="지역으로 거르기" className="mb-3 flex flex-wrap gap-1">
               {["", ...REGIONS].map((region) => (
