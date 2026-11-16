@@ -1,11 +1,11 @@
 /**
- * B 통합: 사건 관제 화면의 표시 규칙 — 단계·배정 방식·분야의 이름과 톤, 시각 표기, 주소 검색어, 배정 참고 정보(금액 표기·표식)와 담당자 속성.
- * 로그인한 계정의 역할(accountRole)도 여기서 가린다.
+ * B 통합: 사건 관제 화면의 표시 규칙 — 단계·배정 방식·분야의 이름과 톤, 시각 표기, 주소 검색어, 배정 참고 정보(금액 표기·표식)와 담당자 속성,
+ * 오늘 지역별 접수 지도의 색 단계. 로그인한 계정의 역할(accountRole)도 여기서 가린다.
  * 런타임 import는 두지 않는다 — 테스트(view.test.mjs)가 Node로 이 파일을 바로 읽는다.
  */
 import type {
-  AssignmentMethod, Coverage, InjurySeverity, IntakeDetails, IntakeFilter, IntakeStage, IntakeView, PersonalInjuryCover, Specialty, StaffMember, StaffRole,
-  VehicleType,
+  AdminOverview, AssignmentMethod, Coverage, InjurySeverity, IntakeDetails, IntakeFilter, IntakeStage, IntakeView, PersonalInjuryCover, Specialty, StaffMember,
+  StaffRole, VehicleType,
 } from "../api/types";
 
 type Tone = "neutral" | "info" | "success" | "warning" | "danger" | "model";
@@ -207,4 +207,67 @@ export function staffOptionLabel(member: StaffMember): string {
   ]
     .filter(Boolean)
     .join(" · ");
+}
+
+/* ---------- 오늘 지역별 접수(지도) ---------- */
+
+/** 지도 색 단계 수. 0건은 따로 0단계(회색)이고, 1건 이상을 1~4단계(옥색이 짙어진다)로 나눈다 */
+export const MAP_STEPS = 4;
+
+export type MapBin = { step: number; from: number; to: number };
+export type RegionCount = { region: string; count: number; step: number };
+export type RegionToday = {
+  /** 17개 시·도 모두, REGIONS 순 */
+  regions: RegionCount[];
+  /** 지역을 판별하지 못한 오늘 접수 */
+  unknown: number;
+  /** 범례 — 실제로 쓰는 단계만, 낮은 단계부터 */
+  bins: MapBin[];
+};
+
+/**
+ * 단계 하나의 폭 — 가장 많은 지역의 수를 4로 나눠 올린다(같은 폭 구간). 10을 넘으면 범례가 읽기 쉽게 50까지는 5의 배수,
+ * 그 위는 자릿수 단위로 올린다. 가장 많은 지역이 22건이면 6 → 1–6 · 7–12 · 13–18 · 19–22, 150건이면 40 → 1–40 · 41–80 · …
+ */
+export function mapBinWidth(max: number): number {
+  const raw = Math.ceil(Math.max(1, max) / MAP_STEPS);
+  const unit = raw <= 10 ? 1 : raw <= 50 ? 5 : 10 ** Math.floor(Math.log10(raw));
+  return Math.ceil(raw / unit) * unit;
+}
+
+/** 건수 → 색 단계(0~4) */
+export function mapStep(count: number, width: number): number {
+  return count > 0 ? Math.min(MAP_STEPS, Math.ceil(count / width)) : 0;
+}
+
+/**
+ * 오늘 지역별 접수 — BE 현황의 시·도별 수를 17개 시·도로 펼치고 색 단계와 범례를 붙인다.
+ * BE가 지역별 수를 주기 전 응답이면 null이다(지도를 그리지 않는다). 없는 지역은 0건이다.
+ */
+export function regionToday(summary: AdminOverview["summary"]): RegionToday | null {
+  const byRegion = summary.received_today_by_region;
+  if (!byRegion) return null;
+  const counts = REGIONS.map((region) => ({ region, count: Math.max(0, Math.trunc(Number(byRegion[region]) || 0)) }));
+  const max = Math.max(0, ...counts.map((c) => c.count));
+  const width = mapBinWidth(max);
+  const bins: MapBin[] = [];
+  for (let step = 1; step <= MAP_STEPS && (step - 1) * width + 1 <= max; step++) {
+    bins.push({ step, from: (step - 1) * width + 1, to: Math.min(step * width, max) });
+  }
+  const known = counts.reduce((sum, c) => sum + c.count, 0);
+  return {
+    regions: counts.map((c) => ({ ...c, step: mapStep(c.count, width) })),
+    unknown: Math.max(0, summary.received_today - known),
+    bins,
+  };
+}
+
+/** 많은 순(같으면 REGIONS 순) — 지도 옆 순위 목록 */
+export function byCount(regions: RegionCount[]): RegionCount[] {
+  return [...regions].sort((a, b) => b.count - a.count || REGIONS.indexOf(a.region) - REGIONS.indexOf(b.region));
+}
+
+/** 범례 한 칸 — "1–10" · "5"(한 값뿐인 단계) */
+export function binLabel(bin: MapBin): string {
+  return bin.from === bin.to ? `${bin.from}` : `${bin.from}–${bin.to}`;
 }

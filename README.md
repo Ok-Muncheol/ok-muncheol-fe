@@ -125,6 +125,7 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 | 선택 · quiet 버튼 hover | `bg-primary-soft` · `text-on-primary-soft` |
 | 상태 톤(배지·안내 상자) | `bg-{info,success,warning,danger,model}-soft` + `text-on-{톤}-soft`, 점·테두리는 `bg-{톤}` · `border-{톤}` |
 | 단계 열 머리(담당 사건 보드) — 상태 톤이 아니라 열 구분. 옥색을 단계가 갈수록 짙게 섞었다 | `bg-stage-intake` · `bg-stage-judgment` · `bg-stage-report` |
+| 지도 단계(사건 관제의 오늘 지역별 접수) — 건수의 많고 적음. 0건은 회색, 1~4단계는 많을수록 짙은 옥색. 지역마다 건수 라벨이 따로 있다 | `fill-map-0` ~ `fill-map-4`(면) · `bg-map-*`(범례) |
 | 그림자 | `shadow-card`(카드) · `shadow-raised`(팝오버·드롭다운) |
 | 반경 | `rounded-card` 12 · `rounded-control` 8(버튼·입력) · `rounded-badge` 6 (px) |
 | 글자 크기 | `text-title` 22 · `text-heading` 17 · `text-body` 14 · `text-caption` 12 (px) |

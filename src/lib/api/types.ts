@@ -353,7 +353,14 @@ export type AssignmentRecord = {
 export type IntakeDetail = IntakeView & { assignments: AssignmentRecord[] };
 export type AdminOverview = {
   staff: StaffMember[];
-  summary: { open: number; unassigned: number; received_today: number; closed_today: number; by_stage: Record<string, number> };
+  summary: {
+    open: number; unassigned: number; received_today: number; closed_today: number; by_stage: Record<string, number>;
+    /**
+     * 오늘 접수의 시·도별 수 `{서울: 3, …}` — 0건 지역은 빠진다. 지역을 판별하지 못한 접수는 세지 않아 합이 received_today보다 작을 수 있다.
+     * BE가 이 값을 주기 전 응답에는 없다(관제 화면이 지도를 그리지 않는다).
+     */
+    received_today_by_region?: Record<string, number>;
+  };
   generated_at: string;
 };
 export type IntakeInput = { location: string; description: string; injured_count?: number; accident_at?: string | null; details?: IntakeDetailsInput };

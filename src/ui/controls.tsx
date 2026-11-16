@@ -276,10 +276,14 @@ export function Checkbox({ className = "", children, ...props }: Omit<InputHTMLA
 
 /* ---------- 표 ---------- */
 
-/** 표 — 사건 목록 · 수정요소 · 이력. 가로가 좁으면 바깥에서 overflow-x-auto로 민다. */
+/**
+ * 표 — 사건 목록 · 수정요소 · 이력. 가로가 좁으면 바깥에서 overflow-x-auto로 민다.
+ * 감싼 상자를 relative로 둔다 — 머리칸의 sr-only 글자(position: absolute)가 상자 밖 페이지 기준으로 놓이면
+ * 좁은 화면에서 페이지 전체가 가로로 밀린다(360px에서 630px까지).
+ */
 export function Table({ className = "", ...props }: TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="overflow-x-auto rounded-card border border-line bg-surface">
+    <div className="relative overflow-x-auto rounded-card border border-line bg-surface">
       <table className={`w-full border-collapse text-body ${className}`} {...props} />
     </div>
   );
