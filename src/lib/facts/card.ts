@@ -361,9 +361,30 @@ export function resetFields(card: Pick<FactCard, "fields" | "status">): Fields {
   );
 }
 
-/** 확인이 아직 필요한 칸 — 담당자가 아직 고르지 않은 needs_review 칸. 0이어야 확인 완료를 누를 수 있다. */
+/**
+ * 담당자가 직접 골라야 하는 칸 — AI가 값을 채우지 못한(모름) needs_review 칸. 0이어야 확정을 누를 수 있다.
+ * AI가 값을 채운 needs_review 칸은 화면이 그 값을 미리 골라 두고, 확정할 때 그 값으로 확인한다(acceptAiValues).
+ */
 export function remainingReview(draft: Fields): string[] {
-  return Object.keys(draft).filter((k) => draft[k].verification_status === "needs_review");
+  return Object.keys(draft).filter((k) => draft[k].verification_status === "needs_review" && draft[k].value === null);
+}
+
+/**
+ * 확정할 때 미리 골라 둔 AI 값을 확인으로 넘긴다 — 값이 있는 needs_review 칸을 그 값 그대로 확인함(pick)으로 바꾼다.
+ * BE는 needs_review 칸이 남으면 확정을 막고, 표시 없는 칸(unverified)은 확정하면 스스로 확인함으로 바꾼다(카드 v1 9절).
+ * 값이 없는(모름) 칸은 그대로 둔다 — 담당자가 골라야 한다(remainingReview).
+ */
+export function acceptAiValues(draft: Fields): Fields {
+  return Object.fromEntries(
+    Object.entries(draft).map(([key, f]) => [key, f.verification_status === "needs_review" && f.value !== null ? pick(f, f.value) : f]),
+  );
+}
+
+/** 확정한 카드의 칸 — BE 확정처럼 값이 있는 칸은 모두 확인함이다(카드 v1 9절). 견본 모드가 BE 대신 쓴다. */
+export function confirmedFields(draft: Fields): Fields {
+  return Object.fromEntries(
+    Object.entries(draft).map(([key, f]) => [key, f.value !== null && f.verification_status !== "human_confirmed" ? pick(f, f.value) : f]),
+  );
 }
 
 /** 칸의 자동 정확도(vision_detail.eval.accuracy, 0~1). 없으면 null. */

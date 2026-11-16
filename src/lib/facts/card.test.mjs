@@ -2,11 +2,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  acceptAiValues,
   buildCardPatch,
   cardLabel,
   cardOptions,
   cardValueLabel,
   chartPartyName,
+  confirmedFields,
   egoName,
   groupFields,
   isFromVideo,
@@ -74,6 +76,37 @@ test("pick은 같은 값을 골라도 확인함으로 만들고 모델 원값은
   assert.equal(picked.verification_status, "human_confirmed");
   assert.equal(picked.model_value, "straight");
   assert.deepEqual(remainingReview({ a: picked, b: f(null, "needs_review") }), ["b"]);
+});
+
+test("AI가 값을 채운 확인 필요 칸은 확정을 막지 않고, 확정할 때 그 값 그대로 확인한다", () => {
+  const card = {
+    version: 2,
+    fields: {
+      movement_B: f("right_turn", "needs_review"),
+      signal_A: f(null, "needs_review"),
+      signal_B: f("green"),
+      movement_A: { ...pick(f("straight"), "left_turn"), model_value: "straight" },
+    },
+    party_mapping: mapping,
+  };
+  // AI가 채우지 못한(모름) 칸만 담당자가 골라야 한다
+  assert.deepEqual(remainingReview(card.fields), ["signal_A"]);
+  const accepted = acceptAiValues(card.fields);
+  assert.equal(accepted.movement_B.verification_status, "human_confirmed");
+  assert.equal(accepted.movement_B.value, "right_turn");
+  assert.equal(accepted.movement_B.model_value, "right_turn");
+  assert.equal(accepted.signal_A.verification_status, "needs_review", "모름 칸은 그대로");
+  assert.equal(accepted.signal_B.verification_status, "unverified", "표시 없는 칸은 BE 확정이 확인한다");
+  assert.equal(accepted.movement_A.value, "left_turn", "담당자가 고친 값은 그대로");
+  assert.equal(card.fields.movement_B.verification_status, "needs_review", "받은 칸은 바꾸지 않는다");
+  // 저장 요청에는 담당자가 고른 칸과 AI 값으로 확인한 칸만 실린다
+  assert.deepEqual(Object.keys(buildCardPatch(card, accepted, mapping, "x").fields).sort(), ["movement_B"]);
+  // 견본 확정은 BE처럼 값이 있는 칸을 모두 확인한다 — 모름 칸과 비운 담당자 입력 칸은 그대로
+  const manual = { ...f(null), source: "manual", model_value: null, model_confidence: null };
+  const confirmed = confirmedFields({ ...accepted, signal_A: pick(card.fields.signal_A, "red"), lane_marking_A: manual });
+  for (const key of ["movement_B", "signal_A", "signal_B", "movement_A"]) assert.equal(confirmed[key].verification_status, "human_confirmed", key);
+  assert.equal(confirmed.signal_B.value, "green");
+  assert.equal(confirmed.lane_marking_A.verification_status, "unverified");
 });
 
 test("buildCardPatch는 바뀐 칸만 싣고 매핑은 바뀌었을 때만 싣는다", () => {
