@@ -50,6 +50,15 @@
   --ok-stage-intake: #edfaf8;
   --ok-stage-judgment: #dbf5f1;
   --ok-stage-report: #caf1eb;
+  /*
+   * 지도 단계(사건 관제의 오늘 지역별 접수) — 0건은 옅은 회색, 1~4단계는 옥색을 면에 섞어(OKLab, 라이트 20·38·56·74%, 다크 22·38·54·70%)
+   * 많을수록 짙게 한다. 단계 사이 밝기(OKLCH L) 차이는 0.08 넘게 둔다. 지역마다 건수 라벨이 따로 있어 면 대비 3:1은 요구하지 않는다.
+   */
+  --ok-map-0: #eceff2;
+  --ok-map-1: #d3e4e0;
+  --ok-map-2: #accbc5;
+  --ok-map-3: #85b3aa;
+  --ok-map-4: #5d9c91;
   --ok-shadow-card: none;
   --ok-shadow-raised: 0 1px 2px rgb(17 24 39 / 0.06), 0 8px 24px rgb(17 24 39 / 0.12);
 }
@@ -92,6 +101,11 @@
     --ok-stage-intake: #1b2d38;
     --ok-stage-judgment: #1e3841;
     --ok-stage-report: #22434a;
+    --ok-map-0: #232a35;
+    --ok-map-1: #213b3e;
+    --ok-map-2: #295554;
+    --ok-map-3: #30706a;
+    --ok-map-4: #358c82;
     --ok-shadow-card: none;
     --ok-shadow-raised: 0 8px 24px rgb(0 0 0 / 0.45);
   }
@@ -157,6 +171,11 @@
   --color-stage-intake: var(--ok-stage-intake);
   --color-stage-judgment: var(--ok-stage-judgment);
   --color-stage-report: var(--ok-stage-report);
+  --color-map-0: var(--ok-map-0);
+  --color-map-1: var(--ok-map-1);
+  --color-map-2: var(--ok-map-2);
+  --color-map-3: var(--ok-map-3);
+  --color-map-4: var(--ok-map-4);
 
   --shadow-card: var(--ok-shadow-card);
   --shadow-raised: var(--ok-shadow-raised);

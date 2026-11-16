@@ -56,6 +56,9 @@ const SWATCHES: { name: string; className: string; note: string }[] = [
   { name: "stage-report", className: "bg-stage-report", note: "보드 열 머리 — 검토 보고서" },
 ];
 
+/** 지도 단계 — 사건 관제의 오늘 지역별 접수 지도. 0건은 회색, 1~4단계는 많을수록 짙은 옥색 */
+const MAP_SWATCHES = ["bg-map-0", "bg-map-1", "bg-map-2", "bg-map-3", "bg-map-4"];
+
 const LANES = [
   { key: "intake", title: "접수", description: "범위 확인·영상 분석", count: 0, tint: "bg-stage-intake" },
   { key: "judgment", title: "판단", description: "사실 카드 확정·구분 질문·검증", count: 1, tint: "bg-stage-judgment" },
@@ -90,10 +93,21 @@ export default function DesignPage() {
               </li>
             ))}
           </ul>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <ul aria-hidden className="flex">
+              {MAP_SWATCHES.map((className) => (
+                <li key={className} className={`h-6 w-9 border-y border-line first:rounded-l-control first:border-l last:rounded-r-control last:border-r ${className}`} />
+              ))}
+            </ul>
+            <span className="min-w-0">
+              <span className="block font-mono text-caption">map-0 ~ map-4</span>
+              <span className="block text-caption text-ink-muted">지도 단계 — 관제의 오늘 지역별 접수. 0건은 회색, 많을수록 짙은 옥색</span>
+            </span>
+          </div>
           <p className="mt-4 text-caption text-ink-muted">
             글자는 <span className="text-ink">ink</span> · <span className="text-ink-muted">ink-muted</span> ·{" "}
             <span className="text-ink-faint">ink-faint</span>, 선은 line · line-strong이다. Tailwind 기본 팔레트(gray·blue 등)는 지웠다. 단계 색(stage-*)은
-            상태 톤이 아니라 보드 열 구분이다.
+            상태 톤이 아니라 보드 열 구분이고, 지도 단계(map-*)는 건수의 많고 적음이다.
           </p>
         </Card>
 

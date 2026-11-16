@@ -2,8 +2,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  accountRole, adminHref, assignable, detailFlags, detailSummary, hasDetails, highValueFor, intakeFilter, needsInjuryAdjuster, parseAdminView, shortTime,
-  specialtyLabels, staffName, staffOptionLabel, won,
+  REGIONS, accountRole, adminHref, assignable, binLabel, byCount, detailFlags, detailSummary, hasDetails, highValueFor, intakeFilter, mapBinWidth, mapStep,
+  needsInjuryAdjuster, parseAdminView, regionToday, shortTime, specialtyLabels, staffName, staffOptionLabel, won,
 } from "./view.ts";
 
 const ID = "11111111-1111-4111-8111-111111111111";
@@ -142,4 +142,36 @@ test("계정 역할은 토큰 app_metadata로 가린다 — 관리자, 대물·�
   for (const meta of [undefined, null, "admin", {}, { staff_role: "ADMIN" }, { staff_role: ["admin"] }, { coverage: "property" }]) {
     assert.deepEqual(accountRole(meta), { staffRole: null, label: "보상 담당자" });
   }
+});
+
+const summary = (over) => ({ open: 0, unassigned: 0, received_today: 0, closed_today: 0, by_stage: {}, ...over });
+
+test("지도 단계 폭 — 가장 많은 지역을 4단계로 나누고, 10을 넘으면 범례가 읽기 쉬운 수로 올린다", () => {
+  assert.deepEqual([0, 1, 3, 4, 10, 22, 35, 40, 41, 150, 480].map(mapBinWidth), [1, 1, 1, 1, 3, 6, 9, 10, 15, 40, 200]);
+  assert.deepEqual([0, 1, 10, 11, 35, 99].map((n) => mapStep(n, 10)), [0, 1, 1, 2, 4, 4]);
+});
+
+test("오늘 지역별 접수 — 17개 시·도로 펼치고, 없는 지역은 0건, 지역 미상은 합에서 뺀 나머지", () => {
+  const today = regionToday(summary({ received_today: 61, received_today_by_region: { 서울: 12, 경기: 35, 부산: 9, 제주: 1, 한양: 4 } }));
+  assert.deepEqual(today.regions.map((r) => r.region), REGIONS);
+  const at = (region) => today.regions.find((r) => r.region === region);
+  assert.deepEqual([at("경기"), at("서울"), at("부산"), at("제주"), at("세종")], [
+    { region: "경기", count: 35, step: 4 },
+    { region: "서울", count: 12, step: 2 },
+    { region: "부산", count: 9, step: 1 },
+    { region: "제주", count: 1, step: 1 },
+    { region: "세종", count: 0, step: 0 },
+  ]);
+  assert.equal(today.unknown, 4); // 61 − (12 + 35 + 9 + 1). 시·도가 아닌 키(한양)는 세지 않는다
+  assert.deepEqual(today.bins.map(binLabel), ["1–9", "10–18", "19–27", "28–35"]);
+  assert.deepEqual(byCount(today.regions).slice(0, 5).map((r) => r.region), ["경기", "서울", "부산", "제주", "대구"]); // 0건은 시·도 순
+});
+
+test("오늘 지역별 접수 — 적을 때는 한 값씩 단계가 되고, 아무 데도 없으면 범례가 비고, BE가 주기 전 응답이면 지도가 없다", () => {
+  const few = regionToday(summary({ received_today: 3, received_today_by_region: { 대전: 2, 울산: 1 } }));
+  assert.deepEqual(few.bins.map(binLabel), ["1", "2"]);
+  assert.deepEqual(byCount(few.regions).slice(0, 2).map((r) => [r.region, r.step]), [["대전", 2], ["울산", 1]]);
+  const none = regionToday(summary({ received_today: 2, received_today_by_region: {} }));
+  assert.deepEqual([none.bins, none.unknown, none.regions.every((r) => r.count === 0 && r.step === 0)], [[], 2, true]);
+  assert.equal(regionToday(summary({ received_today: 5 })), null);
 });

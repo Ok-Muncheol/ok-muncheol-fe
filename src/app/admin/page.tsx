@@ -4,11 +4,15 @@
  * (BE `POST /admin/intakes`와 ApiClient.registerAdminIntake는 남아 있다.)
  * 관리자만 들어온다. 메뉴는 관리자에게만 보이고(레이아웃), 화면은 BE가 403을 주면 없는 화면이 된다(admin-source.ts).
  * 보기(탭·지역·담당자·쪽)는 주소 검색어다 — 새로고침·뒤로 가기에도 같은 목록이 나온다.
+ * 현황 줄 아래에 오늘 지역별 접수 지도를 둔다(region-map.tsx). BE가 지역별 수를 주기 전 응답이면 지도 없이 그린다.
  */
 import Link from "next/link";
 import { IntakeTable } from "@/features/admin/intake-table";
 import { PAGE_SIZE, loadAdmin } from "@/features/admin/admin-source";
-import { COVERAGE_LABELS, INTAKE_TABS, OPEN_STAGES, REGIONS, STAGE_VIEW, adminHref, parseAdminView, shortTime, specialtyLabels, staffName } from "@/lib/admin/view";
+import { RegionMap } from "@/features/admin/region-map";
+import {
+  COVERAGE_LABELS, INTAKE_TABS, OPEN_STAGES, REGIONS, STAGE_VIEW, adminHref, parseAdminView, regionToday, shortTime, specialtyLabels, staffName,
+} from "@/lib/admin/view";
 import { Badge, ButtonLink, Notice, PageHeader, Stat, StatStrip, Table, Td, Th } from "@/ui/controls";
 
 export default async function AdminPage(props: PageProps<"/admin">) {
@@ -37,6 +41,7 @@ export default async function AdminPage(props: PageProps<"/admin">) {
   const adjusters = staff.filter((member) => member.staff_role === "adjuster");
   const picked = staff.find((member) => member.user_id === view.assignee);
   const last = intakes.at(-1);
+  const today = regionToday(summary);
 
   return (
     <>
@@ -54,6 +59,8 @@ export default async function AdminPage(props: PageProps<"/admin">) {
           <Stat key={stage} label={STAGE_VIEW[stage].label} value={summary.by_stage[stage]} />
         ))}
       </StatStrip>
+
+      {today && <RegionMap today={today} selected={view.region} hrefFor={(region) => adminHref(view, { region })} />}
 
       <div className="flex flex-col gap-6">
         <section aria-labelledby="intakes-heading">
