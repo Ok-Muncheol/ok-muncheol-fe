@@ -274,12 +274,21 @@ function Editor({
   only?: readonly string[];
   allowUnknown: boolean;
   onChange: (field: FactField) => void;
-  /** 고르기를 마쳤다 — 칩은 고르는 즉시, 글·숫자 칸은 「다 고쳤어요」로 닫는다. */
+  /** 고르기를 마쳤다 — 칩은 고르는 즉시, 글·숫자 칸은 「확인」으로 닫는다. */
   onDone: () => void;
 }) {
+  // 「확인」은 지금 값을 그대로 확인으로 남기고 닫는다 — AI 값이 맞으면 고치지 않고 눌러도 확인이다
+  // (칩 칸에서 같은 값을 다시 누르는 것과 같다). 고쳤으면 고친 값이 이미 들어 있다.
   const done = (
-    <Button variant="quiet" size="sm" onClick={onDone}>
-      다 고쳤어요
+    <Button
+      variant="quiet"
+      size="sm"
+      onClick={() => {
+        onChange(pick(field, field.value));
+        onDone();
+      }}
+    >
+      확인
     </Button>
   );
   if (fieldKey === "narrative") {
