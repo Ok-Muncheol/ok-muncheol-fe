@@ -37,7 +37,7 @@ export interface ApiClient {
    * 카드가 이미 있으면 409 fact_card_exists, 영상 분석이 대기·진행 중이면 409 analysis_in_progress
    */
   startWithoutVideo(caseId: string): Promise<FactCard>;
-  /** GET /cases/{id}/evidence — 근거 사진 · 미리보기 영상 서명 URL(1시간). 담당자 본인 사건만, 카드가 없으면 빈 목록 */
+  /** GET /cases/{id}/evidence — 미리보기 영상 서명 URL(1시간). 담당자 본인 사건만, 완료한 분석이 없으면 preview_url null */
   getEvidence(caseId: string): Promise<EvidenceView>;
   patchFactCard(caseId: string, patch: FactPatch): Promise<FactCard>;
   confirmFactCard(caseId: string, expectedVersion: number): Promise<FactCard>;

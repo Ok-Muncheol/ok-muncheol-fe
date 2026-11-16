@@ -36,7 +36,7 @@ PDF 파싱·문서 임베딩·평가 실행은 김지은의 BE/오프라인 책�
 | --- | --- |
 | `src/features/cases/case-intake.tsx` | 사건 범위/당사자 수·영상 업로드, BE cases API, 업로드/실패/재시도. 사실 카드 직접 입력 경로는 뺐다(구준휘, 2026-11-16) — 사건은 배정 시스템이 영상 사건으로 만들고, 당사자 진술은 판단 화면의 사실 카드에서 반영한다. 영상이 없으면 「영상 없이 진행」이 빈 카드를 만들어 판단 화면으로 가고, 영상은 보고서 전까지 나중에 올릴 수 있다(구준휘, 2026-11-16) |
 | `src/features/facts/fact-card-panel.tsx` | 값·모델 원값·출처·확신도·증거, 편집/저장/확정, 수정 이력·매핑·버전 충돌. 초안(구준휘, 2026-11-10): 칸 수정·담당자 확인·저장/확정 요청 모양까지 있고 요청·이력·매핑 편집은 없다. 카드가 아직 없을 때의 빈 틀은 `fact-card-skeleton.tsx`(같은 칸 순서) |
-| `src/features/facts/evidence-frames.tsx`·`parties-card.tsx`·`fact-source.ts`, `src/lib/facts/view.ts` | 판단 화면(`src/app/cases/[id]/judgment/page.tsx`) 안의 사실 카드 자리 — 카드·사고·당사자·근거 프레임과 카드 조회·화면 규칙. 사실 카드 화면은 판단 화면에 합쳤다(구준휘, 2026-11-11). 카드 조회 API·권한 있는 프레임 URL·영상 연결 |
+| `src/features/facts/parties-card.tsx`·`fact-source.ts`, `src/lib/facts/view.ts` | 판단 화면(`src/app/cases/[id]/judgment/page.tsx`) 안의 사실 카드 자리 — 카드·사고·당사자와 카드 조회·화면 규칙. 사실 카드 화면은 판단 화면에 합쳤다(구준휘, 2026-11-11). 카드 조회 API·영상 연결. 근거 장면 목록은 두지 않는다(모든 칸이 같은 고정 프레임이라 칸별 근거가 아니다 — FE #166) |
 | `src/lib/supabase/README.md` | 인증·직접 업로드·권한 있는 프레임 조회·Realtime 알림/조회 복원 구현 |
 
 완료 기준: 영상 없이도 진행(빈 카드)·당사자 진술을 반영한 칸 수정/확정, 카드 칸→근거 프레임 이동, 불명·불일치·매핑 확인,

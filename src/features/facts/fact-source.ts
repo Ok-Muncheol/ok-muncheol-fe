@@ -28,8 +28,8 @@ export async function getFactCard(caseId: string): Promise<FactCard | null> {
 }
 
 /**
- * 근거 사진 · 미리보기 영상 보기 주소(BE GET /cases/{id}/evidence). 주소가 1시간 뒤 만료되므로 화면을 열 때마다 새로 읽는다.
- * 견본 모드는 파일이 없어 null이다. 못 읽으면(권한 · 연결 · BE 오류) 화면을 막지 않고 null — 영상 · 사진 자리만 비운다.
+ * 미리보기 영상 보기 주소(BE GET /cases/{id}/evidence). 주소가 1시간 뒤 만료되므로 화면을 열 때마다 새로 읽는다.
+ * 견본 모드는 파일이 없어 null이다. 못 읽으면(권한 · 연결 · BE 오류) 화면을 막지 않고 null — 영상 자리만 비운다.
  */
 export async function getEvidence(caseId: string): Promise<EvidenceView | null> {
   if (isSampleSource()) return null;
