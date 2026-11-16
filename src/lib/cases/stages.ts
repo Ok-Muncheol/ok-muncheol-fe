@@ -151,9 +151,10 @@ export type BoardStatus = { label: string; tone: BoardTone };
 export function boardStatus(c: CaseSummary): BoardStatus {
   const t = c.task_status;
   switch (c.stage) {
+    // 접수 단계 사건은 늘 영상을 기다린다 — 사건은 배정 시스템이 영상 사건으로 만든다(BE app/dispatch/repository.py insert_case).
     case "intake":
       if (t === "failed") return { label: "분석 실패", tone: "failed" };
-      return { label: c.input_path === "video" ? "영상 업로드 대기" : "입력 대기", tone: "turn" };
+      return { label: "영상 업로드 대기", tone: "turn" };
     case "analysis":
       if (t === "failed") return { label: "분석 실패", tone: "failed" };
       return { label: "영상 분석 중", tone: "running" };
