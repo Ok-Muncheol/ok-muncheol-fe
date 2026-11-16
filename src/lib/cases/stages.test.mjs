@@ -133,6 +133,8 @@ test("사건 목록은 고정한 사건을 따로 위에 두고 둘 다 접수 �
 test("boardStatus는 단계마다 할 일과 상태를 가른다", async () => {
   const { boardStatus } = await import("./stages.ts");
   assert.deepEqual(boardStatus(make({ stage: "intake" })), { label: "영상 업로드 대기", tone: "turn" });
+  // 「입력 대기」는 없다 — 배정 시스템이 만드는 사건은 모두 영상 사건이다
+  assert.equal(boardStatus(make({ stage: "intake", input_path: "manual" })).label, "영상 업로드 대기");
   assert.equal(boardStatus(make({ stage: "analysis", task_status: "running" })).tone, "running");
   assert.equal(boardStatus(make({ stage: "analysis", task_status: "failed" })).tone, "failed");
   assert.equal(boardStatus(make({ stage: "judgment", task_status: "waiting_for_confirmation", open_questions: 2 })).label, "질문 2건");
