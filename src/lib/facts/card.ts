@@ -535,3 +535,16 @@ export function reasonParts(reason: string, mapping: PartyMapping, ego: EgoName 
   if (last < text.length) parts.push(text.slice(last));
   return parts;
 }
+
+/**
+ * 판단이 보류·추가 확인으로 끝났을 때 담당자가 먼저 볼 카드 칸 — 화면이 누르기 전에도 그 칸을 칠해 둔다.
+ * 「미확인」 사유의 칸은 모두, 「카드와 불일치」 줄은 다른 칸이 가장 적은 도표(가장 가까운 도표)의 칸만 고른다.
+ * 멀리 어긋난 도표까지 칠하면 카드 대부분이 칠해져 쓸모가 없다. key는 카드 칸 이름이다(reasonParts).
+ */
+export function fieldsToFix(reasons: readonly string[], mapping: PartyMapping): string[] {
+  const keysOf = (reason: string) => reasonParts(reason, mapping).flatMap((part) => (typeof part === "string" ? [] : [part.key]));
+  const unconfirmed = reasons.filter((r) => r.includes("미확인")).flatMap(keysOf);
+  const mismatches = reasons.filter((r) => r.includes("카드와 불일치")).map(keysOf).filter((keys) => keys.length > 0);
+  const fewest = Math.min(...mismatches.map((keys) => keys.length));
+  return [...new Set([...unconfirmed, ...mismatches.filter((keys) => keys.length === fewest).flat()])];
+}

@@ -45,6 +45,8 @@ type Props = {
   editable: (key: string) => boolean;
   /** 답하지 않은 구분 질문(칸 이름 → 질문). 그 칸은 맨 위에 두고 질문의 보기만 보인다. */
   questions: Record<string, QuestionView>;
+  /** 판단이 보류하며 가리킨 칸(fieldsToFix) — 누르기 전에도 칠해 둔다. */
+  highlighted?: readonly string[];
   /** 「초기화」할 때마다 바뀐다 — 칸을 처음 상태(펼침)로 다시 그린다. */
   resetKey?: number;
   /** 머리의 오른쪽 — 잠긴 카드의 「수정하기」 등. */
@@ -56,7 +58,7 @@ type Props = {
 /** 카드 맨 아래 확정 줄 — 이 줄이 화면 밖이면 사건 화면이 같은 버튼을 아래에 띄운다. */
 export const FACT_CARD_FOOTER_ID = "fact-card-footer";
 
-export function FactCardPanel({ card, draft, mapping, onField, editable, questions, resetKey = 0, aside, footer }: Props) {
+export function FactCardPanel({ card, draft, mapping, onField, editable, questions, highlighted = [], resetKey = 0, aside, footer }: Props) {
   const groups = groupFields(card.fields, draft, Object.keys(questions));
   // AI가 채웠고 담당자가 아직 확인하지 않은 보기 칸·사고 설명 — 처음부터 칩·입력창을 펼쳐 AI 값을 고른 채로 보인다
   // (맞으면 그대로 확정하고, 틀리면 그 자리에서 다른 칩을 누르거나 글을 고친다).
@@ -78,6 +80,7 @@ export function FactCardPanel({ card, draft, mapping, onField, editable, questio
       open={open}
       editable={editable(key)}
       question={questions[key]}
+      highlighted={highlighted.includes(key)}
       onChange={(next) => onField(key, next)}
     />
   );
@@ -157,6 +160,7 @@ function FieldRow({
   open: initiallyOpen,
   editable,
   question,
+  highlighted = false,
   onChange,
 }: {
   /** 2열 목록의 한 칸 — 줄 구분선을 위에 긋고, 열리면 두 열을 다 쓴다. */
@@ -168,6 +172,8 @@ function FieldRow({
   open: boolean;
   editable: boolean;
   question?: QuestionView;
+  /** 판단이 보류하며 가리킨 칸 — 사유의 칸 이름을 눌렀을 때(:target)와 같은 색으로 칠한다 */
+  highlighted?: boolean;
   onChange: (field: FactField) => void;
 }) {
   // 확인이 필요한 칸은 열린 채로 시작하고, 고르면 닫힌다.
@@ -186,7 +192,7 @@ function FieldRow({
   return (
     <li
       id={`fact-${fieldKey}`}
-      className={`scroll-mt-24 py-3 transition-colors target:bg-primary-soft ${compact ? `border-t border-line ${open ? "sm:col-span-2" : ""}` : "-mx-5 px-5"} `}
+      className={`scroll-mt-24 py-3 transition-colors target:bg-primary-soft ${highlighted ? "bg-primary-soft" : ""} ${compact ? `border-t border-line ${open ? "sm:col-span-2" : ""}` : "-mx-5 px-5"} `}
     >
       <div className="flex items-baseline justify-between gap-3">
         <p className="flex items-center gap-1.5 font-semibold text-ink">
