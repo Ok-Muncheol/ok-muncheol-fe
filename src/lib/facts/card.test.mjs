@@ -11,6 +11,7 @@ import {
   confirmedFields,
   egoName,
   emptyField,
+  fieldsToFix,
   groupFields,
   isFromVideo,
   isRelevant,
@@ -316,3 +317,20 @@ test("진로 변경 순서 칸(BE #261)은 이름·보기가 있고 일반 도�
   assert.equal(readableMessage("남은 칸: lane_change_timing"), "남은 칸: 두 차 진로 변경 순서");
 });
 
+
+test("fieldsToFix는 미확인 칸과 가장 가까운 도표의 다른 칸만 고른다", () => {
+  const mapping = { video_ego_party_id: "P1", insured_party_id: "P1", chart_party_A_id: "P2", chart_party_B_id: "P1" };
+  assert.deepEqual(fieldsToFix(["도표 선택 칸 미확인: relative_position"], mapping), ["relative_position"]);
+  const deferred = [
+    "검수한 도표 근거 없음",
+    "차11-3: 카드와 불일치 ['location_type', 'movement_A', 'movement_B']",
+    "차43-6: 카드와 불일치 ['relative_position']",
+    "그 밖에 제외한 도표 37개",
+    "도표 A/B를 맞바꾸면 차43-2 「후행 직진 대 선행 진로변경」: 카드와 불일치 ['relative_position']",
+    "도표 A/B를 맞바꾸면 차43-1 「차로 감소 도로 (합류) 사고」: 카드와 불일치 ['lane_reduction']",
+  ];
+  assert.deepEqual(fieldsToFix(deferred, mapping), ["relative_position", "lane_reduction"], "멀리 어긋난 도표(차11-3)의 칸은 칠하지 않는다");
+  // 도표 A가 블랙박스 차면 카드 칸 이름으로 바꾼다
+  assert.deepEqual(fieldsToFix(["S-1: 카드와 불일치 ['movement_A']"], swapChartParties(mapping)), ["movement_B"]);
+  assert.deepEqual(fieldsToFix(["검수한 도표 근거 없음"], mapping), []);
+});

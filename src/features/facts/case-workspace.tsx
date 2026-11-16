@@ -26,6 +26,7 @@ import {
   changedFields,
   confirmedFields,
   egoName,
+  fieldsToFix,
   readableMessage,
   remainingReview,
   resetFields,
@@ -105,6 +106,8 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   // AI가 값을 채운 칸은 그 값을 미리 골라 두었으므로 세지 않는다.
   const toPick = [...new Set([...pendingQuestions.filter((q) => !touched.has(q.field_key)).map((q) => q.field_key), ...remainingReview(draft)])];
   const result = sampleResult ?? (run?.status === "completed" ? run.result : null);
+  // 지금 카드로 낸 판단이 보류·추가 확인이면 사유가 가리킨 칸을 칠해 둔다 — 담당자가 고른 칸은 지운다.
+  const toFix = runForCard?.status === "completed" && runForCard.result && runForCard.result.status !== "draft_ready" ? fieldsToFix(runForCard.result.reasons, baseMapping).filter((key) => !touched.has(key)) : [];
   const stale = sampleResult === null && result !== null && (run!.fact_card_version !== card.version || editing || dirty);
   const running = runForCard !== null && (runForCard.status === "queued" || runForCard.status === "running");
 
@@ -343,6 +346,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
           onField={onField}
           editable={editable}
           questions={questionMap}
+          highlighted={toFix}
           resetKey={resetKey}
           footer={footer}
           aside={
