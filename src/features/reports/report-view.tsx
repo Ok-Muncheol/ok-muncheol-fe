@@ -462,7 +462,7 @@ function Estimate({ source, busy, progress, onFile }: { source: unknown; busy: b
 
 /**
  * 면책 확인 — 운전자(계약자 · 기명피보험자 · 30일 초과 임차인 · 동거 친족)의 무면허 · 음주, 고의. 「해당 없음」과 항목은 함께 고를 수 없다.
- * 아무것도 고르지 않으면 보내지 않는다(BE: 해당 없음으로 가정). 고르면 바로 저장해 새 버전이 생긴다.
+ * 아무것도 고르지 않으면 보내지 않는다(BE: 「면책 확인 필요 — 사실 미입력」. 해당 없음으로 가정하지 않고, 지급 불가도 아니다 — BE #205). 고르면 바로 저장해 새 버전이 생긴다.
  */
 function Exclusions({ busy, onSave }: { busy: boolean; onSave: (facts: CaseFacts) => void }) {
   const [picked, setPicked] = useState<"none" | (typeof EXCLUSIONS)[number][] | null>(null);
@@ -478,7 +478,7 @@ function Exclusions({ busy, onSave }: { busy: boolean; onSave: (facts: CaseFacts
   return (
     <div className="mb-4">
       <p className="text-caption text-ink-muted" title="운전자(계약자 · 기명피보험자 · 30일 초과 임차인 · 동거 친족) 기준">
-        면책 사유 <span className="text-ink-faint">· 고르지 않으면 해당 없음으로 가정해요</span>
+        면책 사유 <span className="text-ink-faint">· 고르지 않으면 「면책 확인 필요」로 남아요</span>
       </p>
       <div role="group" aria-label="면책 사유" className="mt-1.5 flex flex-wrap gap-1.5">
         <button type="button" disabled={busy} aria-pressed={picked === "none"} className={chip(picked === "none")} onClick={() => choose("none")}>
