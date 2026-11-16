@@ -2,7 +2,9 @@
 
 /**
  * A: 사실 카드 — 사건 작업 화면(case-workspace.tsx) 위쪽 오른쪽. 값과 상태는 부모가 쥐고 여기서는 그리고 고르기만 한다.
- * - 두 묶음이다: 「AI가 채운 값」(2열)과 「담당자 입력 · 선택」(영상이 채우지 않는 칸). 값만 한 줄로 보이고 「바꾸기」를 누르면 칩이 열린다.
+ * - 두 묶음이다: 「AI가 채운 값」(2열)과 「담당자 입력 · 선택」(영상이 채우지 않는 칸).
+ * - AI가 채운 보기 칸은 담당자가 아직 확인하지 않았으면 처음부터 칩을 펼쳐 두고, AI 값은 칠하지 않고 「AI」로만 보인다.
+ *   칩을 누르면 바로 확인이고 칸이 닫힌다(AI 값이 맞으면 그 칩을 누르면 된다). 확인한 칸과 담당자 입력 칸은 값만 한 줄로 보이고 「바꾸기」로 연다.
  * - 확인이 필요한 칸(BE needs_review · 구분 질문이 걸린 칸)은 따로 빼지 않고 자기 묶음 안 맨 앞에 둔다. 칸 이름 앞 주황 점으로 표시하고
  *   보기를 칩으로 펼쳐 둔다(두 열을 다 쓴다). 고르면 점이 빠지고 칸이 닫힌다.
  * - 이 사고와 상관없는 칸(신호 없는 교차로의 신호 등)은 접어 둔다.
@@ -55,6 +57,9 @@ export const FACT_CARD_FOOTER_ID = "fact-card-footer";
 export function FactCardPanel({ card, draft, mapping, onField, onMapping, editable, questions, onFrame, aside, footer }: Props) {
   const groups = groupFields(card.fields, draft, Object.keys(questions));
   const frameTimes = new Map(card.evidence_frames.map((frame) => [frame.frame_id, frame.timestamp_ms]));
+  // AI가 채웠고 담당자가 아직 확인하지 않은 보기 칸 — 처음부터 칩을 펼쳐 바로 눌러 확인하게 한다.
+  const toConfirm = (key: string) =>
+    card.fields[key]?.source === "vision" && card.fields[key]?.verification_status !== "human_confirmed" && cardOptions(key).length > 0;
   const row = (key: string, open: boolean, compact = false) => (
     <FieldRow
       key={key}
@@ -85,7 +90,7 @@ export function FactCardPanel({ card, draft, mapping, onField, onMapping, editab
         // 이미 채운 값은 2열로 촘촘하게 — 고치려고 연 칸만 두 열을 다 쓴다.
         <div className="border-t border-line px-5 pt-4 pb-1">
           <h3 className="text-caption font-semibold text-ink-muted">{card.fields[groups.rest[0]]?.source === "vision" ? "AI가 채운 값" : "입력한 값"}</h3>
-          <ul className="mt-1 grid gap-x-8 sm:grid-cols-2">{groups.rest.map((key) => row(key, groups.review.includes(key), true))}</ul>
+          <ul className="mt-1 grid gap-x-8 sm:grid-cols-2">{groups.rest.map((key) => row(key, groups.review.includes(key) || toConfirm(key), true))}</ul>
         </div>
       )}
 
@@ -323,15 +328,15 @@ function Editor({
   }
 
   const confirmed = field.verification_status === "human_confirmed";
-  const aiValue = field.verification_status === "needs_review" ? field.value : null;
+  // 담당자가 아직 확인하지 않은 칸(확인 필요 · AI가 채운 값)의 AI 값은 고른 것으로 칠하지 않고 「AI」로만 표시한다 — 담당자가 골라야 확인이다.
+  const aiValue = confirmed ? null : field.value;
   const chips: [string, string][] = [...cardOptions(fieldKey, only), ...(allowUnknown ? ([["__null__", "모르겠어요"]] as [string, string][]) : [])];
   return (
     <div role="radiogroup" aria-label={cardLabel(fieldKey)} className="flex flex-wrap gap-1.5">
       {chips.map(([raw, label]) => {
         const value = raw === "__null__" ? null : parseOption(fieldKey, raw);
         const isValue = field.value === null ? value === null : value !== null && String(value) === String(field.value);
-        // 확인이 필요한 칸의 AI 값은 고른 것으로 칠하지 않고 「AI」로만 표시한다 — 담당자가 골라야 확인이다.
-        const selected = isValue && (confirmed || field.verification_status === "unverified");
+        const selected = isValue && confirmed;
         const suggested = aiValue !== null && isValue && !confirmed;
         return (
           <button
