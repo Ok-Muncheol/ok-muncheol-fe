@@ -1,6 +1,6 @@
 /**
- * B 통합: 담당자 — 관리자가 담당자별 업무량(진행 중·종결)과 지역·분야·경력·전문 분야, 부재·고액 권한·자동 배정 제외를 본다.
- * 사건 관제(/admin) 아래에 있던 표를 메뉴 「담당자」로 옮겼다. 줄마다 「맡은 건 보기」를 누르면 사건 관제에서 그 담당자의 진행 중 접수 건만 거른다.
+ * B 통합: 담당자 — 관리자가 담당자별 업무량(진행 중·완료)과 지역·분야·경력·전문 분야, 부재·고액 권한·자동 배정 제외를 본다.
+ * 사건 관제(/admin) 아래에 있던 표를 메뉴 「담당자」로 옮겼다. 줄마다 「맡은 건 보기」를 누르면 사건 관제에서 그 담당자의 접수 건만 거른다(전체 탭).
  * 관리자만 들어온다. 메뉴는 관리자에게만 보이고(src/ui/app-shell.tsx), 화면은 BE가 403을 주면 없는 화면이 된다(admin-source.ts).
  */
 import Link from "next/link";
@@ -29,7 +29,7 @@ export default async function StaffPage() {
   }
 
   const adjusters = data.overview.staff.filter((member) => member.staff_role === "adjuster");
-  // 「맡은 건 보기」는 사건 관제의 기본 보기(진행 중 · 전국)에서 담당자만 고른 주소다
+  // 「맡은 건 보기」는 사건 관제의 기본 보기(전체 탭 · 전국)에서 담당자만 고른 주소다 — 단계 탭으로 더 거를 수 있다
   const intakes = parseAdminView({});
 
   return (
@@ -55,7 +55,7 @@ export default async function StaffPage() {
             <Th className="text-right whitespace-nowrap">경력</Th>
             <Th className="whitespace-nowrap">전문 분야</Th>
             <Th className="text-right whitespace-nowrap">진행 중</Th>
-            <Th className="text-right whitespace-nowrap">종결</Th>
+            <Th className="text-right whitespace-nowrap">완료</Th>
             <Th>
               <span className="sr-only">접수 건 보기</span>
             </Th>

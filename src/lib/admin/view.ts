@@ -12,7 +12,7 @@ type Tone = "neutral" | "info" | "success" | "warning" | "danger" | "model";
 
 export const COVERAGE_LABELS: Record<Coverage, string> = { property: "대물", injury: "대인" };
 
-/** 단계 이름과 톤. 미배정은 관리자가 손써야 하는 상태라 warning이다. */
+/** 단계 이름과 톤. 미배정은 관리자가 손써야 하는 상태라 warning이다. 끝난 건은 담당자 화면처럼 「완료」라 부른다. */
 export const STAGE_VIEW: Record<IntakeStage, { label: string; tone: Tone }> = {
   unassigned: { label: "미배정", tone: "warning" },
   intake: { label: "접수", tone: "neutral" },
@@ -20,10 +20,8 @@ export const STAGE_VIEW: Record<IntakeStage, { label: string; tone: Tone }> = {
   facts: { label: "사실 카드", tone: "info" },
   judgment: { label: "판단", tone: "info" },
   report: { label: "검토 보고서", tone: "info" },
-  done: { label: "종결", tone: "success" },
+  done: { label: "완료", tone: "success" },
 };
-/** 현황 줄에 보이는 진행 단계 순서 */
-export const OPEN_STAGES: IntakeStage[] = ["intake", "analysis", "facts", "judgment", "report"];
 
 /** 배정 방식. 에이전트가 낸 배정만 model 톤이다(모델이 낸 값). */
 export const METHOD_VIEW: Record<AssignmentMethod, { label: string; tone: Tone }> = {
@@ -33,39 +31,61 @@ export const METHOD_VIEW: Record<AssignmentMethod, { label: string; tone: Tone }
   transfer: { label: "이관", tone: "info" },
 };
 
-/** 목록 탭. 주소 검색어 state 값과 같다(전체는 값 없음). */
-export const INTAKE_TABS: { key: "" | "open" | "unassigned" | "closed"; label: string }[] = [
-  { key: "open", label: "진행 중" },
-  { key: "unassigned", label: "미배정" },
-  { key: "closed", label: "종결" },
+export type IntakeTab = "" | "unassigned" | "intake" | "judgment" | "report" | "closed";
+
+/**
+ * 목록 탭 — 주소 검색어 state 값과 같다(전체는 값 없음, 처음 들어오면 전체). 접수 건이 배정 전부터 끝날 때까지 지나는 순서다.
+ * 진행 중인 건은 담당자 화면의 단계 묶음(담당 사건 보드의 열 — src/lib/cases/stages.ts BOARD_COLUMNS)으로 나눈다:
+ * 접수(접수·영상 분석), 판단(사실 카드·판단), 검토 보고서. stages는 BE 목록 조건 stage로 넘긴다. 완료 사건은 끝난 건(BE state=closed)이다.
+ * 이 파일은 런타임 import를 두지 않아 묶음을 여기 다시 적었다 — BOARD_COLUMNS를 바꾸면 같이 바꾼다.
+ */
+export const INTAKE_TABS: { key: IntakeTab; label: string; stages?: IntakeStage[] }[] = [
   { key: "", label: "전체" },
+  { key: "unassigned", label: "미배정" },
+  { key: "intake", label: "접수", stages: ["intake", "analysis"] },
+  { key: "judgment", label: "판단", stages: ["facts", "judgment"] },
+  { key: "report", label: "검토 보고서", stages: ["report"] },
+  { key: "closed", label: "완료 사건" },
 ];
+
+/** 현황 줄의 진행 단계 수 — BE 단계별 수(by_stage)를 탭과 같은 단계 묶음(접수·판단·검토 보고서)으로 더한다. 0건 묶음은 뺀다. */
+export function stageGroupCounts(byStage: Record<string, number>): { key: IntakeTab; label: string; count: number }[] {
+  return INTAKE_TABS.flatMap(({ key, label, stages }) => {
+    const count = (stages ?? []).reduce((sum, stage) => sum + (byStage[stage] ?? 0), 0);
+    return count > 0 ? [{ key, label, count }] : [];
+  });
+}
 
 /** BE 지역 값(17개 시·도) — app/schemas/admin.py Region과 같은 순서 */
 export const REGIONS = [
   "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
 ];
 
-export type AdminView = { state: "" | "open" | "unassigned" | "closed"; region: string; assignee: string; before: string };
+export type AdminView = { state: IntakeTab; region: string; assignee: string; before: string };
 
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
 
-/** 주소 검색어 → 화면 보기. 모르는 값은 버린다. 처음 들어오면 진행 중 탭이다. */
+/** 주소 검색어 → 화면 보기. 모르는 값은 버린다(예전 주소의 진행 중 state=open도 전체가 된다). 처음 들어오면 전체 탭이다. */
 export function parseAdminView(params: Record<string, string | string[] | undefined>): AdminView {
   const state = first(params.state);
   const region = first(params.region);
   return {
-    state: params.state === undefined ? "open" : state === "open" || state === "unassigned" || state === "closed" ? state : "",
+    state: INTAKE_TABS.find((tab) => tab.key === state)?.key ?? "",
     region: REGIONS.includes(region) ? region : "",
     assignee: /^[0-9a-f-]{36}$/i.test(first(params.assignee)) ? first(params.assignee) : "",
     before: Number.isNaN(Date.parse(first(params.before))) ? "" : first(params.before),
   };
 }
 
-/** 화면 보기 → BE 목록 조건 */
+/**
+ * 화면 보기 → BE 목록 조건. 단계 탭은 진행 중(state=open)에 단계(stage)를 더해 보낸다 —
+ * stage를 모르는 예전 BE도 진행 중 목록은 돌려준다.
+ */
 export function intakeFilter(view: AdminView, limit: number): IntakeFilter {
+  const stages = INTAKE_TABS.find((tab) => tab.key === view.state)?.stages;
   return {
-    state: view.state || undefined,
+    state: stages ? "open" : view.state === "unassigned" || view.state === "closed" ? view.state : undefined,
+    stage: stages?.join(","),
     region: view.region || undefined,
     assignee_id: view.assignee || undefined,
     before: view.before || undefined,
@@ -73,15 +93,16 @@ export function intakeFilter(view: AdminView, limit: number): IntakeFilter {
   };
 }
 
-/** 화면 보기 → /admin 주소. 바꿀 값만 넘기면 나머지는 그대로다. 탭·거르기를 바꾸면 쪽은 처음으로 돌아간다. */
+/** 화면 보기 → /admin 주소. 바꿀 값만 넘기면 나머지는 그대로다. 탭·거르기를 바꾸면 쪽은 처음으로 돌아간다. 전체 탭은 주소에서 뺀다. */
 export function adminHref(view: AdminView, change: Partial<AdminView> = {}): string {
   const next = { ...view, before: "", ...change };
   const query = new URLSearchParams();
-  query.set("state", next.state);
+  if (next.state) query.set("state", next.state);
   if (next.region) query.set("region", next.region);
   if (next.assignee) query.set("assignee", next.assignee);
   if (next.before) query.set("before", next.before);
-  return `/admin?${query.toString()}`;
+  const text = query.toString();
+  return text ? `/admin?${text}` : "/admin";
 }
 
 /** "11.14 15:02" — 한국 시간. BE가 +09:00으로 준 값을 그대로 자른다(브라우저 시간대와 무관하게 같은 글자). */

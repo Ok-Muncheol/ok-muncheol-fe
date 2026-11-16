@@ -1,9 +1,10 @@
 // 사건 관제 표시 규칙 테스트. Node가 .ts의 타입만 지우고 실행한다.
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { BOARD_COLUMNS } from "../cases/stages.ts";
 import {
-  REGIONS, accountRole, adminHref, assignable, binLabel, byCount, detailFlags, hasDetails, highValueFor, intakeFilter, mapBinWidth, mapStep,
-  needsInjuryAdjuster, parseAdminView, regionToday, shortTime, specialtyLabels, staffName, staffOptionLabel, won,
+  INTAKE_TABS, REGIONS, accountRole, adminHref, assignable, binLabel, byCount, detailFlags, hasDetails, highValueFor, intakeFilter, mapBinWidth, mapStep,
+  needsInjuryAdjuster, parseAdminView, regionToday, shortTime, specialtyLabels, stageGroupCounts, staffName, staffOptionLabel, won,
 } from "./view.ts";
 
 const ID = "11111111-1111-4111-8111-111111111111";
@@ -12,21 +13,46 @@ const member = (over) => ({
   region: "서울", auto_assign: true, career_years: 7, specialties: [], high_value: false, away: false, cases: { open: 3, closed: 0 }, ...over,
 });
 
-test("주소 검색어를 화면 보기로 읽는다 — 처음에는 진행 중, 모르는 값은 버린다", () => {
-  assert.deepEqual(parseAdminView({}), { state: "open", region: "", assignee: "", before: "" });
-  assert.deepEqual(parseAdminView({ state: "", region: "부산", assignee: ID }), { state: "", region: "부산", assignee: ID, before: "" });
-  assert.deepEqual(parseAdminView({ state: "done", region: "한양", assignee: "x", before: "어제" }), { state: "", region: "", assignee: "", before: "" });
+test("주소 검색어를 화면 보기로 읽는다 — 처음에는 전체, 모르는 값(예전 주소의 진행 중 open 포함)은 버린다", () => {
+  assert.deepEqual(parseAdminView({}), { state: "", region: "", assignee: "", before: "" });
+  assert.deepEqual(parseAdminView({ state: "judgment", region: "부산", assignee: ID }), { state: "judgment", region: "부산", assignee: ID, before: "" });
+  assert.deepEqual(parseAdminView({ state: "open", region: "한양", assignee: "x", before: "어제" }), { state: "", region: "", assignee: "", before: "" });
   assert.equal(parseAdminView({ state: ["closed", "open"] }).state, "closed");
 });
 
-test("화면 보기를 BE 목록 조건과 주소로 바꾼다", () => {
+test("화면 보기를 BE 목록 조건과 주소로 바꾼다 — 단계 탭은 진행 중에 담당자 화면의 단계 묶음을 더한다", () => {
   const view = parseAdminView({ state: "unassigned", region: "서울", before: "2026-11-14T10:00:00+09:00" });
-  assert.deepEqual(intakeFilter(view, 50), { state: "unassigned", region: "서울", assignee_id: undefined, before: "2026-11-14T10:00:00+09:00", limit: 50 });
-  // 탭·거르기를 바꾸면 쪽은 처음으로 돌아간다
-  assert.equal(adminHref(view, { state: "open" }), `/admin?state=open&region=${encodeURIComponent("서울")}`);
+  assert.deepEqual(intakeFilter(view, 50), {
+    state: "unassigned", stage: undefined, region: "서울", assignee_id: undefined, before: "2026-11-14T10:00:00+09:00", limit: 50,
+  });
+  const filter = (state) => {
+    const { state: sent, stage } = intakeFilter(parseAdminView({ state }), 50);
+    return [sent, stage];
+  };
+  assert.deepEqual(filter(undefined), [undefined, undefined]); // 전체
+  assert.deepEqual(filter("intake"), ["open", "intake,analysis"]);
+  assert.deepEqual(filter("judgment"), ["open", "facts,judgment"]);
+  assert.deepEqual(filter("report"), ["open", "report"]);
+  assert.deepEqual(filter("closed"), ["closed", undefined]);
+  // 탭·거르기를 바꾸면 쪽은 처음으로 돌아간다. 전체 탭은 주소에서 뺀다
+  assert.equal(adminHref(view, { state: "judgment" }), `/admin?state=judgment&region=${encodeURIComponent("서울")}`);
   assert.equal(adminHref(view, { region: "" }), "/admin?state=unassigned");
   assert.match(adminHref(view, { before: "2026-11-13T09:00:00+09:00" }), /before=2026-11-13/);
-  assert.equal(adminHref(parseAdminView({ state: "" })), "/admin?state=");
+  assert.equal(adminHref(view, { state: "", region: "" }), "/admin");
+  assert.equal(adminHref(parseAdminView({}), { assignee: ID }), `/admin?assignee=${ID}`);
+});
+
+test("단계 탭은 담당 사건 보드의 열(BOARD_COLUMNS)과 이름·단계 묶음이 같다", () => {
+  const tabs = INTAKE_TABS.filter((tab) => tab.stages).map(({ key, label, stages }) => ({ key, label, stages }));
+  assert.deepEqual(tabs, BOARD_COLUMNS.map(({ key, label, stages }) => ({ key, label, stages: [...stages] })));
+});
+
+test("현황 줄의 단계 수는 탭과 같은 묶음으로 더하고 0건 묶음은 뺀다", () => {
+  assert.deepEqual(stageGroupCounts({ intake: 60, analysis: 2, facts: 120, judgment: 130 }), [
+    { key: "intake", label: "접수", count: 62 },
+    { key: "judgment", label: "판단", count: 250 },
+  ]);
+  assert.deepEqual(stageGroupCounts({}), []);
 });
 
 test("시각은 BE가 준 한국 시간 글자를 그대로 자른다", () => {
