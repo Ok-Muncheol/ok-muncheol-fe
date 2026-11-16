@@ -30,7 +30,6 @@ import {
   parseOption,
   parseSeconds,
   pick,
-  swapChartParties,
   type EgoName,
 } from "@/lib/facts/card";
 import { Button, Input, Textarea } from "@/ui/controls";
@@ -42,7 +41,6 @@ type Props = {
   draft: Fields;
   mapping: PartyMapping;
   onField: (key: string, field: FactField) => void;
-  onMapping: (mapping: PartyMapping) => void;
   /** 칸별로 고를 수 있는지. 잠긴 카드는 모두 false, 구분 질문 대기 중이면 질문 칸만 true다. */
   editable: (key: string) => boolean;
   /** 답하지 않은 구분 질문(칸 이름 → 질문). 그 칸은 맨 위에 두고 질문의 보기만 보인다. */
@@ -58,7 +56,7 @@ type Props = {
 /** 카드 맨 아래 확정 줄 — 이 줄이 화면 밖이면 사건 화면이 같은 버튼을 아래에 띄운다. */
 export const FACT_CARD_FOOTER_ID = "fact-card-footer";
 
-export function FactCardPanel({ card, draft, mapping, onField, onMapping, editable, questions, resetKey = 0, aside, footer }: Props) {
+export function FactCardPanel({ card, draft, mapping, onField, editable, questions, resetKey = 0, aside, footer }: Props) {
   const groups = groupFields(card.fields, draft, Object.keys(questions));
   // AI가 채웠고 담당자가 아직 확인하지 않은 보기 칸·사고 설명 — 처음부터 칩·입력창을 펼쳐 AI 값을 고른 채로 보인다
   // (맞으면 그대로 확정하고, 틀리면 그 자리에서 다른 칩을 누르거나 글을 고친다).
@@ -93,7 +91,7 @@ export function FactCardPanel({ card, draft, mapping, onField, onMapping, editab
         {aside}
       </header>
 
-      <Parties mapping={mapping} ego={ego} onChange={onMapping} editable={editable("party_mapping")} />
+      <Parties mapping={mapping} ego={ego} />
 
       {groups.rest.length > 0 && (
         // 이미 채운 값은 2열로 촘촘하게 — 고치려고 연 칸만 두 열을 다 쓴다.
@@ -127,9 +125,10 @@ export function FactCardPanel({ card, draft, mapping, onField, onMapping, editab
 
 /**
  * 누가 가입자인지, 과실 도표의 A가 누구인지. 과실 비율은 도표 A : B로 나온다.
- * 가입자는 카드 B 차(블랙박스 차 · 가입자 차)로 고정이라 고르지 않는다(BE 카드 v1 2절 — 확정할 때 BE가 그렇게 맞춘다). 도표 A만 맞바꾼다.
+ * 가입자는 카드 B 차(블랙박스 차 · 가입자 차)로 고정이라 고르지 않는다(BE 카드 v1 2절 — 확정할 때 BE가 그렇게 맞춘다).
+ * 도표 A/B도 고르지 않는다 — 판단이 시작할 때 더 맞는 방향으로 정해 카드에 남긴다(BE graph.choose_orientation). 여기서는 보여 주기만 한다.
  */
-function Parties({ mapping, ego, onChange, editable }: { mapping: PartyMapping; ego: EgoName; onChange: (m: PartyMapping) => void; editable: boolean }) {
+function Parties({ mapping, ego }: { mapping: PartyMapping; ego: EgoName }) {
   const chartAIsEgo = mapping.chart_party_A_id !== null && mapping.chart_party_A_id === mapping.video_ego_party_id;
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4 text-body">
@@ -142,12 +141,9 @@ function Parties({ mapping, ego, onChange, editable }: { mapping: PartyMapping; 
       )}
       <div className="flex items-center gap-2">
         <span className="text-caption text-ink-muted">도표 A</span>
-        <span className="font-semibold">{mapping.chart_party_A_id === null ? "정하지 않았어요" : chartAIsEgo ? ego : "상대 차"}</span>
-        {editable && (
-          <Button variant="quiet" size="sm" onClick={() => onChange(swapChartParties(mapping))}>
-            맞바꾸기
-          </Button>
-        )}
+        <span className="font-semibold" title="도표 A/B는 판단이 정해요">
+          {mapping.chart_party_A_id === null ? "판단이 정해요" : chartAIsEgo ? ego : "상대 차"}
+        </span>
       </div>
     </div>
   );
