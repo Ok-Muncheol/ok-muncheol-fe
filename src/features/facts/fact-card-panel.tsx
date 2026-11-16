@@ -24,6 +24,7 @@ import {
   cardValueLabel,
   differsFromModel,
   egoName,
+  emptyField,
   fieldAccuracy,
   groupFields,
   parseOption,
@@ -75,7 +76,8 @@ export function FactCardPanel({ card, draft, mapping, onField, onMapping, editab
       compact={compact}
       ego={ego}
       fieldKey={key}
-      field={draft[key]}
+      // 판단이 물었는데 카드에 없는 칸(11/16 전 영상 카드의 새 칸)은 빈 담당자 칸으로 그린다 — 고르면 그 칸이 카드에 생긴다
+      field={draft[key] ?? emptyField()}
       open={open}
       editable={editable(key)}
       question={questions[key]}

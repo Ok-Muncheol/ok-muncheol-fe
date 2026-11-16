@@ -26,11 +26,11 @@ import {
   changedFields,
   confirmedFields,
   egoName,
-  pick,
   readableMessage,
   remainingReview,
   resetFields,
   sameMapping,
+  withAnswers,
   withDefaultChart,
 } from "@/lib/facts/card";
 import { answeredValues } from "@/lib/judgment/view";
@@ -69,14 +69,10 @@ function scrollTo(id: string) {
 
 export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, reportHref, evidence = null }: Props) {
   const router = useRouter();
-  // 이미 값으로 답한 구분 질문은 그 값을 카드에 미리 채운다 — 확인 완료 때 카드에 반영·재확정한다.
+  // 이미 값으로 답한 구분 질문은 그 값을 카드에 미리 채운다 — 확인 완료 때 카드에 반영·재확정한다(카드에 없던 칸도, withAnswers).
   const [draft, setDraft] = useState(() => {
     if (run?.status !== "waiting_for_confirmation" || run.fact_card_version !== card.version) return card.fields;
-    const answered = Object.entries(answeredValues(run.questions)).filter(([key]) => card.fields[key]);
-    return {
-      ...card.fields,
-      ...Object.fromEntries(answered.map(([key, value]) => [key, pick(card.fields[key], value)])),
-    };
+    return withAnswers(card.fields, answeredValues(run.questions));
   });
   // 도표 A/B가 비어 온 카드는 기본값(A 상대 차 · B 블랙박스 차)으로 보이고, 확정할 때 그 값을 같이 저장한다.
   const baseMapping = withDefaultChart(card.party_mapping, card.parties);

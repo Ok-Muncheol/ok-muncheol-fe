@@ -10,6 +10,7 @@ import {
   chartPartyName,
   confirmedFields,
   egoName,
+  emptyField,
   groupFields,
   isFromVideo,
   isRelevant,
@@ -22,6 +23,7 @@ import {
   resetFields,
   setInsured,
   swapChartParties,
+  withAnswers,
 } from "./card.ts";
 
 const f = (value, status = "unverified") => ({
@@ -70,6 +72,36 @@ test("groupFields는 영상 카드의 담당자 입력 칸을 따로 묶고, 질
   // 영상 분석 칸이 없는 카드(모든 칸이 manual)는 따로 묶지 않는다
   const typed = { movement_A: manual("straight"), lane_marking_A: manual(null) };
   assert.deepEqual(groupFields(typed, typed).manual, []);
+});
+
+test("groupFields는 판단이 물었는데 카드에 없는 칸(11/16 전 영상 카드의 새 칸)도 줄로 둔다", () => {
+  const fields = { location_type: f("highway"), movement_A: f("lane_change"), relative_position: f("right") };
+  const asked = groupFields(fields, fields, ["lane_reduction"]);
+  assert.deepEqual(asked.review, ["lane_reduction"]);
+  assert.deepEqual(asked.manual, ["lane_reduction"], "영상 카드에서는 담당자 입력 묶음 — AI가 채운 값 묶음의 제목을 바꾸지 않는다");
+  assert.deepEqual(asked.rest, ["location_type", "movement_A", "relative_position"]);
+  // 영상 분석 칸이 없는 카드는 한 묶음이다
+  const typed = { movement_A: { ...f("straight"), source: "manual" } };
+  assert.deepEqual(groupFields(typed, typed, ["shoulder"]).rest, ["shoulder", "movement_A"]);
+  // 묻지 않은 칸은 카드에 없으면 그대로 없다
+  assert.equal(groupFields(fields, fields).manual.includes("lane_reduction"), false);
+});
+
+test("withAnswers는 답한 값을 칸 값으로 바꿔 미리 채우고, 카드에 없던 칸은 빈 담당자 칸에서 만든다", () => {
+  const fields = { night: f(null, "needs_review"), movement_B: f("straight") };
+  const filled = withAnswers(fields, { lane_reduction: "false", night: "true", movement_B: "left_turn" });
+  // 참거짓 칸은 글자가 아니라 true/false다(BE 카드 수정은 글자 "true"를 거절한다)
+  assert.deepEqual(filled.lane_reduction, { ...emptyField(), value: false, verification_status: "human_confirmed" });
+  assert.equal(filled.night.value, true);
+  assert.equal(filled.night.verification_status, "human_confirmed");
+  assert.equal(filled.movement_B.value, "left_turn");
+  assert.equal(filled.movement_B.model_value, "straight", "모델 원값은 그대로 둔다");
+  assert.deepEqual(withAnswers(fields, {}), fields, "답이 없으면 칸을 바꾸지 않는다");
+  // 빈 담당자 칸은 BE apply_patch가 없던 칸을 만들 때와 같은 모양이다
+  assert.deepEqual(emptyField(), {
+    value: null, model_value: null, source: "manual", model_confidence: null, verification_status: "unverified",
+    evidence_frame_ids: [], source_document_ids: [],
+  });
 });
 
 test("pick은 같은 값을 골라도 확인함으로 만들고 모델 원값은 둔다", () => {
