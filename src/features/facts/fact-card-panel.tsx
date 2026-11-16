@@ -2,7 +2,7 @@
 
 /**
  * A: 사실 카드 — 사건 작업 화면(case-workspace.tsx) 위쪽 오른쪽. 값과 상태는 부모가 쥐고 여기서는 그리고 고르기만 한다.
- * - 두 묶음이다: 「AI가 채운 값」(2열)과 「담당자 입력 · 선택」(영상이 채우지 않는 칸).
+ * - 두 묶음이다: 「AI가 채운 값」(2열)과 「담당자 입력 · 판단이 물으면 답해요」(영상이 채우지 않는 칸).
  * - AI가 채운 보기 칸은 담당자가 아직 확인하지 않았으면 처음부터 칩을 펼쳐 두고, AI 값 칩을 고른 것으로 칠해 「AI」를 붙인다.
  *   AI 값이 맞으면 아무것도 누르지 않고 카드 아래 확정만 누르면 그 값으로 확인된다. 다른 칩을 누르면 바로 고침이고 칸이 닫힌다.
  *   사고 설명도 처음부터 AI 글을 채운 입력창을 펼치고, 고치지 않고 확정하면 그 글 그대로 확인이다(「확인」으로 먼저 닫아도 된다).
@@ -101,11 +101,11 @@ export function FactCardPanel({ card, draft, mapping, onField, editable, questio
         </div>
       )}
 
-      {/* 영상 카드에서 비전이 채우지 않는 담당자 입력 칸 — 확정을 막지 않는 선택 칸이다. 판단이 물으면 제자리에서 확인할 칸으로 표시된다. */}
+      {/* 영상 카드에서 비전이 채우지 않는 담당자 입력 칸 — 비워도 확정은 되지만, 남은 후보 도표가 그 칸으로 갈리면 판단이 묻고 그때는 답해야 한다(그래서 「선택」이라고 적지 않는다). 판단이 물으면 제자리에서 확인할 칸으로 표시된다. */}
       {groups.manual.length > 0 && (
         <div className="border-t border-line px-5 pt-4 pb-1">
           <h3 className="text-caption font-semibold text-ink-muted">
-            담당자 입력 <span className="font-normal text-ink-faint">· 선택</span>
+            담당자 입력 <span className="font-normal text-ink-faint">· 판단이 물으면 답해요</span>
           </h3>
           <ul className="mt-1 grid gap-x-8 sm:grid-cols-2">{groups.manual.map((key) => row(key, groups.review.includes(key), true))}</ul>
         </div>
