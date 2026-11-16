@@ -5,8 +5,9 @@
  * 관리자만 들어온다. 메뉴는 관리자에게만 보이고(레이아웃), 화면은 BE가 403을 주면 없는 화면이 된다(admin-source.ts).
  * 보기(탭·지역·담당자·쪽)는 주소 검색어다 — 새로고침·뒤로 가기에도 같은 목록이 나온다.
  * 현황 줄 아래는 본문이 넓으면 [오늘 지역별 접수 지도 | 접수 건] 두 칸이다 — 지도에서 지역을 누르면 바로 옆 목록이 그 지역으로 걸린다.
- * 두 칸은 화면 폭이 아니라 본문 폭(컨테이너 쿼리 @5xl, 64rem 이상)으로 가른다. 접수 건 표는 최소 700px쯤 필요해서, 본문이 1120px(1440px 화면,
- * 또는 왼쪽 메뉴를 접은 1280px)이면 두 칸(접수 건 760px), 960px(메뉴를 펼친 1280px)이면 지도 · 접수 건 순으로 쌓는다.
+ * 두 칸은 화면 폭이 아니라 본문 폭(컨테이너 쿼리 @min-[68rem], 1088px 이상)으로 가른다. 접수 건 표는 단추를 위아래로 쌓아도 720px쯤 필요해서,
+ * 본문이 1120px(1440px 이상 화면, 또는 왼쪽 메뉴를 접은 1280px)이면 두 칸(접수 건 760px), 그보다 좁으면(메뉴를 펼친 1280px·1366px)
+ * 지도 · 접수 건 순으로 쌓아 표가 본문 폭을 다 쓴다. 어느 쪽이든 줄 끝의 상세·이관 단추까지 가로 스크롤 없이 보인다.
  * 담당자 표는 늘 아래 전체 폭이다. BE가 지역별 수를 주기 전 응답이면 지도 없이 접수 건이 전체 폭이다.
  * 접수 건 칸은 보이는 제목 없이 탭부터 시작한다. 제목 「접수 건」은 화면 낭독기용 숨은 제목(sr-only)으로만 둔다(지도 카드의 「오늘 지역별 접수」도 같다).
  */
@@ -62,7 +63,7 @@ export default async function AdminPage(props: PageProps<"/admin">) {
       </StatStrip>
 
       <div className="@container flex flex-col gap-6">
-        <div className={today ? "grid gap-6 @5xl:grid-cols-[21rem_minmax(0,1fr)] @5xl:items-start" : ""}>
+        <div className={today ? "grid gap-6 @min-[68rem]:grid-cols-[21rem_minmax(0,1fr)] @min-[68rem]:items-start" : ""}>
           {today && <RegionMap today={today} selected={view.region} hrefFor={(region) => adminHref(view, { region })} />}
 
           <section aria-labelledby="intakes-heading" className="min-w-0">

@@ -1,24 +1,31 @@
 "use client";
 
 /**
- * B 통합: 접수 건 목록 — 한 줄에 접수 시각·장소·단계·대물/대인 담당자·배정 방식과 까닭을 보이고, 줄마다 직접 배정·이관을 연다.
+ * B 통합: 접수 건 목록 — 한 줄에 접수 시각·장소·단계·대물/대인 담당자·배정 방식을 보이고, 줄마다 상세와 직접 배정·이관을 연다.
  * 배정 폼은 고른 줄 바로 아래에 펼친다(POST /admin/intakes/{id}/assignments). 담당자가 없던 분야면 직접 배정, 있었으면 이관이다.
  * 종결된 건은 담당자를 바꿀 수 없어 단추를 두지 않는다. 가상 접수(시연용)는 「가상」 표시를 단다.
- * 배정 참고 정보(details)는 사고 내용 아래에 한 줄 요약과 표식(고액 사건·수입차·다중 추돌·대인배상Ⅱ 미가입·민원)으로 보이고,
- * 가입 담보·계약자 이력 전체는 「상세」로 줄 아래에 펼친다. 참고 정보가 없는 건(예전 접수·실제 사건)에는 아무것도 보이지 않는다.
+ * 줄에는 장소와 표식(고액 사건·수입차·다중 추돌·대인배상Ⅱ 미가입·민원)만 둔다. 사고 내용, 배정 까닭(배정하지 못한 까닭), 배정 참고 정보 전체
+ * (사고 규모·가입 담보·계약자 이력)는 「상세」로 줄 아래에 펼친다 — 줄이 좁아져 관제 화면의 지도 옆 칸에서도 상세·이관 단추까지 보인다.
  */
 import { useRouter } from "next/navigation";
-import { type FormEvent, Fragment, useState } from "react";
+import { type FormEvent, Fragment, type ReactNode, useState } from "react";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError } from "@/lib/api/client";
 import type { ApiError, Coverage, IntakeDetails, IntakeView, StaffMember } from "@/lib/api/types";
 import {
-  COVERAGE_LABELS, METHOD_VIEW, PERSONAL_INJURY_LABELS, SEVERITY_LABELS, STAGE_VIEW, VEHICLE_LABELS, assignable, detailFlags, detailSummary, hasDetails,
+  COVERAGE_LABELS, METHOD_VIEW, PERSONAL_INJURY_LABELS, SEVERITY_LABELS, STAGE_VIEW, VEHICLE_LABELS, assignable, detailFlags, hasDetails,
   highValueFor, needsInjuryAdjuster, shortTime, staffName, staffOptionLabel, won,
 } from "@/lib/admin/view";
 import { Badge, Button, DescriptionList, DescriptionRow, Field, Input, Notice, Select, Table, Td, Th } from "@/ui/controls";
 
 type Panel = { id: string; kind: "assign" | "details" };
+
+/**
+ * 줄 아래에 펼친 상세·배정 폼은 표 폭이 아니라 보이는 폭에 맞춘다. 좁은 화면에서는 표가 가로로 밀려 펼친 칸도 표만큼 넓어지는데,
+ * 그대로 두면 사고 내용 글이 오른쪽에서 잘린다. 감싼 상자(@container) 폭에서 표 테두리와 칸 여백(34px)을 뺀 폭으로 줄이고,
+ * 가로로 밀어도 보이는 칸 왼쪽에 붙어 있게 한다(sticky). 표가 칸에 다 들어가는 넓은 화면에서는 폭이 같아 아무 일도 하지 않는다.
+ */
+const UNFOLDED = "sticky left-4 max-w-[calc(100cqi-2.125rem)]";
 
 export function IntakeTable({ intakes, staff }: { intakes: IntakeView[]; staff: StaffMember[] }) {
   const [panel, setPanel] = useState<Panel | null>(null);
@@ -27,111 +34,143 @@ export function IntakeTable({ intakes, staff }: { intakes: IntakeView[]; staff: 
   const name = (userId: string | null) => staffName(byId.get(userId ?? ""), userId);
 
   return (
-    <Table>
-      <caption className="sr-only">접수 건 목록 — 최근 접수 순</caption>
-      <thead>
-        <tr>
-          <Th>접수</Th>
-          <Th>사고 장소 · 내용</Th>
-          <Th>단계</Th>
-          {/* 관제 화면에서 지도 옆 좁은 칸(760px)에 놓여도 머리글이 「대물 담 / 당」으로 꺾이지 않게 한다 */}
-          <Th className="whitespace-nowrap">대물 담당</Th>
-          <Th className="whitespace-nowrap">대인 담당</Th>
-          <Th>배정</Th>
-          <Th>
-            <span className="sr-only">동작</span>
-          </Th>
-        </tr>
-      </thead>
-      <tbody>
-        {intakes.map((intake) => {
-          const stage = STAGE_VIEW[intake.stage];
-          const method = intake.assignment && METHOD_VIEW[intake.assignment.method];
-          const closed = intake.stage === "done";
-          const open = panel?.id === intake.intake_id ? panel.kind : null;
-          const flags = detailFlags(intake.details);
-          const summary = detailSummary(intake.details);
-          const detailed = hasDetails(intake.details);
-          return (
-            <Fragment key={intake.intake_id}>
-              <tr>
-                <Td className="font-mono text-caption whitespace-nowrap tabular-nums text-ink-muted">
-                  <time dateTime={intake.received_at}>{shortTime(intake.received_at)}</time>
-                  {intake.simulated && <Badge className="mt-1 flex w-fit">가상</Badge>}
-                </Td>
-                <Td className="max-w-[22rem]">
-                  <span className="block font-semibold break-keep">{intake.location}</span>
-                  <span className="block text-caption break-keep text-ink-muted">{intake.description}</span>
-                  {summary && <span className="mt-1 block font-mono text-caption break-keep tabular-nums text-ink">{summary}</span>}
-                  {flags.length > 0 && (
-                    <span className="mt-1 flex flex-wrap gap-1">
-                      {flags.map((flag) => (
-                        <Badge key={flag.key} tone={flag.tone}>
-                          {flag.label}
-                        </Badge>
-                      ))}
-                    </span>
-                  )}
-                </Td>
-                <Td className="whitespace-nowrap">
-                  <Badge tone={stage.tone} dot>
-                    {stage.label}
-                  </Badge>
-                  {intake.region && <span className="mt-1 block text-caption text-ink-muted">{intake.region}</span>}
-                </Td>
-                <Td className="whitespace-nowrap">{name(intake.property_assignee_id) || <span className="text-ink-faint">없음</span>}</Td>
-                <Td className="whitespace-nowrap">
-                  {name(intake.injury_assignee_id) ||
-                    (needsInjuryAdjuster(intake) ? <Badge tone="warning">배정 필요</Badge> : <span className="text-ink-faint">{intake.injured_count > 0 ? "없음" : "해당 없음"}</span>)}
-                </Td>
-                <Td className="max-w-[20rem]">
-                  {method && <Badge tone={method.tone}>{method.label}</Badge>}
-                  {intake.assignment && <span className="mt-1 block text-caption break-keep text-ink-muted">{intake.assignment.reason}</span>}
-                  {intake.unassigned_reason && <span className="mt-1 block text-caption break-keep text-on-warning-soft">{intake.unassigned_reason}</span>}
-                </Td>
-                <Td className="text-right whitespace-nowrap">
-                  {detailed && (
-                    <Button variant="quiet" size="sm" aria-expanded={open === "details"} onClick={() => toggle(intake.intake_id, "details")}>
-                      {open === "details" ? "닫기" : "상세"}
-                    </Button>
-                  )}
-                  {!closed && (
-                    <Button variant="quiet" size="sm" aria-expanded={open === "assign"} onClick={() => toggle(intake.intake_id, "assign")}>
-                      {open === "assign" ? "닫기" : intake.status === "assigned" ? "이관" : "직접 배정"}
-                    </Button>
-                  )}
-                </Td>
-              </tr>
-              {open === "assign" && (
+    // 단추 칸은 표가 놓인 칸의 폭으로 배치를 고른다(컨테이너 쿼리) — 아래 단추 칸 주석
+    <div className="@container">
+      <Table>
+        <caption className="sr-only">접수 건 목록 — 최근 접수 순</caption>
+        <thead>
+          <tr>
+            <Th>접수</Th>
+            <Th>사고 장소</Th>
+            <Th>단계</Th>
+            {/* 관제 화면에서 지도 옆 좁은 칸(760px)에 놓여도 머리글이 「대물 담 / 당」으로 꺾이지 않게 한다 */}
+            <Th className="whitespace-nowrap">대물 담당</Th>
+            <Th className="whitespace-nowrap">대인 담당</Th>
+            <Th>배정</Th>
+            <Th>
+              <span className="sr-only">동작</span>
+            </Th>
+          </tr>
+        </thead>
+        <tbody>
+          {intakes.map((intake) => {
+            const stage = STAGE_VIEW[intake.stage];
+            const method = intake.assignment && METHOD_VIEW[intake.assignment.method];
+            const closed = intake.stage === "done";
+            const open = panel?.id === intake.intake_id ? panel.kind : null;
+            const flags = detailFlags(intake.details);
+            return (
+              <Fragment key={intake.intake_id}>
                 <tr>
-                  <Td colSpan={7} className="bg-surface-muted">
-                    <AssignForm intake={intake} staff={staff} onDone={() => setPanel(null)} />
+                  <Td className="font-mono text-caption whitespace-nowrap tabular-nums text-ink-muted">
+                    {/* 「가상」은 시각 아래 줄에 둔다 — 옆에 두면 이 칸이 그만큼 넓어진다 */}
+                    <time dateTime={intake.received_at} className="block">
+                      {shortTime(intake.received_at)}
+                    </time>
+                    {intake.simulated && <Badge className="mt-1">가상</Badge>}
+                  </Td>
+                  <Td className="max-w-[22rem]">
+                    <span className="block font-semibold break-keep">{intake.location}</span>
+                    {flags.length > 0 && (
+                      <span className="mt-1 flex flex-wrap gap-1">
+                        {flags.map((flag) => (
+                          <Badge key={flag.key} tone={flag.tone}>
+                            {flag.label}
+                          </Badge>
+                        ))}
+                      </span>
+                    )}
+                  </Td>
+                  <Td className="whitespace-nowrap">
+                    <Badge tone={stage.tone} dot>
+                      {stage.label}
+                    </Badge>
+                    {intake.region && <span className="mt-1 block text-caption text-ink-muted">{intake.region}</span>}
+                  </Td>
+                  <Td className="whitespace-nowrap">{name(intake.property_assignee_id) || <span className="text-ink-faint">없음</span>}</Td>
+                  <Td className="whitespace-nowrap">
+                    {name(intake.injury_assignee_id) ||
+                      (needsInjuryAdjuster(intake) ? <Badge tone="warning">배정 필요</Badge> : <span className="text-ink-faint">{intake.injured_count > 0 ? "없음" : "해당 없음"}</span>)}
+                  </Td>
+                  <Td className="whitespace-nowrap">
+                    {method ? <Badge tone={method.tone}>{method.label}</Badge> : <span className="text-ink-faint">없음</span>}
+                  </Td>
+                  <Td className="whitespace-nowrap">
+                    {/*
+                     * 표가 48rem보다 좁은 칸(관제 화면의 지도 옆 760px, 좁은 화면)에 놓이면 상세·이관 단추를 위아래로 쌓는다.
+                     * 나란히 두면 이 칸만 145px라 표가 칸보다 넓어지고, 오른쪽 끝의 단추가 가로 스크롤 밖으로 밀린다.
+                     */}
+                    <div className="flex flex-col items-end @3xl:flex-row @3xl:justify-end">
+                      <Button variant="quiet" size="sm" aria-expanded={open === "details"} onClick={() => toggle(intake.intake_id, "details")}>
+                        {open === "details" ? "닫기" : "상세"}
+                      </Button>
+                      {!closed && (
+                        <Button variant="quiet" size="sm" aria-expanded={open === "assign"} onClick={() => toggle(intake.intake_id, "assign")}>
+                          {open === "assign" ? "닫기" : intake.status === "assigned" ? "이관" : "직접 배정"}
+                        </Button>
+                      )}
+                    </div>
                   </Td>
                 </tr>
-              )}
-              {open === "details" && detailed && (
-                <tr>
-                  <Td colSpan={7} className="bg-surface-muted">
-                    <DetailPanel details={intake.details} />
-                  </Td>
-                </tr>
-              )}
-            </Fragment>
-          );
-        })}
-      </tbody>
-    </Table>
+                {open === "assign" && (
+                  <tr>
+                    <Td colSpan={7} className="bg-surface-muted">
+                      <div className={UNFOLDED}>
+                        <AssignForm intake={intake} staff={staff} onDone={() => setPanel(null)} />
+                      </div>
+                    </Td>
+                  </tr>
+                )}
+                {open === "details" && (
+                  <tr>
+                    <Td colSpan={7} className="bg-surface-muted">
+                      <div className={UNFOLDED}>
+                        <DetailPanel intake={intake} />
+                      </div>
+                    </Td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </Table>
+    </div>
   );
 }
 
 const yesNo = (value: boolean) => (value ? "가입" : "미가입");
 
-/** 배정 참고 정보 전체 — 사고 규모, 가입 담보, 계약자 이력. 없는 값은 「정보 없음」으로 둔다 */
-function DetailPanel({ details }: { details: IntakeDetails }) {
-  const { policy, policyholder } = details;
+/**
+ * 줄 아래에 펼치는 상세 — 사고 내용, 배정(방식과 까닭, 배정하지 못한 까닭), 배정 참고 정보 전체(사고 규모·가입 담보·계약자 이력).
+ * 참고 정보가 없는 건(예전 접수·실제 사건)은 사고 내용과 배정만 보인다. 참고 정보의 없는 값은 「정보 없음」으로 둔다.
+ */
+function DetailPanel({ intake }: { intake: IntakeView }) {
+  const { assignment, unassigned_reason: unassigned } = intake;
   const none = <span className="text-ink-faint">정보 없음</span>;
   return (
     <div className="grid gap-x-8 gap-y-4 py-1 lg:grid-cols-3">
+      <section className="lg:col-span-2">
+        <h3 className="mb-1 text-caption font-semibold text-ink-muted">사고 내용</h3>
+        <p className="break-keep">{intake.description || none}</p>
+      </section>
+      {/* 배정 방식(AI 배정 등)은 바로 위 줄의 배정 칸에 있어 까닭만 둔다 */}
+      <section>
+        <h3 className="mb-1 text-caption font-semibold text-ink-muted">배정</h3>
+        {assignment && <p className="break-keep">{assignment.reason}</p>}
+        {unassigned && <p className={`break-keep text-on-warning-soft ${assignment ? "mt-1" : ""}`}>{unassigned}</p>}
+        {!assignment && !unassigned && none}
+      </section>
+      {hasDetails(intake.details) && <ReferenceInfo details={intake.details} none={none} />}
+    </div>
+  );
+}
+
+/** 배정 참고 정보 — 사고 규모, 가입 담보, 계약자 이력. 상세 격자의 셋째 줄에 세 칸으로 놓인다 */
+function ReferenceInfo({ details, none }: { details: IntakeDetails; none: ReactNode }) {
+  const { policy, policyholder } = details;
+  return (
+    <>
       <section>
         <h3 className="mb-1 text-caption font-semibold text-ink-muted">사고 규모</h3>
         <DescriptionList>
@@ -177,7 +216,7 @@ function DetailPanel({ details }: { details: IntakeDetails }) {
           <p className="py-2.5">{none}</p>
         )}
       </section>
-    </div>
+    </>
   );
 }
 

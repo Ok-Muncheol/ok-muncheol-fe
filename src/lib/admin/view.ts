@@ -172,21 +172,6 @@ export function detailFlags(details: IntakeDetails | null | undefined): DetailFl
   return flags;
 }
 
-/** 목록 한 줄 요약 — "예상 3,500만 원 · 수입차 3대 · 중상". 있는 값만 잇는다 */
-export function detailSummary(details: IntakeDetails | null | undefined): string {
-  if (!details) return "";
-  const vehicle = [details.vehicle_type ? VEHICLE_LABELS[details.vehicle_type] : "", details.vehicle_count != null ? `${details.vehicle_type ? "" : "차량 "}${details.vehicle_count}대` : ""]
-    .filter(Boolean)
-    .join(" ");
-  return [
-    details.estimated_damage != null ? `예상 ${won(details.estimated_damage)}` : "",
-    vehicle,
-    details.injury_severity ? SEVERITY_LABELS[details.injury_severity] : "",
-  ]
-    .filter(Boolean)
-    .join(" · ");
-}
-
 /* ---------- 담당자 속성 ---------- */
 
 /** 전문 분야 이름 목록. BE가 속성을 주기 전 응답이면 빈 목록이다 */
