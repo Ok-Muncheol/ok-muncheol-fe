@@ -217,6 +217,14 @@ export type LiabilityResult = {
   insured_fault: number | null; fault_source?: "judgment" | "agreed"; accident_date: string | null;
   property: PropertyDamageResult | null; injuries: InjuryResult[]; notice: string;
 };
+/**
+ * 시연용 가데이터 — 제휴 병원이 보내온 것으로 보이는 진료 정보 1건(BE GET /cases/{id}/partner-medical, 다친 사람 1명).
+ * 실제 병원 연동이 아니다. 사건 ID로 정해지는 값이고, 담당자가 반영하면 대인 입력(InjuredPersonDoc)으로 저장된다.
+ */
+export type PartnerMedicalRecord = {
+  person_id: string; label: string; hospital: string; treated_from: string; treated_to: string;
+  grade: number; treatment_cost: number; is_driver: boolean; received_at: string; source: string;
+};
 /** 대인 1명 입력(BE InjuredPersonDoc) — addDocuments로 보낸다. 고칠 때는 새 document_id, 같은 person_id면 가장 늦은 received_at을 쓴다 */
 export type InjuredPersonDoc = {
   kind: "injured_person"; document_id: string; person_id: string; label?: string | null;

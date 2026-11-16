@@ -47,6 +47,7 @@ const ROUTES = [
   ["confirmReport", [CASE, 2], "POST", `/cases/${CASE}/reports/2/confirm`, { counterparty: null }],
   ["getClaim", [CASE, 2], "GET", `/cases/${CASE}/reports/2/claim`, undefined],
   ["addDocuments", [CASE, [{ kind: "estimate" }]], "POST", `/cases/${CASE}/documents`, { documents: [{ kind: "estimate" }], case_facts: null }],
+  ["getPartnerMedical", [CASE], "GET", `/cases/${CASE}/partner-medical`, undefined],
   ["uploadEstimate", [CASE, "estimates/a.pdf", "party-1"], "POST", `/cases/${CASE}/estimates`, { storage_path: "estimates/a.pdf", party_id: "party-1" }],
   ["setAgreedFault", [CASE, FAULT], "PATCH", `/cases/${CASE}/agreed-fault`, FAULT],
   ["getAdminOverview", [], "GET", "/admin/overview", undefined],
@@ -75,9 +76,9 @@ function fakeClient({ respond = () => json(200, {}), ...options } = {}) {
 
 const failure = (promise) => promise.then(() => assert.fail("오류가 나야 한다"), (error) => error);
 
-test("메서드 25개가 BE 경로 25개와 1:1이다", () => {
+test("메서드 26개가 BE 경로 26개와 1:1이다", () => {
   const { client } = fakeClient();
-  assert.equal(ROUTES.length, 25);
+  assert.equal(ROUTES.length, 26);
   assert.deepEqual(Object.keys(client).sort(), ROUTES.map(([name]) => name).sort());
 });
 

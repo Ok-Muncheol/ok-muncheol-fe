@@ -16,7 +16,7 @@ import { CaseHeader } from "@/features/cases/case-header";
 import { getFactCard } from "@/features/facts/fact-source";
 import { getLatestJudgmentRun } from "@/features/judgment/judgment-source";
 import { QA_PANEL_COOKIE, QaIcon, QaSide } from "@/features/qa/qa-side";
-import { getReport } from "@/features/reports/report-source";
+import { getPartnerMedical, getReport } from "@/features/reports/report-source";
 import { ReportView } from "@/features/reports/report-view";
 import { egoName } from "@/lib/facts/card";
 import { latestJudgment, qaSlot } from "@/lib/qa/view";
@@ -29,12 +29,13 @@ export default async function ReportPage(props: PageProps<"/cases/[id]/reports/[
   const reportVersion = Number(version);
   if (!Number.isInteger(reportVersion) || reportVersion < 1) notFound();
   const live = !isSampleSource();
-  const [summary, { run, error }, cookieStore, { report, error: reportError }, card] = await Promise.all([
+  const [summary, { run, error }, cookieStore, { report, error: reportError }, card, partnerMedical] = await Promise.all([
     getCaseSummary(id),
     getLatestJudgmentRun(id),
     cookies(),
     getReport(id, reportVersion),
     getFactCard(id),
+    getPartnerMedical(id),
   ]);
   // 카드 B 차 이름 — 영상 없이 진행한 사건은 가입자 차다(도표 A/B · 사실 칸 이름에 쓴다)
   const ego = card ? egoName(card) : undefined;
@@ -69,7 +70,7 @@ export default async function ReportPage(props: PageProps<"/cases/[id]/reports/[
         cookieName={QA_PANEL_COOKIE}
         main={
           report ? (
-            <ReportView caseId={id} report={report} live={live} ego={ego} claimHref={`${base}/reports/${reportVersion}/claim`} />
+            <ReportView caseId={id} report={report} live={live} ego={ego} partnerMedical={partnerMedical} claimHref={`${base}/reports/${reportVersion}/claim`} />
           ) : (
             <div className="rounded-card border border-line bg-surface px-6 py-5">
               <p className="font-semibold">{reportError ? "검토 보고서를 불러오지 못했어요" : `검토 보고서 v${reportVersion}가 없어요`}</p>

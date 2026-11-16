@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type ReactNode } from "react";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError } from "@/lib/api/client";
-import type { CaseFacts, InjuredPersonDoc, PartyMapping, PropertyDamageInputDoc, ReportSection, ReviewReport } from "@/lib/api/types";
+import type { CaseFacts, InjuredPersonDoc, PartnerMedicalRecord, PartyMapping, PropertyDamageInputDoc, ReportSection, ReviewReport } from "@/lib/api/types";
 import { cardLabel, cardValueLabel, chartPartyName, readableReason, type EgoName } from "@/lib/facts/card";
 import { Button, ButtonLink, Input, Spinner } from "@/ui/controls";
 import { UploadError, uploadFile } from "@/features/cases/upload";
@@ -32,7 +32,22 @@ const EXCLUSIONS = ["무면허", "음주", "고의"] as const;
 type Busy = null | "estimate" | "facts" | "fault" | "confirm" | "liability";
 
 /** ego — 카드 B 차 이름(영상 없이 진행한 사건은 가입자 차). 없으면 블랙박스 차. */
-export function ReportView({ caseId, report, live, ego, claimHref }: { caseId: string; report: ReviewReport; live: boolean; ego?: EgoName; claimHref: string }) {
+export function ReportView({
+  caseId,
+  report,
+  live,
+  ego,
+  partnerMedical = [],
+  claimHref,
+}: {
+  caseId: string;
+  report: ReviewReport;
+  live: boolean;
+  ego?: EgoName;
+  /** 시연용 가데이터 — 제휴 병원이 보내온 것으로 보이는 진료 정보 */
+  partnerMedical?: PartnerMedicalRecord[];
+  claimHref: string;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState<Busy>(null);
   const [message, setMessage] = useState<{ tone: "error" | "info"; text: string } | null>(null);
@@ -293,7 +308,7 @@ export function ReportView({ caseId, report, live, ego, claimHref }: { caseId: s
 
       {/* 대물 · 대인 — 8번 「대물·대인 1차 판정」 */}
       {ready && (
-        <LiabilityBlock liability={report.liability} busy={busy === "liability"} onSave={saveLiability} onEstimate={uploadCounterEstimate} onMedical={attachMedical} />
+        <LiabilityBlock liability={report.liability} partnerMedical={partnerMedical} busy={busy === "liability"} onSave={saveLiability} onEstimate={uploadCounterEstimate} onMedical={attachMedical} />
       )}
 
       {/* 구상 — 9번 */}
