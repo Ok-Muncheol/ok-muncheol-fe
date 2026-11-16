@@ -332,6 +332,8 @@ export function Stat({ label, value, tone = "neutral", title }: { label: ReactNo
  * 항목 카드는 그 항목이 있는 단계 칸에만 놓는다(LaneRow). 표라서 한 줄의 칸은 높이가 같다.
  * 데스크톱(lg)에서는 머리줄이 화면 맨 위에 붙는다(앱 메뉴가 왼쪽이라 위 머리글이 없다). 그래서 감싼 상자를 lg에서 overflow: clip으로 둔다 —
  * hidden·auto는 스크롤 상자가 돼 머리줄이 화면에 붙지 않는다. 좁은 화면에서는 표를 가로로 밀고 행 머리 칸이 왼쪽에 붙는다.
+ * 감싼 상자는 Table처럼 relative다 — 열 머리의 sr-only 글자(position: absolute)가 페이지 기준으로 놓이면 좁은 화면이 가로로 밀린다.
+ * relative는 붙는 머리줄(sticky)에 영향이 없다.
  */
 /** tint는 단계 열 머리 바탕의 토큰 클래스다(예: bg-stage-intake). 없으면 bg-surface. 머리줄이 화면에 붙으므로 불투명해야 한다. */
 export type LaneHead = { key: string; title: ReactNode; description?: ReactNode; count: number; tint?: string };
@@ -340,7 +342,7 @@ const LANE_HEAD_CELL = "border-b border-line px-3 py-2.5 text-left align-top fon
 
 export function LaneTable({ caption, head, lanes, children }: { caption: string; head: LaneHead; lanes: readonly LaneHead[]; children: ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-card border border-line bg-surface lg:overflow-clip">
+    <div className="relative overflow-x-auto rounded-card border border-line bg-surface lg:overflow-clip">
       <table className="w-full min-w-[40rem] table-fixed border-separate border-spacing-0 text-body">
         <caption className="sr-only">{caption}</caption>
         <colgroup>
