@@ -22,11 +22,10 @@ CI(lint·typecheck·test·build)와 ship 하네스는 있다([브랜치·PR 규�
 ![전체 아키텍처 v8 — 확장 기능 포함](https://raw.githubusercontent.com/Ok-Muncheol/ok-muncheol-be/main/docs/architecture/accident-review-architecture-v8.png)
 
 BE 레포가 2026-11-16 `main` 코드 기준으로 다시 그린 v8이다(v7과 달라진 곳은 BE README 「아키텍처 원본과 적용 기준」).
-그림은 확장 기능까지 포함한다. 선행 MVP에서는 사실 카드 확인→판단·검증→과실비율 보고서까지 구현하며,
-손해액·보험금·약관·구상·질의응답은 후속 단계다.
+그림의 담당자 흐름과 관리자 흐름은 FE 화면에도 모두 있다. 사실 카드 확인(`facts`·`evidence`), 판단 진행·구분 질문(`judgment`),
+서류·면책 입력과 산정(`calculation`), 보고서(`reports`), 구상 청구서(`claims`), 질의응답(`qa`), 관리자 관제(`admin`)다.
 
-그림의 ‘확신도 0.7 미만’은 제안값이다. FE는 임계값을 박아 확인 필드를 자체 결정하지 않고 BE가 반환한
-필드별 확인 상태·질문을 표시한다. ‘9항목 보고서’도 MVP에서는 1~7번만 제공하며, 8~9번은 자차 확장에서 추가한다.
+FE는 임계값을 박아 확인 필드를 자체 결정하지 않고 BE가 반환한 필드별 확인 상태·질문을 표시한다.
 서류 추가에 따른 공식 새 버전 생성과, 점선으로 표시된 what-if 가정 실행을 화면에서도 구분한다.
 그림과 다르게 적용하는 나머지 기준은 [BE 적용 기준](https://github.com/Ok-Muncheol/ok-muncheol-be#아키텍처-원본과-적용-기준)에 정리했다.
 
