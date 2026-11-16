@@ -118,6 +118,8 @@ test("도표 칸 표기는 BE 값을 글자로 바꾸고 모르는 값은 그대
   assert.equal(optionLabel("overtake_line", "no_passing_zone"), "앞지르기 금지 장소");
   assert.equal(optionLabel("movement_A", "reversing"), "후진");
   assert.equal(optionLabel("location_type", "parking_lot"), "주차장");
+  assert.equal(fieldLabel("lane_change_timing"), "두 차 진로 변경 순서");
+  assert.equal(optionLabel("lane_change_timing", "simultaneous"), "양옆 차로에서 동시에");
 });
 
 const question = (field_key, answer = null) => ({
