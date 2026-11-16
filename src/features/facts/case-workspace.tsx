@@ -17,7 +17,7 @@ import { FAULT_RATIO_HEAD_ID, FaultResult } from "@/features/judgment/fault-resu
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
 import type { AnswerResult, ApiError, EvidenceView, FactCard, FactField, JudgmentResult, JudgmentRunView, PartyMapping } from "@/lib/api/types";
-import { buildCardPatch, cardLabel, changedFields, egoName, pick, readableMessage, remainingReview, sameMapping, withDefaultChart } from "@/lib/facts/card";
+import { buildCardPatch, cardLabel, changedFields, egoName, pick, readableMessage, remainingReview, resetFields, sameMapping, withDefaultChart } from "@/lib/facts/card";
 import { answeredValues } from "@/lib/judgment/view";
 import { frameTime } from "@/lib/facts/view";
 import { Button, ButtonLink, Spinner } from "@/ui/controls";
@@ -74,6 +74,8 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   const [busy, setBusy] = useState<Busy>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [frame, setFrame] = useState<string | null>(null);
+  /** 「초기화」 횟수 — 바뀌면 카드 칸을 처음 상태로 다시 그린다 */
+  const [resetKey, setResetKey] = useState(0);
   const [sampleResult, setSampleResult] = useState<JudgmentResult | null>(null);
   const [resultInView, setResultInView] = useState(false);
   /** 비율 제목 줄이 화면 위로 지나갔다(결과를 읽으며 아래로 내려왔다) */
@@ -164,6 +166,16 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   function editCard() {
     setEditing(true);
     scrollTo("fact-card");
+  }
+
+  /** 「초기화」 — 고른 값을 한 번에 되돌린다(resetFields). 확정한 카드는 수정 상태로 열어 다시 고르게 한다. */
+  function resetCard() {
+    setDraft(resetFields(card));
+    setMapping(baseMapping);
+    setTouched(new Set());
+    setFailure(null);
+    setResetKey((n) => n + 1);
+    if (confirmed) setEditing(true);
   }
 
   function cancelEdit() {
@@ -318,21 +330,35 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
           }}
           editable={editable}
           questions={questionMap}
-          onFrame={setFrame}
+          resetKey={resetKey}
           footer={footer}
           aside={
             busy === null &&
-            confirmed &&
             pendingQuestions.length === 0 &&
-            (editing ? (
-              <Button variant="quiet" size="sm" onClick={cancelEdit}>
-                수정 취소
-              </Button>
+            (!confirmed ? (
+              // 확정 전 — 고른 값이 있을 때만 되돌릴 수 있다
+              (dirty || touched.size > 0) && (
+                <Button variant="quiet" size="sm" onClick={resetCard}>
+                  초기화
+                </Button>
+              )
+            ) : editing ? (
+              <span className="flex items-center gap-2">
+                <Button variant="quiet" size="sm" onClick={resetCard}>
+                  초기화
+                </Button>
+                <Button variant="quiet" size="sm" onClick={cancelEdit}>
+                  수정 취소
+                </Button>
+              </span>
             ) : (
               <span className="flex items-center gap-2">
                 <span className="text-caption font-semibold text-ink-muted">✓ 확정</span>
                 <Button variant="quiet" size="sm" onClick={() => setEditing(true)}>
                   수정하기
+                </Button>
+                <Button variant="quiet" size="sm" onClick={resetCard}>
+                  초기화
                 </Button>
               </span>
             ))
@@ -417,7 +443,7 @@ function BottomBar({ children }: { children: ReactNode }) {
 
 /**
  * 왼쪽 영상 칸 — 위는 분석이 만든 H.264 미리보기 영상, 아래는 근거 장면 목록(사진 · 시각 · 이 장면을 근거로 쓴 칸).
- * 근거 장면을 누르거나 카드 칸의 근거 시각(▸ 00:03.4)을 누르면 영상이 그 장면으로 가서 멈춘다.
+ * 근거 장면을 누르면 영상이 그 장면으로 가서 멈춘다.
  * 보기 주소는 BE GET /cases/{id}/evidence(1시간 서명 URL — 화면을 열 때마다 새로 읽는다)이고, 없으면(견본 · 파일 없음) 빈 자리와 시각만 보인다.
  */
 function Media({
@@ -438,7 +464,7 @@ function Media({
   const photos = new Map((evidence?.frames ?? []).map((f) => [f.frame_id, f.url]));
   const preview = evidence?.preview_url ?? null;
 
-  // 고른 장면으로 영상을 옮긴다(카드 칸의 근거 시각을 눌러도 온다).
+  // 고른 장면으로 영상을 옮긴다.
   useEffect(() => {
     const at = card.evidence_frames.find((f) => f.frame_id === selected)?.timestamp_ms;
     if (at === undefined || !video.current) return;
