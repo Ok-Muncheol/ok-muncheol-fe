@@ -30,7 +30,6 @@ import {
   parseOption,
   parseSeconds,
   pick,
-  setInsured,
   swapChartParties,
   type EgoName,
 } from "@/lib/facts/card";
@@ -128,31 +127,17 @@ export function FactCardPanel({ card, draft, mapping, onField, onMapping, editab
 
 /**
  * 누가 가입자인지, 과실 도표의 A가 누구인지. 과실 비율은 도표 A : B로 나온다.
- * 영상 없이 진행한 카드는 카드 B가 곧 가입자 차라 가입자를 고르지 않는다 — 도표 A만 맞바꾼다.
+ * 가입자는 카드 B 차(블랙박스 차 · 가입자 차)로 고정이라 고르지 않는다(BE 카드 v1 2절 — 확정할 때 BE가 그렇게 맞춘다). 도표 A만 맞바꾼다.
  */
 function Parties({ mapping, ego, onChange, editable }: { mapping: PartyMapping; ego: EgoName; onChange: (m: PartyMapping) => void; editable: boolean }) {
-  const insuredIsEgo = mapping.insured_party_id !== null && mapping.insured_party_id === mapping.video_ego_party_id;
   const chartAIsEgo = mapping.chart_party_A_id !== null && mapping.chart_party_A_id === mapping.video_ego_party_id;
-  const segment = (active: boolean) => `h-8 px-3 text-caption font-semibold ${active ? "bg-primary-soft text-on-primary-soft" : "bg-control text-ink-muted hover:text-ink"}`;
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4 text-body">
+      {/* 영상 없이 진행한 카드는 카드 B 이름이 이미 「가입자 차」라 다시 적지 않는다 */}
       {ego === "블랙박스 차" && (
         <div className="flex items-center gap-2">
           <span className="text-caption text-ink-muted">가입자</span>
-          <span className="inline-flex overflow-hidden rounded-control border border-line-strong" role="group" aria-label="가입자">
-            <button type="button" disabled={!editable} aria-pressed={insuredIsEgo} className={segment(insuredIsEgo)} onClick={() => onChange(setInsured(mapping, true))}>
-              블랙박스 차
-            </button>
-            <button
-              type="button"
-              disabled={!editable}
-              aria-pressed={!insuredIsEgo}
-              className={`border-l border-line-strong ${segment(!insuredIsEgo)}`}
-              onClick={() => onChange(setInsured(mapping, false))}
-            >
-              상대 차
-            </button>
-          </span>
+          <span className="font-semibold">{ego}</span>
         </div>
       )}
       <div className="flex items-center gap-2">

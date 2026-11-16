@@ -484,13 +484,6 @@ export function swapChartParties(mapping: PartyMapping): PartyMapping {
   return { ...mapping, chart_party_A_id: mapping.chart_party_B_id, chart_party_B_id: mapping.chart_party_A_id };
 }
 
-/** 가입자를 블랙박스 차 쪽(true)이나 상대 차 쪽(false)으로 둔 매핑. 상대 차 ID는 블랙박스 차가 아닌 도표 당사자다. */
-export function setInsured(mapping: PartyMapping, insuredIsEgo: boolean): PartyMapping {
-  const ego = mapping.video_ego_party_id;
-  const other = [mapping.chart_party_A_id, mapping.chart_party_B_id].find((id) => id !== null && id !== ego) ?? null;
-  return { ...mapping, insured_party_id: insuredIsEgo ? ego : other };
-}
-
 /** 화면 이름이 있는 카드 칸 이름(movement_A 등). 앞뒤가 낱말 경계일 때만 바꾼다 — collision_signal_A 속 signal_A는 그대로다. */
 const FIELD_KEY_PATTERN = new RegExp(`\\b(${Object.keys(LABELS).join("|")})\\b`, "g");
 
