@@ -1,6 +1,7 @@
 /**
  * A: 사실 카드 화면(사건 작업 화면 위쪽)의 순수 규칙 — 칸 순서·이름·보기, 상황에 맞는 칸, 칸 묶기, 당사자 이름, 저장 요청 모양.
  * 카드 v1(BE docs/contracts/fact-card-v1.md)의 A = 상대 차, B = 블랙박스(촬영) 차다. 화면은 A/B 대신 이 이름을 쓴다.
+ * 영상 없이 진행한 카드는 가입자 차를 카드 B 자리에 두므로(BE blank_card) 그 카드의 B는 「가입자 차」라고 부른다(egoName).
  * 도표 A/B(party_mapping.chart_party_*)는 카드 A/B와 다를 수 있다 — 과실 비율은 매핑으로 차 이름을 붙인다.
  * 확정할 수 있는지는 BE가 정한다. 여기서는 보여 주는 순서와 묶음만 정한다. 런타임 import는 두지 않는다.
  */
@@ -54,8 +55,27 @@ const LABELS: Record<string, string> = {
   narrative: "사고 설명",
 };
 
-export function cardLabel(key: string): string {
-  return LABELS[key] ?? key;
+/** 카드 B(1인칭 영상의 촬영 차 자리) 차의 화면 이름 — 영상 카드는 블랙박스 차, 영상 없이 진행한 카드는 가입자 차다. */
+export type EgoName = "블랙박스 차" | "가입자 차";
+const VIDEO_EGO: EgoName = "블랙박스 차";
+
+/** 영상 분석으로 만든 카드인가 — 근거 장면이나 영상 분석 칸(출처 vision)이 있다. 담당자가 칸을 고쳐도 근거 장면은 남는다. */
+export function isFromVideo(card: Pick<FactCard, "fields" | "evidence_frames">): boolean {
+  return card.evidence_frames.length > 0 || Object.values(card.fields).some((f) => f.source === "vision");
+}
+
+/** 그 카드의 카드 B 차 이름. */
+export function egoName(card: Pick<FactCard, "fields" | "evidence_frames">): EgoName {
+  return isFromVideo(card) ? VIDEO_EGO : "가입자 차";
+}
+
+/** 표에 적어 둔 「블랙박스 차」를 그 카드의 카드 B 이름으로 바꾼다. */
+function named(text: string, ego: EgoName): string {
+  return ego === VIDEO_EGO ? text : text.replaceAll(VIDEO_EGO, ego);
+}
+
+export function cardLabel(key: string, ego: EgoName = VIDEO_EGO): string {
+  return named(LABELS[key] ?? key, ego);
 }
 
 const MOVEMENT = { straight: "직진", left_turn: "좌회전", right_turn: "우회전", u_turn: "유턴", lane_change: "진로 변경", other: "그 밖" };
@@ -122,16 +142,16 @@ const OPTIONS: Record<string, Record<string, string>> = {
 };
 
 /** 칸 하나의 보기. 구분 질문이 있으면 질문의 보기만 남긴다. */
-export function cardOptions(key: string, only?: readonly string[]): [string, string][] {
-  const all = Object.entries(OPTIONS[key] ?? {});
+export function cardOptions(key: string, only?: readonly string[], ego: EgoName = VIDEO_EGO): [string, string][] {
+  const all = Object.entries(OPTIONS[key] ?? {}).map(([value, label]): [string, string] => [value, named(label, ego)]);
   return only ? all.filter(([value]) => only.includes(value)) : all;
 }
 
 /** 값 → 화면 글자. 모르는 값은 그대로, null은 "모름". */
-export function cardValueLabel(key: string, value: Value): string {
+export function cardValueLabel(key: string, value: Value, ego: EgoName = VIDEO_EGO): string {
   if (value === null) return "모름";
   if (key === "collision_time_ms" && typeof value === "number") return secondsText(value);
-  return OPTIONS[key]?.[String(value)] ?? String(value);
+  return named(OPTIONS[key]?.[String(value)] ?? String(value), ego);
 }
 
 /** 보기 값(문자열) → 카드 값. 밤낮·비보호 좌회전 표지는 참거짓이다. */
@@ -256,12 +276,12 @@ export function withDefaultChart(mapping: PartyMapping, parties: readonly { part
   return { ...mapping, chart_party_A_id: other, chart_party_B_id: ego };
 }
 
-/** 도표 A/B 당사자의 화면 이름 — 블랙박스 차인지 상대 차인지, 가입자면 덧붙인다. */
-export function chartPartyName(mapping: PartyMapping, side: "A" | "B"): string {
+/** 도표 A/B 당사자의 화면 이름 — 카드 B 차(블랙박스 차 · 가입자 차)인지 상대 차인지, 가입자면 덧붙인다. */
+export function chartPartyName(mapping: PartyMapping, side: "A" | "B", ego: EgoName = VIDEO_EGO): string {
   const id = side === "A" ? mapping.chart_party_A_id : mapping.chart_party_B_id;
   if (id === null) return side === "A" ? "도표 A" : "도표 B";
-  const car = mapping.video_ego_party_id !== null && id === mapping.video_ego_party_id ? "블랙박스 차" : "상대 차";
-  return id === mapping.insured_party_id ? `${car}(가입자)` : car;
+  const car = mapping.video_ego_party_id !== null && id === mapping.video_ego_party_id ? ego : "상대 차";
+  return id === mapping.insured_party_id && car !== "가입자 차" ? `${car}(가입자)` : car;
 }
 
 /** 도표 A·B를 맞바꾼 매핑. */

@@ -4,7 +4,9 @@
  * A: 새 사건 — 사고 날짜와 블랙박스 영상만 받는다. 「분석 시작」 한 번으로 사건 생성 → 업로드 URL 발급 → 영상 PUT → 분석 접수를 잇고,
  * 같은 자리가 「영상 분석 중이에요」로 바뀐다. 사건이 생기면 주소만 /cases/{id}로 바꿔(history.replaceState — 화면은 다시 그리지 않아
  * 업로드가 끊기지 않는다) 새로고침해도 사건 화면이 같은 상태를 서버에서 다시 읽어 그린다. 분석이 끝나면 판단 화면으로 넘어간다.
- * 사건 이름은 사고 날짜다(caseTitle). 사건은 모두 영상으로 시작하고, 당사자 진술은 판단 화면의 사실 카드에서 반영한다.
+ * 사건 이름은 사고 날짜다(caseTitle). 당사자 진술은 판단 화면의 사실 카드에서 반영한다.
+ * 블랙박스 영상이 없으면 「영상 없이 진행」이 빈 사실 카드를 만들고(BE POST /cases/{id}/fact-card) 판단 화면으로 넘어간다 — 비워 둔 칸은
+ * 판단이 구분 질문으로 묻는다. 그렇게 진행한 사건도 보고서 전까지는 이 화면에서 영상을 올릴 수 있고, 분석 카드가 새 버전이 된다.
  * 배정된 사건(/cases/[id])은 단계와 상관없이 늘 이 화면이 접수 화면이다 — 머리(CaseHeader)는 사건 화면이 그리고, 여기는
  * 위에서부터 영상(올리기 칸 · 고른 영상 · 올린 영상) → 상태 한 줄(분석 시작 · 올리는 중 · 분석 중 · 실패 · 분석 완료와 다음 단계) → 사건 정보 상자다.
  * 견본 모드는 BE에 보내지 않고 진행만 흉내 낸 뒤 견본 사건의 판단 화면으로 간다.
@@ -35,6 +37,8 @@ export type ExistingCase = {
   versions: VersionRef;
   /** 올린 영상의 재생 주소 — BE가 주기 전까지는 없다. */
   videoUrl?: string | null;
+  /** 카드가 있는 사건의 카드가 영상 분석으로 만든 것인가(lib/facts/card isFromVideo · 미리보기 영상). false면 영상 없이 진행한 사건이다 */
+  hasVideo?: boolean;
 };
 
 /** GET /cases/{id}에서 이 화면이 읽는 부분. analysis는 BE가 최신 분석 작업을 실어 줄 때만 있다. */
@@ -48,6 +52,8 @@ type Phase = { kind: "form" } | { kind: "uploading"; progress: number } | { kind
 
 const POLL_MS = 4000;
 const SAMPLE_DONE_HREF = "/cases/SYN-2026-0130/judgment";
+/** 견본 모드의 「영상 없이 진행」 — 영상 분석 칸 없이 담당자가 칸을 채운 견본 카드의 판단 화면 */
+const SAMPLE_NO_VIDEO_HREF = "/cases/SYN-2026-0105/judgment";
 const FAILED_MESSAGE = "영상 분석이 실패했어요. 다시 시도해 주세요.";
 
 function friendly(error: ApiError): string {
@@ -187,6 +193,9 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   const [dragging, setDragging] = useState(false);
   /** 고른 파일이 받지 않는 형식·크기일 때 — 분석 실패(error)와 달리 올리기 칸 아래 한 줄로만 알린다. */
   const [fileProblem, setFileProblem] = useState<string | null>(null);
+  /** 「영상 없이 진행」 요청 중 · 실패 이유(분석 실패와 다른 자리에 한 줄로 보인다) */
+  const [proceeding, setProceeding] = useState(false);
+  const [proceedProblem, setProceedProblem] = useState<string | null>(null);
 
   // 다시 시도할 때 이미 끝난 단계는 건너뛴다 — 사건은 한 번만 만들고, 올린 영상은 다시 올리지 않는다.
   // ref는 이어지는 요청이 읽고, 화면은 hasCase 상태로 그린다.
@@ -198,17 +207,23 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   const fileInput = useRef<HTMLInputElement>(null);
 
   const title = hasCase || phase.kind !== "form" ? caseTitle(date) : "새 사건";
-  // 분석이 끝난 사건(사실 카드 · 판단 · 검토 보고서 단계)은 올리기 대신 올린 영상과 다음 단계 버튼을 보인다.
+  // 카드가 있는 사건(사실 카드 · 판단 · 검토 보고서 단계). 영상으로 만든 카드면 올리기 대신 올린 영상과 다음 단계 버튼을 보인다.
   const settled = existing !== undefined && !isBeforeCard(existing.stage);
-  const analysis = settled
-    ? "완료"
-    : phase.kind === "uploading"
-      ? "영상 올리는 중"
-      : phase.kind === "analyzing"
-        ? "분석 중"
-        : error
-          ? "실패"
-          : "영상 대기";
+  // 영상 없이 진행한 사건 — 다음 단계 버튼과 함께, 보고서 전까지는 영상을 올릴 칸을 그대로 둔다.
+  const noVideo = settled && existing?.hasVideo === false;
+  const canAddVideo = noVideo && existing?.stage !== "report";
+  const analysis =
+    settled && !noVideo
+      ? "완료"
+      : phase.kind === "uploading"
+        ? "영상 올리는 중"
+        : phase.kind === "analyzing"
+          ? "분석 중"
+          : error
+            ? "실패"
+            : noVideo
+              ? "없음 · 영상 없이 진행"
+              : "영상 대기";
 
   // 영상 미리보기 주소는 바꾸거나 떠나면 브라우저 메모리를 돌려준다.
   useEffect(
@@ -337,23 +352,52 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
     }
   }
 
-  if (existing && settled) {
-    const next = NEXT_LABEL[existing.stage];
+  /** 「영상 없이 진행」 — 빈 사실 카드를 만들고 판단 화면으로 간다. 카드가 이미 있으면(다른 창에서 먼저 진행) 그 카드로 이어서 한다. */
+  async function proceedWithoutVideo() {
+    const id = caseId.current;
+    if (!id) return;
+    setProceedProblem(null);
+    if (sample) return router.push(SAMPLE_NO_VIDEO_HREF);
+    setProceeding(true);
+    try {
+      await createBrowserApiClient().startWithoutVideo(id);
+    } catch (caught) {
+      const apiError = asApiError(caught);
+      if (apiError.code !== "fact_card_exists") {
+        setProceedProblem(friendly(apiError));
+        setProceeding(false);
+        return;
+      }
+    }
+    router.push(`/cases/${encodeURIComponent(id)}/judgment`);
+  }
+
+  const next = existing ? NEXT_LABEL[existing.stage] : undefined;
+  const nextLink =
+    existing && next ? (
+      <ButtonLink href={stageHref({ case_id: existing.caseId, stage: existing.stage, versions: existing.versions })} className="h-10 px-6">
+        {next} →
+      </ButtonLink>
+    ) : null;
+
+  if (existing && settled && !canAddVideo) {
     return (
       <div className="flex w-full max-w-3xl flex-col gap-6">
-        <UploadedVideo src={existing.videoUrl ?? null} />
+        {!noVideo && <UploadedVideo src={existing.videoUrl ?? null} />}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="flex items-center gap-2 text-heading font-semibold">
-            <svg aria-hidden viewBox="0 0 16 16" className="size-4 text-primary-strong" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="m3.5 8.5 3 3 6-7" />
-            </svg>
-            영상 분석 완료
+            {noVideo ? (
+              "영상 없이 진행한 사건"
+            ) : (
+              <>
+                <svg aria-hidden viewBox="0 0 16 16" className="size-4 text-primary-strong" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m3.5 8.5 3 3 6-7" />
+                </svg>
+                영상 분석 완료
+              </>
+            )}
           </p>
-          {next && (
-            <ButtonLink href={stageHref({ case_id: existing.caseId, stage: existing.stage, versions: existing.versions })} className="h-10 px-6">
-              {next} →
-            </ButtonLink>
-          )}
+          {nextLink}
         </div>
         <CaseInfo existing={existing} analysis={analysis} />
       </div>
@@ -364,6 +408,17 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
     // 새 사건(/cases/new)은 가운데, 배정된 사건은 머리(CaseHeader)에 맞춰 왼쪽에 붙인다.
     <div className={`flex w-full flex-col gap-6 ${existing ? "max-w-3xl" : "mx-auto max-w-2xl"}`}>
       {!existing && <h1 className="text-title font-bold tracking-tight break-keep">{title}</h1>}
+
+      {noVideo && (
+        // 영상 없이 진행한 사건 — 판단 화면으로 가는 버튼이 먼저고, 영상이 생기면 아래 칸에 올린다.
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-heading font-semibold">영상 없이 진행한 사건</p>
+            {nextLink}
+          </div>
+          <p className="text-caption text-ink-muted break-keep">블랙박스 영상이 생기면 아래에 올려 주세요. 분석한 사실 카드가 새 버전이 되고, 판단은 그 카드로 다시 해요.</p>
+        </div>
+      )}
 
       {phase.kind === "form" && !hasCase && (
         <div className="flex flex-col gap-1.5">
@@ -424,7 +479,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
               <path d="M10 13V4m-3.5 3.5L10 4l3.5 3.5M4 13.5v1A1.5 1.5 0 0 0 5.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-1" />
             </svg>
           </span>
-          <span className="text-heading font-semibold text-ink">{error ? "영상을 다시 올려 주세요" : "블랙박스 영상을 끌어다 놓으세요"}</span>
+          <span className="text-heading font-semibold text-ink break-keep">{error ? "영상을 다시 올려 주세요" : "블랙박스 영상을 끌어다 놓으세요"}</span>
           <span className="text-caption text-ink-muted">또는 눌러서 고르기 · 50MB까지</span>
         </label>
       )}
@@ -433,6 +488,21 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
         <p role="alert" className="-mt-3 text-caption text-on-danger-soft">
           {fileProblem}
         </p>
+      )}
+
+      {/* 배정된 사건에 블랙박스 영상이 없으면 빈 사실 카드로 판단 화면에서 진행한다(진술로 칸을 채우고, 비운 칸은 구분 질문이 묻는다). */}
+      {existing && !settled && phase.kind === "form" && (!file || error) && (
+        <div className="-mt-3 flex flex-wrap items-center gap-x-1 gap-y-1 text-caption text-ink-muted">
+          블랙박스 영상이 없나요?
+          <Button variant="quiet" size="sm" onClick={proceedWithoutVideo} disabled={proceeding}>
+            {proceeding ? "카드를 만드는 중…" : "영상 없이 진행 →"}
+          </Button>
+          {proceedProblem && (
+            <span role="alert" className="basis-full text-on-danger-soft">
+              {proceedProblem}
+            </span>
+          )}
+        </div>
       )}
 
       {phase.kind === "uploading" ? (

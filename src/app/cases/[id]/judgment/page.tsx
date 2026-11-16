@@ -13,6 +13,7 @@ import { CaseWorkspace } from "@/features/facts/case-workspace";
 import { getEvidence, getFactCard } from "@/features/facts/fact-source";
 import { getLatestJudgmentRun } from "@/features/judgment/judgment-source";
 import { isBeforeCard } from "@/lib/cases/intake";
+import { isFromVideo } from "@/lib/facts/card";
 
 export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgment">) {
   const { id } = await props.params;
@@ -41,8 +42,8 @@ export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgmen
     );
   }
 
-  // 영상 칸은 영상 분석의 흔적(미리보기 영상 · 근거 장면 · 영상 분석 칸)이 있을 때 둔다. 담당자가 칸을 모두 채운 견본 카드는 카드만 가운데에 둔다.
-  const hasVideo = Boolean(evidence?.preview_url) || card.evidence_frames.length > 0 || Object.values(card.fields).some((f) => f.source === "vision");
+  // 영상 칸은 영상 분석의 흔적(미리보기 영상 · 근거 장면 · 영상 분석 칸)이 있을 때 둔다. 영상 없이 진행한 카드는 카드만 가운데에 둔다.
+  const hasVideo = Boolean(evidence?.preview_url) || isFromVideo(card);
   const reportVersion = run?.result && run.fact_card_version === card.version ? run.report_version : null;
 
   return (

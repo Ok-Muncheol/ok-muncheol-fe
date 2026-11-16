@@ -16,7 +16,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError } from "@/lib/api/client";
 import type { CaseFacts, InjuredPersonDoc, PartyMapping, PropertyDamageInputDoc, ReportSection, ReviewReport } from "@/lib/api/types";
-import { cardLabel, cardValueLabel, chartPartyName } from "@/lib/facts/card";
+import { cardLabel, cardValueLabel, chartPartyName, type EgoName } from "@/lib/facts/card";
 import { Button, ButtonLink, Input, Spinner } from "@/ui/controls";
 import { UploadError, uploadFile } from "@/features/cases/upload";
 import { LiabilityBlock, type MedicalKind } from "./liability-block";
@@ -31,7 +31,8 @@ const EXCLUSIONS = ["무면허", "음주", "고의"] as const;
 
 type Busy = null | "estimate" | "facts" | "fault" | "confirm" | "liability";
 
-export function ReportView({ caseId, report, live, claimHref }: { caseId: string; report: ReviewReport; live: boolean; claimHref: string }) {
+/** ego — 카드 B 차 이름(영상 없이 진행한 사건은 가입자 차). 없으면 블랙박스 차. */
+export function ReportView({ caseId, report, live, ego, claimHref }: { caseId: string; report: ReviewReport; live: boolean; ego?: EgoName; claimHref: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState<Busy>(null);
   const [message, setMessage] = useState<{ tone: "error" | "info"; text: string } | null>(null);
@@ -162,7 +163,7 @@ export function ReportView({ caseId, report, live, claimHref }: { caseId: string
           )}
         </div>
         <dl className="mt-5 grid gap-6 sm:grid-cols-3">
-          <Figure term="최종 과실" note={j.fault_A !== null ? `${chartPartyName(mapping, "A")} : ${chartPartyName(mapping, "B")}` : "판정 전"}>
+          <Figure term="최종 과실" note={j.fault_A !== null ? `${chartPartyName(mapping, "A", ego)} : ${chartPartyName(mapping, "B", ego)}` : "판정 전"}>
             {j.fault_A !== null && j.fault_B !== null ? `${j.fault_A} : ${j.fault_B}` : "—"}
           </Figure>
           <Figure term="자차 보험금" note="보상 인정 손해액 − 자기부담금">
@@ -213,7 +214,7 @@ export function ReportView({ caseId, report, live, claimHref }: { caseId: string
                   .filter((m) => m.decision === "적용")
                   .map((m) => (
                     <span key={m.modifier_id} className="text-ink-muted">
-                      → {chartPartyName(mapping, m.applies_to)} {m.name}{" "}
+                      → {chartPartyName(mapping, m.applies_to, ego)} {m.name}{" "}
                       <b className="text-ink tabular-nums">
                         {m.delta > 0 ? "+" : ""}
                         {m.delta}
@@ -241,9 +242,9 @@ export function ReportView({ caseId, report, live, claimHref }: { caseId: string
               "—"
             )}
           </Row>
-          <FollowUps section={section(7)} />
+          <FollowUps section={section(7)} ego={ego} />
         </Rows>
-        <Facts section={section(2)} />
+        <Facts section={section(2)} ego={ego} />
       </Block>
 
       {/* 손해액 · 보험금 — 8번 */}
@@ -388,14 +389,14 @@ function Row({ term, children }: { term: string; children: ReactNode }) {
 }
 
 /** 7번 추가 확인 사항 — 남은 질문 · 반박이 있을 때만 주황 점과 함께 보인다. */
-function FollowUps({ section }: { section?: ReportSection }) {
+function FollowUps({ section, ego }: { section?: ReportSection; ego?: EgoName }) {
   const questions = (section?.body["담당자 질문"] as { 칸: string; 질문: string }[] | undefined) ?? [];
   const rebuttals = list(section?.body["미해결 반박·검증"]);
   if (questions.length === 0 && rebuttals.length === 0) return null;
   return (
     <Row term="추가 확인">
       <ul className="flex flex-col gap-1">
-        {[...questions.map((q) => `${cardLabel(q.칸)}: ${q.질문}`), ...rebuttals].map((t) => (
+        {[...questions.map((q) => `${cardLabel(q.칸, ego)}: ${q.질문}`), ...rebuttals].map((t) => (
           <li key={t} className="flex items-start gap-2">
             <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-warning" />
             {t}
@@ -407,7 +408,7 @@ function FollowUps({ section }: { section?: ReportSection }) {
 }
 
 /** 2번 확정 사실 — 판단에 쓴 사실 카드. 접어 둔다. */
-function Facts({ section }: { section?: ReportSection }) {
+function Facts({ section, ego }: { section?: ReportSection; ego?: EgoName }) {
   const fields = (section?.body["사실 카드"] as { 칸: string; 값: unknown }[] | undefined) ?? [];
   if (fields.length === 0) return null;
   return (
@@ -416,8 +417,8 @@ function Facts({ section }: { section?: ReportSection }) {
       <dl className="mt-2 grid gap-x-8 gap-y-1.5 text-caption sm:grid-cols-2">
         {fields.map((f) => (
           <div key={f.칸} className="flex gap-3">
-            <dt className="w-28 shrink-0 text-ink-muted">{cardLabel(f.칸)}</dt>
-            <dd className="text-ink">{cardValueLabel(f.칸, f.값 as string | number | boolean | null)}</dd>
+            <dt className="w-28 shrink-0 text-ink-muted">{cardLabel(f.칸, ego)}</dt>
+            <dd className="text-ink">{cardValueLabel(f.칸, f.값 as string | number | boolean | null, ego)}</dd>
           </div>
         ))}
       </dl>

@@ -32,6 +32,11 @@ export interface ApiClient {
   startAnalysis(caseId: string, storagePath: string, idempotencyKey: string): Promise<Record<string, unknown>>;
   getCase(caseId: string): Promise<Record<string, unknown>>;
   getFactCard(caseId: string): Promise<FactCard>;
+  /**
+   * POST /cases/{id}/fact-card — 201. 블랙박스 영상 없이 진행: 칸이 모두 빈 카드 v1(가입자 차가 카드 B)을 만든다.
+   * 카드가 이미 있으면 409 fact_card_exists, 영상 분석이 대기·진행 중이면 409 analysis_in_progress
+   */
+  startWithoutVideo(caseId: string): Promise<FactCard>;
   /** GET /cases/{id}/evidence — 근거 사진 · 미리보기 영상 서명 URL(1시간). 담당자 본인 사건만, 카드가 없으면 빈 목록 */
   getEvidence(caseId: string): Promise<EvidenceView>;
   patchFactCard(caseId: string, patch: FactPatch): Promise<FactCard>;
@@ -170,6 +175,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
       request("POST", `${caseUrl(caseId)}/analysis`, { body: { storage_path: storagePath }, idempotencyKey }),
     getCase: (caseId) => request("GET", caseUrl(caseId)),
     getFactCard: (caseId) => request("GET", `${caseUrl(caseId)}/fact-card`),
+    startWithoutVideo: (caseId) => request("POST", `${caseUrl(caseId)}/fact-card`),
     getEvidence: (caseId) => request("GET", `${caseUrl(caseId)}/evidence`),
     patchFactCard: (caseId, patch) => request("PATCH", `${caseUrl(caseId)}/fact-card`, { body: patch }),
     confirmFactCard: (caseId, expectedVersion) =>
