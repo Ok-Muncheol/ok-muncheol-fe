@@ -366,5 +366,9 @@ export type AdminOverview = {
   generated_at: string;
 };
 export type IntakeInput = { location: string; description: string; injured_count?: number; accident_at?: string | null; details?: IntakeDetailsInput };
-export type IntakeFilter = { state?: "open" | "unassigned" | "closed"; assignee_id?: string; region?: string; before?: string; limit?: number };
+/**
+ * GET /admin/intakes 조건. stage는 진행 중 건의 단계(intake·analysis·facts·judgment·report)를 쉼표로 이은 값이다(예: "facts,judgment").
+ * 값이 틀리면 422 invalid_intake_filter.
+ */
+export type IntakeFilter = { state?: "open" | "unassigned" | "closed"; stage?: string; assignee_id?: string; region?: string; before?: string; limit?: number };
 export type AssignmentInput = { coverage: Coverage; assignee_id: string; reason: string };
