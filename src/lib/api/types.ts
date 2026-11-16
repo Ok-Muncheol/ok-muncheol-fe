@@ -206,6 +206,8 @@ export type PropertyDamageResult = {
 };
 export type InjuryResult = {
   status: LiabilityStatus; person_id: string; label?: string | null; grade: number | null; treatment_cost: number | null;
+  /** 입력한 운전자 여부(모름 null). 고치기 폼이 이 값으로 시작한다. BE가 이 칸을 더하기 전 보고서에는 없다 */
+  is_driver?: boolean | null;
   consolation: number | null; damage: number | null; after_offset: number | null; treatment_guarantee: boolean;
   bodily_1_limit: number | null; bodily_1: number | null; bodily_2: number | null;
   formula: string; flags: LiabilityFlag[]; assumptions: string[]; reasons: string[]; clause_ids: string[];
