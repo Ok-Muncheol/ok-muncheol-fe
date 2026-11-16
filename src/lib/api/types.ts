@@ -14,11 +14,11 @@ export type ApiError = { code: string; message: string; retryable: boolean };
 export type UploadKind = "estimate" | "video" | "medical_document";
 /** POST /cases/{id}/uploads 응답(BE UploadTicket). upload_url에 키 없이 파일 본문과 Content-Type만 넣어 PUT하고, storage_path를 /estimates·/analysis에 보낸다. */
 /**
- * GET /cases/{id}/evidence — 최신 카드 근거 사진과 최신 완료 분석의 H.264 미리보기 영상을 보기용 서명 URL(expires_in초, 1시간)로 준다.
- * 파일이 없으면 url · preview_url이 null이다. 주소가 만료되므로 화면을 열 때마다 새로 읽는다(BE #170).
+ * GET /cases/{id}/evidence — 최신 완료 분석의 H.264 미리보기 영상을 보기용 서명 URL(expires_in초, 1시간)로 준다.
+ * 파일이 없으면 preview_url이 null이다. 주소가 만료되므로 화면을 열 때마다 새로 읽는다(BE #170).
+ * 근거 사진 주소는 주지 않는다 — 카드의 근거 장면은 모든 칸이 같은 고정 프레임이라 화면이 쓰지 않는다(FE #166).
  */
 export type EvidenceView = {
-  frames: { frame_id: string; timestamp_ms: number; url: string | null }[];
   preview_url: string | null;
   expires_in: number;
 };

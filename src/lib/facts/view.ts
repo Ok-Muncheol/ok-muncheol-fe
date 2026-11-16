@@ -53,11 +53,3 @@ export function countFields(fields: Fields): FieldCounts {
     unknown: all.filter((f) => f.value === null).length,
   };
 }
-
-/** 프레임 시각 — 영상 시작부터 분:초.십분의 일초(예: 00:03.4). */
-export function frameTime(ms: number): string {
-  const tenths = Math.floor(ms / 100);
-  const minutes = Math.floor(tenths / 600);
-  const seconds = Math.floor((tenths % 600) / 10);
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${tenths % 10}`;
-}

@@ -16,7 +16,7 @@ export type StageDef = { key: CaseStage; label: string; description: string };
 export const STAGES: readonly StageDef[] = [
   { key: "intake", label: "접수", description: "사건 생성·범위 확인" },
   { key: "analysis", label: "영상 분석", description: "업로드·분석 진행" },
-  { key: "facts", label: "사실 카드", description: "근거 프레임 확인·수정·확정" },
+  { key: "facts", label: "사실 카드", description: "사실 확인·수정·확정" },
   { key: "judgment", label: "판단", description: "도표 검색·구분 질문·검증" },
   { key: "report", label: "검토 보고서", description: "판정·초안·담당자 승인" },
 ];

@@ -46,7 +46,7 @@ type Props = {
   /** 판단 조회가 실패했으면 그 이유 */
   loadError: ApiError | null;
   reportHref: string | null;
-  /** 근거 사진 · 미리보기 영상 보기 주소(BE GET /cases/{id}/evidence). 없으면 빈 자리 */
+  /** 미리보기 영상 보기 주소(BE GET /cases/{id}/evidence). 없으면 빈 자리 */
   evidence?: EvidenceView | null;
 };
 

@@ -1,7 +1,7 @@
 // 사실 카드(판단 화면 안) 규칙 테스트. Node가 .ts의 타입만 지우고 실행한다(런타임 import 없음).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildPatch, changedKeys, countFields, editValue, frameTime, setConfirmed } from "./view.ts";
+import { buildPatch, changedKeys, countFields, editValue, setConfirmed } from "./view.ts";
 
 const vision = (value, status = "unverified") => ({
   value, model_value: "straight", source: "vision", model_confidence: 0.4, verification_status: status,
@@ -45,10 +45,4 @@ test("changedKeys·buildPatch는 바뀐 칸만 기대 버전·사유와 함께 �
 test("countFields는 확인 상태와 불명 칸을 센다", () => {
   const counts = countFields({ a: vision("straight", "human_confirmed"), b: vision(null, "needs_review"), c: vision("straight") });
   assert.deepEqual(counts, { total: 3, confirmed: 1, needsReview: 1, unverified: 1, unknown: 1 });
-});
-
-test("frameTime은 분:초.십분의 일초로 적는다", () => {
-  assert.equal(frameTime(3400), "00:03.4");
-  assert.equal(frameTime(0), "00:00.0");
-  assert.equal(frameTime(65250), "01:05.2");
 });
