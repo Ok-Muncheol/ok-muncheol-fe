@@ -19,9 +19,9 @@
    "fields": {
     "accident_type": { "value": "car_to_car", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
     "location_type": { "value": "unsignalized_intersection", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
-    "road_priority": { "value": "major_A", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] },
-    "movement_A": { "value": "straight", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] },
-    "movement_B": { "value": "left_turn", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] },
+    "road_priority": { "value": "major_A", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+    "movement_A": { "value": "straight", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
+    "movement_B": { "value": "left_turn", "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "human_confirmed", "evidence_frame_ids": [], "source_document_ids": [] },
     "entry_order": { "value": null, "model_value": null, "source": "manual", "model_confidence": null, "verification_status": "unverified", "evidence_frame_ids": [], "source_document_ids": [] }
    }
   },

@@ -31,6 +31,8 @@ test("직접 입력·진술 칸에는 모델 값·확신도·프레임이 없고
         assert.equal(field.model_value, null, at);
         assert.equal(field.model_confidence, null, `${at}: 수동 입력 확신도는 해당 없음`);
         assert.deepEqual(field.evidence_frame_ids, [], at);
+        // 담당자가 넣은 값은 확인한 값이다(BE apply_patch) — 미확인으로 두면 보기 칩이 사람 값에 「AI」를 붙인다
+        if (field.source === "manual" && field.value !== null) assert.equal(field.verification_status, "human_confirmed", at);
       }
     }
     // 영상 분석 칸(출처 vision)이 없으면 담당자가 칸을 모두 채운 카드다(groupFields의 fromVideo와 같은 기준)
