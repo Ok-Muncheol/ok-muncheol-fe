@@ -31,7 +31,6 @@ import {
   swapChartParties,
   type EgoName,
 } from "@/lib/facts/card";
-import { frameTime } from "@/lib/facts/view";
 import { Button, Input, Textarea } from "@/ui/controls";
 
 type Fields = Record<string, FactField>;
@@ -46,8 +45,8 @@ type Props = {
   editable: (key: string) => boolean;
   /** 답하지 않은 구분 질문(칸 이름 → 질문). 그 칸은 맨 위에 두고 질문의 보기만 보인다. */
   questions: Record<string, QuestionView>;
-  /** 근거 장면을 누르면 왼쪽 영상 칸에서 그 장면을 보인다. */
-  onFrame: (frameId: string) => void;
+  /** 「초기화」할 때마다 바뀐다 — 칸을 처음 상태(펼침)로 다시 그린다. */
+  resetKey?: number;
   /** 머리의 오른쪽 — 잠긴 카드의 「수정하기」 등. */
   aside?: ReactNode;
   /** 카드 맨 아래 — 확정 버튼 · 고친 이유 · 남은 칸 안내. */
@@ -57,20 +56,20 @@ type Props = {
 /** 카드 맨 아래 확정 줄 — 이 줄이 화면 밖이면 사건 화면이 같은 버튼을 아래에 띄운다. */
 export const FACT_CARD_FOOTER_ID = "fact-card-footer";
 
-export function FactCardPanel({ card, draft, mapping, onField, onMapping, editable, questions, onFrame, aside, footer }: Props) {
+export function FactCardPanel({ card, draft, mapping, onField, onMapping, editable, questions, resetKey = 0, aside, footer }: Props) {
   const groups = groupFields(card.fields, draft, Object.keys(questions));
-  const frameTimes = new Map(card.evidence_frames.map((frame) => [frame.frame_id, frame.timestamp_ms]));
   // AI가 채웠고 담당자가 아직 확인하지 않은 보기 칸·사고 설명 — 처음부터 칩·입력창을 펼쳐 바로 확인하게 한다
   // (사고 설명은 고치지 않아도 「확인」을 누르면 지금 글 그대로 확인이다).
+  // 「초기화」한 뒤에도 다시 펼치게 지금 값(draft)의 상태로 본다.
   const toConfirm = (key: string) =>
-    card.fields[key]?.source === "vision" &&
-    card.fields[key]?.verification_status !== "human_confirmed" &&
+    draft[key]?.source === "vision" &&
+    draft[key]?.verification_status !== "human_confirmed" &&
     (cardOptions(key).length > 0 || key === "narrative");
   // 영상 없이 진행한 카드는 카드 B가 가입자 차다(BE blank_card) — 칸 이름·보기에 그 이름을 쓴다
   const ego = egoName(card);
   const row = (key: string, open: boolean, compact = false) => (
     <FieldRow
-      key={key}
+      key={`${key}:${resetKey}`}
       compact={compact}
       ego={ego}
       fieldKey={key}
@@ -78,8 +77,6 @@ export function FactCardPanel({ card, draft, mapping, onField, onMapping, editab
       open={open}
       editable={editable(key)}
       question={questions[key]}
-      frameTimes={frameTimes}
-      onFrame={onFrame}
       onChange={(next) => onField(key, next)}
     />
   );
@@ -175,8 +172,6 @@ function FieldRow({
   open: initiallyOpen,
   editable,
   question,
-  frameTimes,
-  onFrame,
   onChange,
 }: {
   /** 2열 목록의 한 칸 — 줄 구분선을 위에 긋고, 열리면 두 열을 다 쓴다. */
@@ -188,8 +183,6 @@ function FieldRow({
   open: boolean;
   editable: boolean;
   question?: QuestionView;
-  frameTimes: Map<string, number>;
-  onFrame: (frameId: string) => void;
   onChange: (field: FactField) => void;
 }) {
   // 확인이 필요한 칸은 열린 채로 시작하고, 고르면 닫힌다.
@@ -269,16 +262,7 @@ function FieldRow({
         </p>
       )}
 
-      {(changed || field.evidence_frame_ids.length > 0) && (
-        <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-ink-muted">
-          {changed && <span>AI 의견: {cardValueLabel(fieldKey, field.model_value, ego)}</span>}
-          {field.evidence_frame_ids.map((frameId) => (
-            <button key={frameId} type="button" onClick={() => onFrame(frameId)} className="text-primary-strong tabular-nums hover:underline">
-              ▸ {frameTimes.has(frameId) ? frameTime(frameTimes.get(frameId)!) : frameId}
-            </button>
-          ))}
-        </p>
-      )}
+      {changed && <p className="mt-1.5 text-caption text-ink-muted">AI 의견: {cardValueLabel(fieldKey, field.model_value, ego)}</p>}
     </li>
   );
 }

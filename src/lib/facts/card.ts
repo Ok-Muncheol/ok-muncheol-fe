@@ -217,6 +217,20 @@ export function pick(field: FactField, value: Value): FactField {
   return { ...field, value, verification_status: "human_confirmed" };
 }
 
+/**
+ * 「초기화」 — 고른 값을 한 번에 되돌린다. 확정 전 카드는 받은 카드 그대로(AI가 채운 값·상태)로,
+ * 확정한 카드는 AI 원값(model_value)으로 되돌리고 확인을 지워(unverified) 다시 고르게 한다. 담당자 입력 칸은 비운다.
+ */
+export function resetFields(card: Pick<FactCard, "fields" | "status">): Fields {
+  if (card.status !== "confirmed") return { ...card.fields };
+  return Object.fromEntries(
+    Object.entries(card.fields).map(([key, f]) => [
+      key,
+      { ...f, value: f.source === "manual" ? null : (f.model_value ?? f.value), verification_status: "unverified" as const },
+    ]),
+  );
+}
+
 /** 확인이 아직 필요한 칸 — 담당자가 아직 고르지 않은 needs_review 칸. 0이어야 확인 완료를 누를 수 있다. */
 export function remainingReview(draft: Fields): string[] {
   return Object.keys(draft).filter((k) => draft[k].verification_status === "needs_review");

@@ -16,6 +16,7 @@ import {
   pick,
   readableMessage,
   remainingReview,
+  resetFields,
   setInsured,
   swapChartParties,
 } from "./card.ts";
@@ -158,4 +159,20 @@ test("담당자 입력 칸(11/13)은 이름·보기가 있고 비보호 좌회�
   assert.equal(isRelevant("unprotected_left_sign", "signalized_intersection"), true);
   assert.equal(isRelevant("lane_marking_A", "unsignalized_intersection"), true);
   assert.equal(readableMessage("남은 칸: lane_marking_A, collision_signal_B"), "남은 칸: 상대 차 차로 노면표시, 블랙박스 차 충돌 순간 신호");
+});
+
+test("resetFields는 확정 전 카드는 받은 그대로, 확정한 카드는 AI 원값으로 되돌리고 확인을 지운다", () => {
+  const fields = {
+    movement_B: { ...f("left_turn", "human_confirmed"), model_value: "straight" },
+    night: f("false", "human_confirmed"),
+    lane_marking_A: { ...f("left_only", "human_confirmed"), model_value: null, source: "manual" },
+  };
+  const draft = resetFields({ status: "draft", fields });
+  assert.deepEqual(draft, fields);
+  const reset = resetFields({ status: "confirmed", fields });
+  assert.equal(reset.movement_B.value, "straight");
+  assert.equal(reset.night.value, "false");
+  assert.equal(reset.lane_marking_A.value, null);
+  for (const key of Object.keys(reset)) assert.equal(reset[key].verification_status, "unverified");
+  assert.equal(fields.movement_B.value, "left_turn"); // 받은 카드는 바꾸지 않는다
 });
