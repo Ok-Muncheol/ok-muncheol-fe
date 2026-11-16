@@ -78,7 +78,8 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   const baseMapping = withDefaultChart(card.party_mapping, card.parties);
   // 카드 B 차 이름 — 영상 없이 진행한 카드는 가입자 차다(칸 이름 · 도표 A/B 이름에 쓴다)
   const ego = egoName(card);
-  const [mapping, setMapping] = useState<PartyMapping>(baseMapping);
+  // 도표 A/B는 판단이 정한다(BE choose_orientation) — 화면은 카드의 매핑을 그대로 쓴다.
+  const mapping: PartyMapping = baseMapping;
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
@@ -181,7 +182,6 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   /** 「초기화」 — 고른 값을 한 번에 되돌린다(resetFields). 확정한 카드는 수정 상태로 열어 다시 고르게 한다. */
   function resetCard() {
     setDraft(resetFields(card));
-    setMapping(baseMapping);
     setTouched(new Set());
     setFailure(null);
     setResetKey((n) => n + 1);
@@ -190,7 +190,6 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
 
   function cancelEdit() {
     setDraft(card.fields);
-    setMapping(baseMapping);
     setTouched(new Set());
     setEditing(false);
     setFailure(null);
@@ -342,10 +341,6 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
           draft={draft}
           mapping={mapping}
           onField={onField}
-          onMapping={(next) => {
-            setMapping(next);
-            setFailure(null);
-          }}
           editable={editable}
           questions={questionMap}
           resetKey={resetKey}
