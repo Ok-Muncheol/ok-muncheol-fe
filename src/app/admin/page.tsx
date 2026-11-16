@@ -48,10 +48,7 @@ export default async function AdminPage(props: PageProps<"/admin">) {
 
   return (
     <>
-      <PageHeader
-        title="사건 관제"
-        description="접수된 사고를 배정 에이전트가 지역의 대물·대인 담당자에게 배정합니다. 필요하면 직접 배정하거나 이관합니다."
-      />
+      <PageHeader title="사건 관제" />
 
       <StatStrip className="mb-6" aside={<span className="text-caption text-ink-muted">{shortTime(overview.generated_at)} 기준</span>}>
         <Stat label="진행 중" value={summary.open} tone="info" />
