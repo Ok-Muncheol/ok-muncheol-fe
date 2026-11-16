@@ -5,6 +5,7 @@
  * BE는 판단 로그 · 결정례 · 약관 검색 · 가정 실행 도구로 답한다. 가정 결과(what-if)는 공식 판정과 따로 그리고
  * 공식 판단 · 보고서는 바뀌지 않는다. 답의 [E1] 표시는 아래 인용 근거로 이동하고, 인용마다 출처(공식 판단 · 검색 · 가정 실행)를 단다.
  * 질문 · 답은 저장하지 않는다 — 이 화면을 떠나면 사라진다. API 모드(live)만 보낸다. 견본 모드는 보내지 않는다.
+ * 질문은 OpenAI로 가므로 개인정보를 적지 않게 안내한다(번호 가리기 BE app/privacy.py, 전송 항목 BE docs/external-data-transfer.md).
  */
 import { type FormEvent, useState } from "react";
 import { StatusLabel } from "@/components/status-label";
@@ -72,6 +73,10 @@ export function QaPanel({ caseId, live, judgmentVersion }: Props) {
       <p className="text-caption text-ink-muted">
         판정의 근거를 묻거나 ‘만약 ~였다면’을 물으면 판단 로그 · 결정례 · 약관 검색과 가정 실행으로 답한다. 공식 판정 · 보고서는
         바뀌지 않고, 질문과 답은 저장하지 않는다.
+      </p>
+      <p className="mt-1 text-caption text-ink-muted">
+        질문은 외부 AI(OpenAI)로 보내 답을 만든다. 이름 · 연락처 · 차량번호 같은 개인정보는 적지 않는다 — 전화번호 · 차량번호 ·
+        주민등록번호 · 이메일은 보내기 전에 가리지만 이름 · 주소는 가리지 못한다.
       </p>
       <form onSubmit={submit} className="mt-4 flex flex-col items-stretch gap-3" aria-busy={sending}>
         <Field id={inputId} label="질문" hint={`${text.length} / ${QA_MAX_LENGTH}자`} error={problem}>
