@@ -1,5 +1,5 @@
 /**
- * B 통합: 사건 관제 — 관리자가 담당자별 업무량과 접수 건의 진행을 보고, 필요하면 직접 배정·이관한다.
+ * B 통합: 사건 관제 — 관리자가 현황과 접수 건의 진행을 보고, 필요하면 직접 배정·이관한다. 담당자별 업무량은 메뉴 「담당자」(/admin/staff)에 있다.
  * 접수를 등록하는 폼은 두지 않는다 — 접수는 고객이 앱·전화로 하고, 들어온 건을 배정 에이전트가 배정한다. 관리자는 그 결과를 보고 바로잡는다.
  * (BE `POST /admin/intakes`와 ApiClient.registerAdminIntake는 남아 있다.)
  * 관리자만 들어온다. 메뉴는 관리자에게만 보이고(레이아웃), 화면은 BE가 403을 주면 없는 화면이 된다(admin-source.ts).
@@ -8,7 +8,7 @@
  * 두 칸은 화면 폭이 아니라 본문 폭(컨테이너 쿼리 @min-[68rem], 1088px 이상)으로 가른다. 접수 건 표는 단추를 위아래로 쌓아도 720px쯤 필요해서,
  * 본문이 1120px(1440px 이상 화면, 또는 왼쪽 메뉴를 접은 1280px)이면 두 칸(접수 건 760px), 그보다 좁으면(메뉴를 펼친 1280px·1366px)
  * 지도 · 접수 건 순으로 쌓아 표가 본문 폭을 다 쓴다. 어느 쪽이든 줄 끝의 상세·이관 단추까지 가로 스크롤 없이 보인다.
- * 담당자 표는 늘 아래 전체 폭이다. BE가 지역별 수를 주기 전 응답이면 지도 없이 접수 건이 전체 폭이다.
+ * BE가 지역별 수를 주기 전 응답이면 지도 없이 접수 건이 전체 폭이다.
  * 접수 건 칸은 보이는 제목 없이 탭부터 시작한다. 제목 「접수 건」은 화면 낭독기용 숨은 제목(sr-only)으로만 둔다(지도 카드의 「오늘 지역별 접수」도 같다).
  */
 import Link from "next/link";
@@ -16,9 +16,9 @@ import { IntakeTable } from "@/features/admin/intake-table";
 import { PAGE_SIZE, loadAdmin } from "@/features/admin/admin-source";
 import { RegionMap } from "@/features/admin/region-map";
 import {
-  COVERAGE_LABELS, INTAKE_TABS, OPEN_STAGES, REGIONS, STAGE_VIEW, adminHref, parseAdminView, regionToday, shortTime, specialtyLabels, staffName,
+  INTAKE_TABS, OPEN_STAGES, REGIONS, STAGE_VIEW, adminHref, parseAdminView, regionToday, shortTime, staffName,
 } from "@/lib/admin/view";
-import { Badge, ButtonLink, Notice, PageHeader, Stat, StatStrip, Table, Td, Th } from "@/ui/controls";
+import { Badge, ButtonLink, Notice, PageHeader, Stat, StatStrip } from "@/ui/controls";
 
 export default async function AdminPage(props: PageProps<"/admin">) {
   const view = parseAdminView(await props.searchParams);
@@ -43,7 +43,6 @@ export default async function AdminPage(props: PageProps<"/admin">) {
 
   const { overview, intakes } = data;
   const { summary, staff } = overview;
-  const adjusters = staff.filter((member) => member.staff_role === "adjuster");
   const picked = staff.find((member) => member.user_id === view.assignee);
   const last = intakes.at(-1);
   const today = regionToday(summary);
@@ -62,7 +61,7 @@ export default async function AdminPage(props: PageProps<"/admin">) {
         ))}
       </StatStrip>
 
-      <div className="@container flex flex-col gap-6">
+      <div className="@container">
         <div className={today ? "grid gap-6 @min-[68rem]:grid-cols-[21rem_minmax(0,1fr)] @min-[68rem]:items-start" : ""}>
           {today && <RegionMap today={today} selected={view.region} hrefFor={(region) => adminHref(view, { region })} />}
 
@@ -132,70 +131,6 @@ export default async function AdminPage(props: PageProps<"/admin">) {
             </div>
           </section>
         </div>
-
-        <section aria-labelledby="staff-heading">
-          <h2 id="staff-heading" className="mb-3 text-heading font-semibold">
-            담당자 <span className="font-mono text-body font-normal tabular-nums text-ink-muted">{adjusters.length}명</span>
-          </h2>
-          <p className="mb-3 text-caption break-keep text-ink-muted">
-            부재인 담당자는 자동 배정에서 빠지지만 직접 배정·이관으로는 줄 수 있습니다. 고액 사건(예상 손해액 3,000만 원 이상, 중상·사망)은 고액 권한이 있는 담당자에게만 자동 배정합니다.
-          </p>
-          <Table>
-            <caption className="sr-only">담당자별 업무량과 경력·전문 분야 — 지역, 분야 순</caption>
-            <thead>
-              <tr>
-                <Th>담당자</Th>
-                <Th>지역</Th>
-                <Th>분야</Th>
-                <Th className="text-right">경력</Th>
-                <Th>전문 분야</Th>
-                <Th className="text-right">진행 중</Th>
-                <Th className="text-right">종결</Th>
-                <Th>
-                  <span className="sr-only">접수 건 보기</span>
-                </Th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...adjusters]
-                .sort(
-                  (a, b) =>
-                    REGIONS.indexOf(a.region ?? "") - REGIONS.indexOf(b.region ?? "") ||
-                    (a.coverage ?? "").localeCompare(b.coverage ?? "") * -1 ||
-                    b.cases.open - a.cases.open,
-                )
-                .map((member) => (
-                  <tr key={member.user_id}>
-                    <Td>
-                      <span className="font-semibold">{staffName(member, member.user_id)}</span>
-                      {member.away && (
-                        <Badge tone="warning" className="ml-2">
-                          부재
-                        </Badge>
-                      )}
-                      {member.high_value && (
-                        <Badge tone="info" className="ml-2">
-                          고액 권한
-                        </Badge>
-                      )}
-                      {!member.auto_assign && <Badge className="ml-2">자동 배정 제외</Badge>}
-                    </Td>
-                    <Td>{member.region ?? <span className="text-ink-faint">없음</span>}</Td>
-                    <Td>{member.coverage ? COVERAGE_LABELS[member.coverage] : ""}</Td>
-                    <Td className="text-right font-mono whitespace-nowrap tabular-nums">{member.career_years != null ? `${member.career_years}년` : ""}</Td>
-                    <Td>{specialtyLabels(member).join(" · ") || <span className="text-ink-faint">없음</span>}</Td>
-                    <Td className="text-right font-mono tabular-nums">{member.cases.open}</Td>
-                    <Td className="text-right font-mono tabular-nums text-ink-muted">{member.cases.closed}</Td>
-                    <Td className="text-right">
-                      <Link href={adminHref(view, { assignee: member.user_id, state: "open", region: "" })} className="text-caption font-semibold text-primary-strong">
-                        맡은 건 보기
-                      </Link>
-                    </Td>
-                  </tr>
-                ))}
-            </tbody>
-          </Table>
-        </section>
       </div>
     </>
   );
