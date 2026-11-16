@@ -4,7 +4,8 @@
  * A: 사실 카드 — 사건 작업 화면(case-workspace.tsx) 위쪽 오른쪽. 값과 상태는 부모가 쥐고 여기서는 그리고 고르기만 한다.
  * - 두 묶음이다: 「AI가 채운 값」(2열)과 「담당자 입력 · 선택」(영상이 채우지 않는 칸).
  * - AI가 채운 보기 칸은 담당자가 아직 확인하지 않았으면 처음부터 칩을 펼쳐 두고, AI 값은 칠하지 않고 「AI」로만 보인다.
- *   칩을 누르면 바로 확인이고 칸이 닫힌다(AI 값이 맞으면 그 칩을 누르면 된다). 확인한 칸과 담당자 입력 칸은 값만 한 줄로 보이고 「바꾸기」로 연다.
+ *   칩을 누르면 바로 확인이고 칸이 닫힌다(AI 값이 맞으면 그 칩을 누르면 된다). 사고 설명도 처음부터 입력창을 펼치고, 고치지 않아도
+ *   「확인」을 누르면 확인이다. 확인한 칸과 담당자 입력 칸은 값만 한 줄로 보이고 「바꾸기」로 연다.
  * - 확인이 필요한 칸(BE needs_review · 구분 질문이 걸린 칸)은 따로 빼지 않고 자기 묶음 안 맨 앞에 둔다. 칸 이름 앞 주황 점으로 표시하고
  *   보기를 칩으로 펼쳐 둔다(두 열을 다 쓴다). 고르면 점이 빠지고 칸이 닫힌다.
  * - 이 사고와 상관없는 칸(신호 없는 교차로의 신호 등)은 접어 둔다.
@@ -57,9 +58,12 @@ export const FACT_CARD_FOOTER_ID = "fact-card-footer";
 export function FactCardPanel({ card, draft, mapping, onField, onMapping, editable, questions, onFrame, aside, footer }: Props) {
   const groups = groupFields(card.fields, draft, Object.keys(questions));
   const frameTimes = new Map(card.evidence_frames.map((frame) => [frame.frame_id, frame.timestamp_ms]));
-  // AI가 채웠고 담당자가 아직 확인하지 않은 보기 칸 — 처음부터 칩을 펼쳐 바로 눌러 확인하게 한다.
+  // AI가 채웠고 담당자가 아직 확인하지 않은 보기 칸·사고 설명 — 처음부터 칩·입력창을 펼쳐 바로 확인하게 한다
+  // (사고 설명은 고치지 않아도 「확인」을 누르면 지금 글 그대로 확인이다).
   const toConfirm = (key: string) =>
-    card.fields[key]?.source === "vision" && card.fields[key]?.verification_status !== "human_confirmed" && cardOptions(key).length > 0;
+    card.fields[key]?.source === "vision" &&
+    card.fields[key]?.verification_status !== "human_confirmed" &&
+    (cardOptions(key).length > 0 || key === "narrative");
   const row = (key: string, open: boolean, compact = false) => (
     <FieldRow
       key={key}
