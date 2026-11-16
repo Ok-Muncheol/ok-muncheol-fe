@@ -19,6 +19,7 @@ import {
   pick,
   readableMessage,
   readableReason,
+  reasonParts,
   remainingReview,
   resetFields,
   swapChartParties,
@@ -219,6 +220,15 @@ test("readableReason은 판단 사유의 도표 칸 이름을 매핑에 맞는 �
   // 모르는 낱말과 칸 이름 속 칸 이름(collision_signal_A 속 signal_A)은 그대로 둔다
   assert.equal(readableReason("U-1: 확인 불가 칸 ['collision_signal_A', 'foo_A']", swapped), "U-1: 확인 불가 칸 (블랙박스 차 충돌 순간 신호, foo_A)");
   assert.equal(readableReason("검수한 도표 근거 없음", mapping), "검수한 도표 근거 없음");
+  // 토막은 칸 이름 자리에 카드 칸을 함께 준다(화면이 그 칸으로 가는 링크를 건다) — 맞바뀐 카드는 카드 칸으로 바꾼 이름이다
+  assert.deepEqual(reasonParts("차43-2: 카드와 불일치 ['movement_A', 'relative_position']", swapped), [
+    "차43-2: 카드와 불일치 (",
+    { key: "movement_B", label: "블랙박스 차 움직임" },
+    ", ",
+    { key: "relative_position", label: "상대 차가 온 쪽" },
+    ")",
+  ]);
+  assert.deepEqual(reasonParts("검수한 도표 근거 없음", mapping), ["검수한 도표 근거 없음"]);
 });
 
 test("withDefaultChart는 비어 있는 도표 A/B를 상대 차 · 블랙박스 차로 채운다", async () => {
