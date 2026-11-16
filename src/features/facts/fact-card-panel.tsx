@@ -3,11 +3,13 @@
 /**
  * A: 사실 카드 — 사건 작업 화면(case-workspace.tsx) 위쪽 오른쪽. 값과 상태는 부모가 쥐고 여기서는 그리고 고르기만 한다.
  * - 두 묶음이다: 「AI가 채운 값」(2열)과 「담당자 입력 · 선택」(영상이 채우지 않는 칸).
- * - AI가 채운 보기 칸은 담당자가 아직 확인하지 않았으면 처음부터 칩을 펼쳐 두고, AI 값은 칠하지 않고 「AI」로만 보인다.
- *   칩을 누르면 바로 확인이고 칸이 닫힌다(AI 값이 맞으면 그 칩을 누르면 된다). 사고 설명도 처음부터 입력창을 펼치고, 고치지 않아도
- *   「확인」을 누르면 확인이다. 확인한 칸과 담당자 입력 칸은 값만 한 줄로 보이고 「바꾸기」로 연다.
+ * - AI가 채운 보기 칸은 담당자가 아직 확인하지 않았으면 처음부터 칩을 펼쳐 두고, AI 값 칩을 고른 것으로 칠해 「AI」를 붙인다.
+ *   AI 값이 맞으면 아무것도 누르지 않고 카드 아래 확정만 누르면 그 값으로 확인된다. 다른 칩을 누르면 바로 고침이고 칸이 닫힌다.
+ *   사고 설명도 처음부터 AI 글을 채운 입력창을 펼치고, 고치지 않고 확정하면 그 글 그대로 확인이다(「확인」으로 먼저 닫아도 된다).
+ *   확인한 칸과 담당자 입력 칸은 값만 한 줄로 보이고 「바꾸기」로 연다.
  * - 확인이 필요한 칸(BE needs_review · 구분 질문이 걸린 칸)은 따로 빼지 않고 자기 묶음 안 맨 앞에 둔다. 칸 이름 앞 주황 점으로 표시하고
- *   보기를 칩으로 펼쳐 둔다(두 열을 다 쓴다). 고르면 점이 빠지고 칸이 닫힌다.
+ *   보기를 칩으로 펼쳐 둔다(두 열을 다 쓴다). AI 값이 있으면 그 값도 미리 골라 두고 확정하면 그 값으로 확인한다.
+ *   AI가 채우지 못한 칸(모름)과 구분 질문 칸은 아무것도 고르지 않은 채로 두고, 담당자가 골라야 확정할 수 있다. 고르면 점이 빠지고 칸이 닫힌다.
  * - 이 사고와 상관없는 칸(신호 없는 교차로의 신호 등)은 접어 둔다.
  * 칩을 고르면 그 칸은 담당자 확인이다 — AI 값과 같은 칩을 골라도 확인이다. 모델 원값은 건드리지 않고, 고친 칸에만 AI 의견을 회색으로 남긴다.
  * 칸마다 AI 확신도(model_confidence)와, 있으면 평가 영상 정답률(vision_detail.eval.accuracy)을 작게 보인다.
@@ -58,8 +60,8 @@ export const FACT_CARD_FOOTER_ID = "fact-card-footer";
 
 export function FactCardPanel({ card, draft, mapping, onField, onMapping, editable, questions, resetKey = 0, aside, footer }: Props) {
   const groups = groupFields(card.fields, draft, Object.keys(questions));
-  // AI가 채웠고 담당자가 아직 확인하지 않은 보기 칸·사고 설명 — 처음부터 칩·입력창을 펼쳐 바로 확인하게 한다
-  // (사고 설명은 고치지 않아도 「확인」을 누르면 지금 글 그대로 확인이다).
+  // AI가 채웠고 담당자가 아직 확인하지 않은 보기 칸·사고 설명 — 처음부터 칩·입력창을 펼쳐 AI 값을 고른 채로 보인다
+  // (맞으면 그대로 확정하고, 틀리면 그 자리에서 다른 칩을 누르거나 글을 고친다).
   // 「초기화」한 뒤에도 다시 펼치게 지금 값(draft)의 상태로 본다.
   const toConfirm = (key: string) =>
     draft[key]?.source === "vision" &&
@@ -243,6 +245,7 @@ function FieldRow({
             ego={ego}
             fieldKey={fieldKey}
             field={field}
+            asked={question !== undefined}
             only={question?.options}
             allowUnknown={question ? question.allow_unknown : true}
             onChange={onChange}
@@ -272,6 +275,7 @@ function Editor({
   ego,
   fieldKey,
   field,
+  asked = false,
   only,
   allowUnknown,
   onChange,
@@ -280,6 +284,8 @@ function Editor({
   ego: EgoName;
   fieldKey: string;
   field: FactField;
+  /** 판단이 구분 질문으로 물은 칸 — 담당자가 직접 답해야 해서 AI 값을 미리 고르지 않는다. */
+  asked?: boolean;
   only?: readonly string[];
   allowUnknown: boolean;
   onChange: (field: FactField) => void;
@@ -332,7 +338,9 @@ function Editor({
   }
 
   const confirmed = field.verification_status === "human_confirmed";
-  // 담당자가 아직 확인하지 않은 칸(확인 필요 · AI가 채운 값)의 AI 값은 고른 것으로 칠하지 않고 「AI」로만 표시한다 — 담당자가 골라야 확인이다.
+  // 담당자가 아직 확인하지 않은 칸(확인 필요 · AI가 채운 값)은 AI 값을 처음부터 고른 것으로 칠하고 「AI」를 붙인다 —
+  // 맞으면 고르지 않고 확정하면 그 값으로 확인된다. AI가 채우지 못한 칸(모름)은 아무것도 고르지 않은 채로 둔다(담당자가 골라야 한다).
+  // 구분 질문 칸은 담당자가 답해야 하므로 AI 값에 「AI」만 붙이고 고르지 않는다.
   const aiValue = confirmed ? null : field.value;
   const chips: [string, string][] = [...cardOptions(fieldKey, only, ego), ...(allowUnknown ? ([["__null__", "모르겠어요"]] as [string, string][]) : [])];
   return (
@@ -340,8 +348,8 @@ function Editor({
       {chips.map(([raw, label]) => {
         const value = raw === "__null__" ? null : parseOption(fieldKey, raw);
         const isValue = field.value === null ? value === null : value !== null && String(value) === String(field.value);
-        const selected = isValue && confirmed;
-        const suggested = aiValue !== null && isValue && !confirmed;
+        const suggested = aiValue !== null && isValue;
+        const selected = isValue && (confirmed || (suggested && !asked));
         return (
           <button
             key={raw}
@@ -355,9 +363,7 @@ function Editor({
             className={`inline-flex h-8 items-center gap-1.5 rounded-control border px-3 text-body transition-[color,background-color,border-color,transform] active:scale-[0.97] ${
               selected
                 ? "border-primary-strong bg-primary-soft font-semibold text-on-primary-soft"
-                : suggested
-                  ? "border-dashed border-model text-ink"
-                  : "border-line-strong bg-control text-ink hover:border-primary-strong hover:bg-primary-soft hover:text-on-primary-soft"
+                : "border-line-strong bg-control text-ink hover:border-primary-strong hover:bg-primary-soft hover:text-on-primary-soft"
             }`}
           >
             {label}

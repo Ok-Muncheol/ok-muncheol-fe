@@ -2,7 +2,9 @@
 
 /**
  * A: 사건 작업 화면(/cases/[id]/judgment) — 위에는 영상(근거 장면)과 사실 카드, 그 아래에 판단 영역(판단 중 · 결과).
- * 흐름: 칸을 확인 · 고침 → 카드 맨 아래 「확정하고 과실 비율 판단」(고친 칸 저장 → 카드 확정 → 판단 접수를 한 번에) →
+ * AI가 채운 칸은 AI 값을 미리 골라 두므로 맞으면 칸마다 누르지 않아도 된다 — 확정하면 그 값으로 확인한다(acceptAiValues).
+ * AI가 채우지 못한 확인 필요 칸(모름)과 구분 질문 칸만 담당자가 골라야 확정할 수 있다.
+ * 흐름: 칸을 확인 · 고침 → 카드 맨 아래 「확정하고 과실 비율 판단」(고친 칸 · AI 값 확인 저장 → 카드 확정 → 판단 접수를 한 번에) →
  * 화면이 아래 판단 영역으로 스르륵 내려가고 거기서 「과실 비율을 판단하고 있어요」 → 결과(FaultResult)가 같은 자리에 뜬다.
  * 판단 영역이 화면 밖이면 아래 가운데에 「과실 비율 보기 ↓」가 떠 있다.
  * 판단 중 구분 질문이 오면 위 카드의 그 칸이 맨 위로 올라오고 질문의 보기만 열린다 — 고른 뒤 확정 버튼을 누르면
@@ -17,7 +19,20 @@ import { FAULT_RATIO_HEAD_ID, FaultResult } from "@/features/judgment/fault-resu
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
 import type { AnswerResult, ApiError, EvidenceView, FactCard, FactField, JudgmentResult, JudgmentRunView, PartyMapping } from "@/lib/api/types";
-import { buildCardPatch, cardLabel, changedFields, egoName, pick, readableMessage, remainingReview, resetFields, sameMapping, withDefaultChart } from "@/lib/facts/card";
+import {
+  acceptAiValues,
+  buildCardPatch,
+  cardLabel,
+  changedFields,
+  confirmedFields,
+  egoName,
+  pick,
+  readableMessage,
+  remainingReview,
+  resetFields,
+  sameMapping,
+  withDefaultChart,
+} from "@/lib/facts/card";
 import { answeredValues } from "@/lib/judgment/view";
 import { frameTime } from "@/lib/facts/view";
 import { Button, ButtonLink, Spinner } from "@/ui/controls";
@@ -91,7 +106,8 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   const confirmed = card.status === "confirmed" || sampleResult !== null;
   const open = !confirmed || editing;
   const dirty = changedFields(card.fields, draft).length > 0 || !sameMapping(baseMapping, mapping);
-  // 아직 고를 칸 — 확인이 필요한 칸과 답하지 않은 질문 칸(같은 칸이면 한 번만 센다). 0이어야 확인 완료를 누를 수 있다.
+  // 아직 고를 칸 — AI가 채우지 못한 확인 필요 칸과 답하지 않은 질문 칸(같은 칸이면 한 번만 센다). 0이어야 확정을 누를 수 있다.
+  // AI가 값을 채운 칸은 그 값을 미리 골라 두었으므로 세지 않는다.
   const toPick = [...new Set([...pendingQuestions.filter((q) => !touched.has(q.field_key)).map((q) => q.field_key), ...remainingReview(draft)])];
   const result = sampleResult ?? (run?.status === "completed" ? run.result : null);
   const stale = sampleResult === null && result !== null && (run!.fact_card_version !== card.version || editing || dirty);
@@ -200,7 +216,11 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
 
   async function confirmAndJudge() {
     setFailure(null);
-    if (!live) return simulate();
+    if (!live) {
+      // 견본도 BE 확정처럼 값이 있는 칸을 모두 확인으로 남긴다(미리 골라 둔 AI 값 포함 — 확정한 카드에 주황 점·펼친 칸이 남지 않게).
+      setDraft(confirmedFields);
+      return simulate();
+    }
     const api = createBrowserApiClient();
     let saved = false;
     try {
@@ -219,9 +239,12 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
         // 모두 「모르겠어요」면 같은 판단이 이어서 끝난다 — 다시 읽으면 결과가 보인다.
         if (last && last.next_action !== "update_fact_card") return router.refresh();
       }
+      // 미리 골라 둔 AI 값 그대로 확인 — 값이 있는 확인 필요 칸은 저장해서 확인으로 바꾼다(BE는 needs_review 칸이 남으면 확정을 막는다).
+      const fields = acceptAiValues(draft);
+      const accepted = changedFields(draft, fields).length > 0;
       let current = card;
-      if (dirty || pendingQuestions.length > 0 || !sameMapping(card.party_mapping, mapping)) {
-        current = await api.patchFactCard(caseId, buildCardPatch(card, draft, mapping, EDIT_REASON));
+      if (dirty || accepted || pendingQuestions.length > 0 || !sameMapping(card.party_mapping, mapping)) {
+        current = await api.patchFactCard(caseId, buildCardPatch(card, fields, mapping, EDIT_REASON));
         saved = true;
       }
       if (current.status !== "confirmed") {
@@ -266,8 +289,9 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
     }
   }
 
-  // 잠긴 카드에서도 질문 칸과 확인이 필요한 칸은 고를 수 있다(그래야 확인 완료를 누를 수 있다).
-  const editable = (key: string) => busy === null && (open || key in questionMap || card.fields[key]?.verification_status === "needs_review");
+  // 잠긴 카드에서도 질문 칸과 아직 확인이 필요한 칸은 고를 수 있다(그래야 확인 완료를 누를 수 있다).
+  // 지금 값(draft)으로 본다 — 확정하며 AI 값으로 확인한 칸은 잠긴 카드에서 다시 펼치지 않는다.
+  const editable = (key: string) => busy === null && (open || key in questionMap || draft[key]?.verification_status === "needs_review");
   // 질문에 값으로 답해 카드 반영을 기다리는 판단(미리 채운 값으로 dirty)도 확인 완료로 반영·재확정·재판단한다.
   const askingCard = open || pendingQuestions.length > 0 || (runForCard?.status === "waiting_for_confirmation" && dirty);
 
