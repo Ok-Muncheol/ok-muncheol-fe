@@ -21,6 +21,7 @@ import {
   cardOptions,
   cardValueLabel,
   differsFromModel,
+  egoName,
   fieldAccuracy,
   groupFields,
   parseOption,
@@ -28,6 +29,7 @@ import {
   pick,
   setInsured,
   swapChartParties,
+  type EgoName,
 } from "@/lib/facts/card";
 import { frameTime } from "@/lib/facts/view";
 import { Button, Input, Textarea } from "@/ui/controls";
@@ -64,10 +66,13 @@ export function FactCardPanel({ card, draft, mapping, onField, onMapping, editab
     card.fields[key]?.source === "vision" &&
     card.fields[key]?.verification_status !== "human_confirmed" &&
     (cardOptions(key).length > 0 || key === "narrative");
+  // 영상 없이 진행한 카드는 카드 B가 가입자 차다(BE blank_card) — 칸 이름·보기에 그 이름을 쓴다
+  const ego = egoName(card);
   const row = (key: string, open: boolean, compact = false) => (
     <FieldRow
       key={key}
       compact={compact}
+      ego={ego}
       fieldKey={key}
       field={draft[key]}
       open={open}
@@ -88,7 +93,7 @@ export function FactCardPanel({ card, draft, mapping, onField, onMapping, editab
         {aside}
       </header>
 
-      <Parties mapping={mapping} onChange={onMapping} editable={editable("party_mapping")} />
+      <Parties mapping={mapping} ego={ego} onChange={onMapping} editable={editable("party_mapping")} />
 
       {groups.rest.length > 0 && (
         // 이미 채운 값은 2열로 촘촘하게 — 고치려고 연 칸만 두 열을 다 쓴다.
@@ -120,33 +125,38 @@ export function FactCardPanel({ card, draft, mapping, onField, onMapping, editab
   );
 }
 
-/** 누가 가입자인지, 과실 도표의 A가 누구인지. 과실 비율은 도표 A : B로 나온다. */
-function Parties({ mapping, onChange, editable }: { mapping: PartyMapping; onChange: (m: PartyMapping) => void; editable: boolean }) {
+/**
+ * 누가 가입자인지, 과실 도표의 A가 누구인지. 과실 비율은 도표 A : B로 나온다.
+ * 영상 없이 진행한 카드는 카드 B가 곧 가입자 차라 가입자를 고르지 않는다 — 도표 A만 맞바꾼다.
+ */
+function Parties({ mapping, ego, onChange, editable }: { mapping: PartyMapping; ego: EgoName; onChange: (m: PartyMapping) => void; editable: boolean }) {
   const insuredIsEgo = mapping.insured_party_id !== null && mapping.insured_party_id === mapping.video_ego_party_id;
   const chartAIsEgo = mapping.chart_party_A_id !== null && mapping.chart_party_A_id === mapping.video_ego_party_id;
   const segment = (active: boolean) => `h-8 px-3 text-caption font-semibold ${active ? "bg-primary-soft text-on-primary-soft" : "bg-control text-ink-muted hover:text-ink"}`;
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4 text-body">
-      <div className="flex items-center gap-2">
-        <span className="text-caption text-ink-muted">가입자</span>
-        <span className="inline-flex overflow-hidden rounded-control border border-line-strong" role="group" aria-label="가입자">
-          <button type="button" disabled={!editable} aria-pressed={insuredIsEgo} className={segment(insuredIsEgo)} onClick={() => onChange(setInsured(mapping, true))}>
-            블랙박스 차
-          </button>
-          <button
-            type="button"
-            disabled={!editable}
-            aria-pressed={!insuredIsEgo}
-            className={`border-l border-line-strong ${segment(!insuredIsEgo)}`}
-            onClick={() => onChange(setInsured(mapping, false))}
-          >
-            상대 차
-          </button>
-        </span>
-      </div>
+      {ego === "블랙박스 차" && (
+        <div className="flex items-center gap-2">
+          <span className="text-caption text-ink-muted">가입자</span>
+          <span className="inline-flex overflow-hidden rounded-control border border-line-strong" role="group" aria-label="가입자">
+            <button type="button" disabled={!editable} aria-pressed={insuredIsEgo} className={segment(insuredIsEgo)} onClick={() => onChange(setInsured(mapping, true))}>
+              블랙박스 차
+            </button>
+            <button
+              type="button"
+              disabled={!editable}
+              aria-pressed={!insuredIsEgo}
+              className={`border-l border-line-strong ${segment(!insuredIsEgo)}`}
+              onClick={() => onChange(setInsured(mapping, false))}
+            >
+              상대 차
+            </button>
+          </span>
+        </div>
+      )}
       <div className="flex items-center gap-2">
         <span className="text-caption text-ink-muted">도표 A</span>
-        <span className="font-semibold">{mapping.chart_party_A_id === null ? "정하지 않았어요" : chartAIsEgo ? "블랙박스 차" : "상대 차"}</span>
+        <span className="font-semibold">{mapping.chart_party_A_id === null ? "정하지 않았어요" : chartAIsEgo ? ego : "상대 차"}</span>
         {editable && (
           <Button variant="quiet" size="sm" onClick={() => onChange(swapChartParties(mapping))}>
             맞바꾸기
@@ -159,6 +169,7 @@ function Parties({ mapping, onChange, editable }: { mapping: PartyMapping; onCha
 
 function FieldRow({
   compact = false,
+  ego,
   fieldKey,
   field,
   open: initiallyOpen,
@@ -170,6 +181,8 @@ function FieldRow({
 }: {
   /** 2열 목록의 한 칸 — 줄 구분선을 위에 긋고, 열리면 두 열을 다 쓴다. */
   compact?: boolean;
+  /** 카드 B 차 이름(칸 이름 · 보기에 쓴다) */
+  ego: EgoName;
   fieldKey: string;
   field: FactField;
   open: boolean;
@@ -201,7 +214,7 @@ function FieldRow({
         <p className="flex items-center gap-1.5 font-semibold text-ink">
           {/* 확인이 필요한 칸 — 담당자가 고르면 점이 빠진다 */}
           {attention && <span aria-hidden title="확인이 필요한 칸" className="size-1.5 shrink-0 rounded-full bg-warning" />}
-          {cardLabel(fieldKey)}
+          {cardLabel(fieldKey, ego)}
           {attention && <span className="sr-only">(확인 필요)</span>}
         </p>
         <p className="flex shrink-0 items-baseline gap-3 text-caption">
@@ -234,6 +247,7 @@ function FieldRow({
       {open ? (
         <div className="mt-2">
           <Editor
+            ego={ego}
             fieldKey={fieldKey}
             field={field}
             only={question?.options}
@@ -245,7 +259,7 @@ function FieldRow({
       ) : (
         <p className="mt-0.5 flex flex-wrap items-baseline gap-2 text-body">
           <span className={field.value === null ? "text-ink-muted" : changed ? "font-semibold text-ink" : "text-ink"}>
-            {field.value === null && pending ? "아직 몰라요" : field.value === null && manual ? "비어 있음" : cardValueLabel(fieldKey, field.value)}
+            {field.value === null && pending ? "아직 몰라요" : field.value === null && manual ? "비어 있음" : cardValueLabel(fieldKey, field.value, ego)}
           </span>
           {changed ? (
             <span className="rounded-control bg-surface-muted px-1.5 text-caption font-semibold text-ink">고침</span>
@@ -257,7 +271,7 @@ function FieldRow({
 
       {(changed || field.evidence_frame_ids.length > 0) && (
         <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-ink-muted">
-          {changed && <span>AI 의견: {cardValueLabel(fieldKey, field.model_value)}</span>}
+          {changed && <span>AI 의견: {cardValueLabel(fieldKey, field.model_value, ego)}</span>}
           {field.evidence_frame_ids.map((frameId) => (
             <button key={frameId} type="button" onClick={() => onFrame(frameId)} className="text-primary-strong tabular-nums hover:underline">
               ▸ {frameTimes.has(frameId) ? frameTime(frameTimes.get(frameId)!) : frameId}
@@ -271,6 +285,7 @@ function FieldRow({
 
 /** 칸 종류에 맞는 입력 — 보기가 있는 칸은 칩, 충돌 시각은 초, 사고 설명은 여러 줄. */
 function Editor({
+  ego,
   fieldKey,
   field,
   only,
@@ -278,6 +293,7 @@ function Editor({
   onChange,
   onDone,
 }: {
+  ego: EgoName;
   fieldKey: string;
   field: FactField;
   only?: readonly string[];
@@ -334,9 +350,9 @@ function Editor({
   const confirmed = field.verification_status === "human_confirmed";
   // 담당자가 아직 확인하지 않은 칸(확인 필요 · AI가 채운 값)의 AI 값은 고른 것으로 칠하지 않고 「AI」로만 표시한다 — 담당자가 골라야 확인이다.
   const aiValue = confirmed ? null : field.value;
-  const chips: [string, string][] = [...cardOptions(fieldKey, only), ...(allowUnknown ? ([["__null__", "모르겠어요"]] as [string, string][]) : [])];
+  const chips: [string, string][] = [...cardOptions(fieldKey, only, ego), ...(allowUnknown ? ([["__null__", "모르겠어요"]] as [string, string][]) : [])];
   return (
-    <div role="radiogroup" aria-label={cardLabel(fieldKey)} className="flex flex-wrap gap-1.5">
+    <div role="radiogroup" aria-label={cardLabel(fieldKey, ego)} className="flex flex-wrap gap-1.5">
       {chips.map(([raw, label]) => {
         const value = raw === "__null__" ? null : parseOption(fieldKey, raw);
         const isValue = field.value === null ? value === null : value !== null && String(value) === String(field.value);

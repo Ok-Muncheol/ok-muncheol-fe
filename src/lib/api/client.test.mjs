@@ -35,6 +35,7 @@ const ROUTES = [
   ["startAnalysis", [CASE, "videos/a.mp4", "analysis-key-1"], "POST", `/cases/${CASE}/analysis`, { storage_path: "videos/a.mp4" }],
   ["getCase", [CASE], "GET", `/cases/${CASE}`, undefined],
   ["getFactCard", [CASE], "GET", `/cases/${CASE}/fact-card`, undefined],
+  ["startWithoutVideo", [CASE], "POST", `/cases/${CASE}/fact-card`, undefined],
   ["getEvidence", [CASE], "GET", `/cases/${CASE}/evidence`, undefined],
   ["patchFactCard", [CASE, PATCH], "PATCH", `/cases/${CASE}/fact-card`, PATCH],
   ["confirmFactCard", [CASE, 3], "POST", `/cases/${CASE}/fact-card/confirm`, { expected_version: 3 }],
@@ -74,9 +75,9 @@ function fakeClient({ respond = () => json(200, {}), ...options } = {}) {
 
 const failure = (promise) => promise.then(() => assert.fail("오류가 나야 한다"), (error) => error);
 
-test("메서드 24개가 BE 경로 24개와 1:1이다", () => {
+test("메서드 25개가 BE 경로 25개와 1:1이다", () => {
   const { client } = fakeClient();
-  assert.equal(ROUTES.length, 24);
+  assert.equal(ROUTES.length, 25);
   assert.deepEqual(Object.keys(client).sort(), ROUTES.map(([name]) => name).sort());
 });
 

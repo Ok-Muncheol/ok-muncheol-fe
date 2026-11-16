@@ -1,14 +1,15 @@
 /**
  * A·B: 사건 작업 화면 아래쪽의 판단 결과 — 하단 버튼 「과실 비율 보기」가 여기(#fault-result)로 내려온다.
  * 판정 셋을 다르게 그린다: 초안 작성 가능(과실 비율·적용 도표·수정요소·사유), 추가 확인 필요(사유·확인할 칸 → 위 카드의 칸),
- * 판단 보류(사유). 비율·가감치·도표는 BE 값 그대로다 — FE가 계산하지 않는다. 도표 A/B는 매핑으로 「상대 차」「블랙박스 차」 이름을 붙인다.
+ * 판단 보류(사유). 비율·가감치·도표는 BE 값 그대로다 — FE가 계산하지 않는다. 도표 A/B는 매핑으로 「상대 차」「블랙박스 차」 이름을 붙인다
+ * (영상 없이 진행한 카드는 「블랙박스 차」 대신 「가입자 차」 — ego).
  * 위 카드가 판단 뒤에 바뀌었으면(stale) 흐리게 두고 이전 카드 기준이라고 알린다.
  * 다음 단계는 비율 제목 줄 오른쪽에 둔다 — 「검토 보고서 보기 →」(보고서 화면으로 넘어간다)와 「사실 카드 고치기」(위 카드를 다시 연다).
  */
 import { Button, ButtonLink } from "@/ui/controls";
 import { EvidencePanel } from "@/features/evidence/evidence-panel";
 import type { JudgmentResult, PartyMapping } from "@/lib/api/types";
-import { cardLabel, chartPartyName } from "@/lib/facts/card";
+import { cardLabel, chartPartyName, type EgoName } from "@/lib/facts/card";
 import { evidenceDecisions, judgmentEvidence } from "@/lib/judgment/view";
 
 export const FAULT_RESULT_ID = "fault-result";
@@ -18,6 +19,8 @@ export const FAULT_RATIO_HEAD_ID = "fault-ratio-head";
 type Props = {
   result: JudgmentResult;
   mapping: PartyMapping;
+  /** 카드 B 차 이름(영상 없이 진행한 카드는 가입자 차). 없으면 블랙박스 차 */
+  ego?: EgoName;
   /** 위 카드가 이 판단 뒤에 바뀌었다 */
   stale: boolean;
   reportHref: string | null;
@@ -27,15 +30,15 @@ type Props = {
   sample?: boolean;
 };
 
-export function FaultResult({ result, mapping, stale, reportHref, onEditCard, sample }: Props) {
+export function FaultResult({ result, mapping, ego, stale, reportHref, onEditCard, sample }: Props) {
   return (
     <section id={FAULT_RESULT_ID} aria-labelledby="fault-result-title" className={`scroll-mt-20 ${stale ? "opacity-60" : ""}`}>
       {stale && <p className="mb-3 text-caption font-semibold text-on-warning-soft">카드를 고쳐서 이 결과는 이전 카드 기준이에요. 다시 확정하면 새로 판단해요.</p>}
       {result.status === "draft_ready" ? (
         // 이전 카드 기준 결과로는 다음 단계로 넘어가지 않는다.
-        <Ratio result={result} mapping={mapping} reportHref={stale ? null : reportHref} onEditCard={stale ? undefined : onEditCard} sample={sample} />
+        <Ratio result={result} mapping={mapping} ego={ego} reportHref={stale ? null : reportHref} onEditCard={stale ? undefined : onEditCard} sample={sample} />
       ) : (
-        <NotReady result={result} />
+        <NotReady result={result} ego={ego} />
       )}
     </section>
   );
@@ -44,20 +47,22 @@ export function FaultResult({ result, mapping, stale, reportHref, onEditCard, sa
 function Ratio({
   result,
   mapping,
+  ego,
   reportHref,
   onEditCard,
   sample,
 }: {
   result: JudgmentResult;
   mapping: PartyMapping;
+  ego?: EgoName;
   reportHref: string | null;
   onEditCard?: () => void;
   sample?: boolean;
 }) {
   const a = result.fault_A;
   const b = result.fault_B;
-  const nameA = chartPartyName(mapping, "A");
-  const nameB = chartPartyName(mapping, "B");
+  const nameA = chartPartyName(mapping, "A", ego);
+  const nameB = chartPartyName(mapping, "B", ego);
   const applied = (result.modifiers ?? []).filter((m) => m.decision === "적용");
   const notApplied = (result.modifiers ?? []).filter((m) => m.decision !== "적용");
   const evidence = judgmentEvidence(result);
@@ -94,7 +99,7 @@ function Ratio({
               <div className="rounded-l-full bg-ink" style={{ width: `${a}%` }} />
               <div className="rounded-r-full bg-primary" style={{ width: `${b}%` }} />
             </div>
-            <Flow result={result} mapping={mapping} />
+            <Flow result={result} mapping={mapping} ego={ego} />
           </>
         )}
         <p className="mt-4 text-caption text-ink-faint">검토 초안 · 승인 전에는 외부로 보내지 않음</p>
@@ -130,7 +135,7 @@ function Ratio({
                       {m.delta}
                     </span>
                     <span>
-                      {chartPartyName(mapping, m.applies_to)} {m.name}
+                      {chartPartyName(mapping, m.applies_to, ego)} {m.name}
                       {m.reason && <span className="block text-caption text-ink-muted">{m.reason}</span>}
                     </span>
                   </li>
@@ -143,7 +148,7 @@ function Ratio({
                 <ul className="mt-1 flex flex-col gap-0.5">
                   {notApplied.map((m) => (
                     <li key={m.modifier_id}>
-                      {chartPartyName(mapping, m.applies_to)} {m.name} · {m.decision}
+                      {chartPartyName(mapping, m.applies_to, ego)} {m.name} · {m.decision}
                       {m.reason && ` — ${m.reason}`}
                     </li>
                   ))}
@@ -200,7 +205,7 @@ function Side({ name, value, align = "left" }: { name: string; value: number; al
 }
 
 /** 계산 흐름 한 줄 — 기본 비율 → 적용한 수정요소 → 최종 비율. 기본 비율을 모르면 그리지 않는다. 값은 BE 그대로다. */
-function Flow({ result, mapping }: { result: JudgmentResult; mapping: PartyMapping }) {
+function Flow({ result, mapping, ego }: { result: JudgmentResult; mapping: PartyMapping; ego?: EgoName }) {
   if (result.base_fault_A == null || result.fault_A === null || result.fault_B === null) return null;
   const applied = (result.modifiers ?? []).filter((m) => m.decision === "적용");
   const step = "inline-flex h-7 items-center gap-1.5 rounded-full border border-line px-3 whitespace-nowrap";
@@ -213,7 +218,7 @@ function Flow({ result, mapping }: { result: JudgmentResult; mapping: PartyMappi
         <li key={m.modifier_id} className="flex items-center gap-2">
           <Arrow />
           <span className={step}>
-            {chartPartyName(mapping, m.applies_to)} {m.name}
+            {chartPartyName(mapping, m.applies_to, ego)} {m.name}
             <span className="font-semibold text-ink tabular-nums">
               {m.delta > 0 ? "+" : ""}
               {m.delta}
@@ -239,7 +244,7 @@ function Arrow() {
   );
 }
 
-function NotReady({ result }: { result: JudgmentResult }) {
+function NotReady({ result, ego }: { result: JudgmentResult; ego?: EgoName }) {
   const deferred = result.status === "deferred";
   return (
     <div className="flex flex-col gap-4">
@@ -260,7 +265,7 @@ function NotReady({ result }: { result: JudgmentResult }) {
             {result.questions.map((q) => (
               <li key={q.question_id}>
                 <a href={`#fact-${q.field_key}`} className="inline-flex h-8 items-center rounded-control border border-line-strong px-3 hover:bg-surface-muted">
-                  {cardLabel(q.field_key)} ↑
+                  {cardLabel(q.field_key, ego)} ↑
                 </a>
               </li>
             ))}

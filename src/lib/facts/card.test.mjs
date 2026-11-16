@@ -7,7 +7,9 @@ import {
   cardOptions,
   cardValueLabel,
   chartPartyName,
+  egoName,
   groupFields,
+  isFromVideo,
   isRelevant,
   parseOption,
   parseSeconds,
@@ -90,6 +92,27 @@ test("chartPartyName은 도표 A/B에 차 이름과 가입자를 붙인다", () 
   const other = setInsured(mapping, false);
   assert.equal(other.insured_party_id, "P2");
   assert.equal(chartPartyName(other, "A"), "상대 차(가입자)");
+});
+
+test("영상 없이 진행한 카드는 카드 B를 가입자 차라고 부른다 — 칸·보기·도표 A/B 이름", () => {
+  const manual = (value = null) => ({ ...f(value), source: "manual", model_value: null, model_confidence: null });
+  // BE blank_card: 칸이 모두 비었고 근거 장면이 없다. 가입자 차(P1)가 카드 B 자리다
+  const blank = { fields: { movement_A: manual(), movement_B: manual() }, evidence_frames: [] };
+  const video = { fields: { movement_A: f("straight"), movement_B: manual() }, evidence_frames: [] };
+  const edited = { fields: { movement_A: manual("straight") }, evidence_frames: [{ frame_id: "f001", timestamp_ms: 0, storage_path: null }] };
+  assert.deepEqual([blank, video, edited].map(isFromVideo), [false, true, true], "담당자가 칸을 다 고쳐도 근거 장면이 남으면 영상 카드");
+  assert.equal(egoName(blank), "가입자 차");
+  assert.equal(egoName(video), "블랙박스 차");
+
+  assert.equal(cardLabel("movement_B", "가입자 차"), "가입자 차 움직임");
+  assert.equal(cardLabel("movement_A", "가입자 차"), "상대 차 움직임");
+  assert.equal(cardLabel("movement_B"), "블랙박스 차 움직임", "이름을 주지 않으면 영상 카드 이름");
+  assert.equal(cardValueLabel("road_priority", "major_B", "가입자 차"), "가입자 차 쪽이 대로");
+  assert.deepEqual(cardOptions("entry_order", ["first", "second"], "가입자 차"), [["first", "상대 차"], ["second", "가입자 차"]]);
+  // 가입자 차는 이미 가입자라 「(가입자)」를 다시 붙이지 않는다. 맞바꾸면 도표 A가 가입자 차다
+  assert.equal(chartPartyName(mapping, "B", "가입자 차"), "가입자 차");
+  assert.equal(chartPartyName(swapChartParties(mapping), "A", "가입자 차"), "가입자 차");
+  assert.equal(chartPartyName(mapping, "A", "가입자 차"), "상대 차");
 });
 
 test("보기·값 글자와 초 입력", () => {

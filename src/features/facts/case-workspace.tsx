@@ -17,7 +17,7 @@ import { FAULT_RATIO_HEAD_ID, FaultResult } from "@/features/judgment/fault-resu
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
 import type { AnswerResult, ApiError, EvidenceView, FactCard, FactField, JudgmentResult, JudgmentRunView, PartyMapping } from "@/lib/api/types";
-import { buildCardPatch, cardLabel, changedFields, pick, readableMessage, remainingReview, sameMapping, withDefaultChart } from "@/lib/facts/card";
+import { buildCardPatch, cardLabel, changedFields, egoName, pick, readableMessage, remainingReview, sameMapping, withDefaultChart } from "@/lib/facts/card";
 import { answeredValues } from "@/lib/judgment/view";
 import { frameTime } from "@/lib/facts/view";
 import { Button, ButtonLink, Spinner } from "@/ui/controls";
@@ -66,6 +66,8 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   });
   // 도표 A/B가 비어 온 카드는 기본값(A 상대 차 · B 블랙박스 차)으로 보이고, 확정할 때 그 값을 같이 저장한다.
   const baseMapping = withDefaultChart(card.party_mapping, card.parties);
+  // 카드 B 차 이름 — 영상 없이 진행한 카드는 가입자 차다(칸 이름 · 도표 A/B 이름에 쓴다)
+  const ego = egoName(card);
   const [mapping, setMapping] = useState<PartyMapping>(baseMapping);
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState(false);
@@ -266,7 +268,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
     <Button
       onClick={toPick.length > 0 ? () => scrollTo(`fact-${toPick[0]}`) : confirmAndJudge}
       aria-disabled={toPick.length > 0}
-      title={toPick.length > 0 ? `아직 고르지 않은 칸: ${toPick.map(cardLabel).join(", ")}` : undefined}
+      title={toPick.length > 0 ? `아직 고르지 않은 칸: ${toPick.map((key) => cardLabel(key, ego)).join(", ")}` : undefined}
       className="h-10 px-5"
     >
       확정하고 과실 비율 판단
@@ -361,6 +363,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
               <FaultResult
                 result={result}
                 mapping={sampleResult ? mapping : baseMapping}
+                ego={ego}
                 stale={stale}
                 reportHref={nextHref}
                 onEditCard={busy === null && confirmed && pendingQuestions.length === 0 && !editing ? editCard : undefined}
@@ -477,7 +480,7 @@ function Media({
                     )}
                     <span className="min-w-0">
                       <span className="block font-semibold tabular-nums">{frameTime(f.timestamp_ms)}</span>
-                      <span className="block text-caption text-ink-muted">{fields.length > 0 ? fields.map(cardLabel).join(" · ") : "연결된 칸 없음"}</span>
+                      <span className="block text-caption text-ink-muted">{fields.length > 0 ? fields.map((key) => cardLabel(key)).join(" · ") : "연결된 칸 없음"}</span>
                     </span>
                   </button>
                 </li>
