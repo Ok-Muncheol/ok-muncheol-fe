@@ -330,13 +330,17 @@ export type FieldGroups = { review: string[]; rest: string[]; manual: string[]; 
  * manual은 영상 카드에서 비전이 채우지 않는 칸(충돌 순간 신호 · 차로 노면표시 · 비보호 좌회전 표지, 카드 v1 — 출처 manual)이다.
  * 확정을 막지 않는 선택 칸이라 AI가 채운 값과 섞지 않는다. 영상 분석 칸이 없는 카드(모든 칸이 manual)는 rest다.
  * 확인이 필요한 칸은 상관없어 보여도 위에 둔다(BE가 확정을 막는다). 묶음은 원래 카드 상태로 정해 고르는 동안 칸이 움직이지 않는다.
+ * 구분 질문이 걸린 칸은 카드에 없어도 줄을 둔다 — 11/16 전에 만든 영상 카드에는 그날 생긴 칸(합류·갓길·정체 등)이 없는데, 판단은 그 칸을 묻는다.
+ * 그런 칸은 담당자 입력 칸으로 묶고 빈 칸(emptyField)으로 그린다. BE 카드 수정은 없던 칸도 받는다(apply_patch).
  */
 export function groupFields(original: Fields, draft: Fields, asked: readonly string[] = []): FieldGroups {
   const location = draft.location_type?.value ?? null;
-  const keys = [...CARD_FIELD_ORDER.filter((k) => draft[k]), ...Object.keys(draft).filter((k) => !(CARD_FIELD_ORDER as readonly string[]).includes(k))];
+  const present = new Set([...Object.keys(draft), ...asked]);
+  const order = CARD_FIELD_ORDER as readonly string[];
+  const keys = [...order.filter((k) => present.has(k)), ...[...present].filter((k) => !order.includes(k))];
   const review = keys.filter((k) => asked.includes(k) || original[k]?.verification_status === "needs_review");
   const fromVideo = keys.some((k) => original[k]?.source === "vision");
-  const isManual = (k: string) => fromVideo && original[k]?.source === "manual";
+  const isManual = (k: string) => fromVideo && (original[k]?.source ?? "manual") === "manual";
   // 확인할 칸을 앞에 — 묶음은 원래 카드 상태로 정하므로 고른 뒤에도 칸이 움직이지 않는다.
   const used = [...review, ...keys.filter((k) => !review.includes(k) && isRelevant(k, location))];
   return {
@@ -350,6 +354,27 @@ export function groupFields(original: Fields, draft: Fields, asked: readonly str
 /** 담당자가 값을 고른다 — 같은 값을 골라도 「확인함」이다(AI 값이 맞다는 답). 모델 원값은 그대로 둔다. */
 export function pick(field: FactField, value: Value): FactField {
   return { ...field, value, verification_status: "human_confirmed" };
+}
+
+/** 카드에 없는 칸의 빈 담당자 칸 — BE 카드 수정이 없던 칸을 만들 때와 같은 모양(apply_patch)이다. */
+export function emptyField(): FactField {
+  return {
+    value: null,
+    model_value: null,
+    source: "manual",
+    model_confidence: null,
+    verification_status: "unverified",
+    evidence_frame_ids: [],
+    source_document_ids: [],
+  };
+}
+
+/**
+ * 값으로 답한 구분 질문(칸 → 답 글자, answeredValues)을 카드 칸에 미리 채운다 — 확인 완료 때 카드에 반영·재확정한다.
+ * 답 글자는 칸 값으로 바꾼다(참거짓 칸은 true/false — BE 카드 수정은 글자 "true"를 받지 않는다). 카드에 없던 칸은 빈 담당자 칸에서 채운다.
+ */
+export function withAnswers(fields: Fields, answers: Record<string, string>): Fields {
+  return { ...fields, ...Object.fromEntries(Object.entries(answers).map(([key, raw]) => [key, pick(fields[key] ?? emptyField(), parseOption(key, raw))])) };
 }
 
 /**
