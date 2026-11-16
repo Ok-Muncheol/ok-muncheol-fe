@@ -111,6 +111,13 @@ test("도표 칸 표기는 BE 값을 글자로 바꾸고 모르는 값은 그대
   assert.equal(optionLabel("collision_signal_B", "flashing_red"), "적색 점멸");
   assert.equal(optionLabel("lane_marking_A", "straight_left"), "직진·좌회전");
   assert.equal(optionLabel("unprotected_left_sign", "true"), "있음");
+  // 11/16 교차로 밖 도표 칸과 새 장소·진행 값(BE #239)
+  assert.equal(fieldLabel("location_type"), "사고 장소");
+  assert.equal(fieldLabel("roundabout_move_A"), "A 회전교차로 진행");
+  assert.equal(optionLabel("two_wheeler_B", "true"), "예");
+  assert.equal(optionLabel("overtake_line", "no_passing_zone"), "앞지르기 금지 장소");
+  assert.equal(optionLabel("movement_A", "reversing"), "후진");
+  assert.equal(optionLabel("location_type", "parking_lot"), "주차장");
 });
 
 const question = (field_key, answer = null) => ({

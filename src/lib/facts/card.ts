@@ -11,9 +11,10 @@ type Fields = Record<string, FactField>;
 type Value = FactField["value"];
 
 /**
- * 화면 순서 — 장소 → 신호·도로 → 움직임 → 위치 → 그 밖.
+ * 화면 순서 — 장소 → 신호·도로(교차로) → 회전교차로 → 움직임 → 위치 → 차 종류 → 도로 상황 → 그 밖.
  * 충돌 순간 신호·차로 노면표시·비보호 좌회전 표지(11/13)는 담당자 입력 칸이다 — 영상 카드는 비워(null + unverified) 보내고,
  * 판단이 그 칸으로 갈리는 도표를 볼 때 구분 질문으로 묻는다(BE docs/contracts/fact-card-v1.md).
+ * 11/16 교차로 밖 도표(차31~61) 칸 22개도 같다. 이륜차·긴급자동차는 영상 AI 2단계 전까지, 나머지는 늘 담당자 입력 칸이다(BE #239).
  */
 export const CARD_FIELD_ORDER = [
   "accident_type",
@@ -25,11 +26,33 @@ export const CARD_FIELD_ORDER = [
   "unprotected_left_sign",
   "road_priority",
   "entry_order",
+  "roundabout_lanes",
+  "roundabout_move_A",
+  "roundabout_move_B",
+  "roundabout_lane_A",
+  "roundabout_lane_B",
   "movement_A",
   "movement_B",
   "lane_marking_A",
   "lane_marking_B",
   "relative_position",
+  "two_wheeler_A",
+  "two_wheeler_B",
+  "emergency_vehicle_A",
+  "emergency_vehicle_B",
+  "center_line_crossing_A",
+  "center_line_crossing_B",
+  "door_open_A",
+  "door_open_B",
+  "overtake_line",
+  "u_turn_zone",
+  "u_turn_timing",
+  "lane_reduction",
+  "shoulder",
+  "traffic_jam",
+  "secondary_collision",
+  "bus_stop",
+  "safety_zone",
   "night",
   "collision_time_ms",
   "narrative",
@@ -50,6 +73,28 @@ const LABELS: Record<string, string> = {
   lane_marking_A: "상대 차 차로 노면표시",
   lane_marking_B: "블랙박스 차 차로 노면표시",
   relative_position: "상대 차가 온 쪽",
+  roundabout_lanes: "회전 차로 수",
+  roundabout_move_A: "상대 차 회전교차로 진행",
+  roundabout_move_B: "블랙박스 차 회전교차로 진행",
+  roundabout_lane_A: "상대 차 회전 차로",
+  roundabout_lane_B: "블랙박스 차 회전 차로",
+  two_wheeler_A: "상대 차 이륜차 여부",
+  two_wheeler_B: "블랙박스 차 이륜차 여부",
+  emergency_vehicle_A: "상대 차 긴급자동차(긴급 운행) 여부",
+  emergency_vehicle_B: "블랙박스 차 긴급자동차(긴급 운행) 여부",
+  center_line_crossing_A: "상대 차 중앙선 침범",
+  center_line_crossing_B: "블랙박스 차 중앙선 침범",
+  door_open_A: "상대 차 문 열림",
+  door_open_B: "블랙박스 차 문 열림",
+  overtake_line: "추월한 곳 차선",
+  u_turn_zone: "유턴 구역",
+  u_turn_timing: "뒤차 유턴 시점",
+  lane_reduction: "차로 감소(합류)",
+  shoulder: "갓길·도로 가장자리",
+  traffic_jam: "정체",
+  secondary_collision: "앞차가 사고로 정차 중(2차 사고)",
+  bus_stop: "버스정류장",
+  safety_zone: "안전지대 통과",
   night: "밤낮",
   collision_time_ms: "충돌 시각",
   narrative: "사고 설명",
@@ -78,7 +123,22 @@ export function cardLabel(key: string, ego: EgoName = VIDEO_EGO): string {
   return named(LABELS[key] ?? key, ego);
 }
 
-const MOVEMENT = { straight: "직진", left_turn: "좌회전", right_turn: "우회전", u_turn: "유턴", lane_change: "진로 변경", other: "그 밖" };
+const MOVEMENT = {
+  straight: "직진",
+  left_turn: "좌회전",
+  right_turn: "우회전",
+  u_turn: "유턴",
+  lane_change: "진로 변경",
+  stopped: "정차·주정차",
+  starting: "정차 후 출발",
+  reversing: "후진",
+  overtaking: "추월",
+  entering_road: "도로 밖에서 진입",
+  leaving_road: "도로 밖으로 진출",
+  parking_out: "주차구획에서 출차",
+  parking_in: "주차구획으로 진입",
+  other: "그 밖",
+};
 const SIGNAL = {
   green: "녹색",
   yellow: "황색",
@@ -98,7 +158,27 @@ const LANE_MARKING = {
   none: "표시 없음",
 };
 /** 참거짓 칸 — 보기는 "true"/"false" 글자지만 카드 값은 bool이다(BE 카드 수정이 글자를 거절한다). */
-const BOOL_KEYS: readonly string[] = ["night", "unprotected_left_sign"];
+const BOOL_KEYS: readonly string[] = [
+  "night",
+  "unprotected_left_sign",
+  "two_wheeler_A",
+  "two_wheeler_B",
+  "emergency_vehicle_A",
+  "emergency_vehicle_B",
+  "center_line_crossing_A",
+  "center_line_crossing_B",
+  "door_open_A",
+  "door_open_B",
+  "lane_reduction",
+  "shoulder",
+  "traffic_jam",
+  "secondary_collision",
+  "bus_stop",
+];
+/** 11/16 참거짓 칸 보기 — 칸 이름이 무엇을 묻는지 말하므로 예·아니요다. */
+const YES_NO = { true: "예", false: "아니요" };
+const ROUNDABOUT_MOVE = { circulating: "회전 중", entering: "진입", exiting: "진출하려고 진로 변경" };
+const ROUNDABOUT_LANE = { inner: "회전 1차로(안쪽)", outer: "회전 2차로 이상(바깥쪽)" };
 
 /** 칸별 보기(BE 값 → 화면 글자). 목록이 없는 칸(충돌 시각·사고 설명)은 없다. */
 const OPTIONS: Record<string, Record<string, string>> = {
@@ -109,7 +189,8 @@ const OPTIONS: Record<string, Record<string, string>> = {
     roundabout: "회전교차로",
     straight_road: "직선 도로",
     highway: "고속도로",
-    other: "주차장 등",
+    parking_lot: "주차장",
+    other: "그 밖(차도 아닌 곳 등)",
   },
   signal_A: SIGNAL,
   signal_B: SIGNAL,
@@ -139,6 +220,34 @@ const OPTIONS: Record<string, Record<string, string>> = {
     same_direction_rear: "같은 방향 뒤(옆 차로 포함)",
   },
   night: { false: "낮", true: "밤" },
+  roundabout_lanes: { one: "1차로", two_plus: "2차로 이상" },
+  roundabout_move_A: ROUNDABOUT_MOVE,
+  roundabout_move_B: ROUNDABOUT_MOVE,
+  roundabout_lane_A: ROUNDABOUT_LANE,
+  roundabout_lane_B: ROUNDABOUT_LANE,
+  two_wheeler_A: YES_NO,
+  two_wheeler_B: YES_NO,
+  emergency_vehicle_A: YES_NO,
+  emergency_vehicle_B: YES_NO,
+  center_line_crossing_A: YES_NO,
+  center_line_crossing_B: YES_NO,
+  door_open_A: YES_NO,
+  door_open_B: YES_NO,
+  overtake_line: {
+    yellow_solid: "황색 실선",
+    yellow_dashed: "황색 점선",
+    white_solid: "흰색 실선",
+    no_passing_zone: "앞지르기 금지 장소",
+    none: "차선 없음",
+  },
+  u_turn_zone: { always: "상시 유턴 구역", signal: "신호 유턴", none: "유턴 구역 아님" },
+  u_turn_timing: { sudden: "급 유턴", simultaneous: "동시 유턴" },
+  lane_reduction: YES_NO,
+  shoulder: YES_NO,
+  traffic_jam: YES_NO,
+  secondary_collision: YES_NO,
+  bus_stop: YES_NO,
+  safety_zone: { before_leaving: "안전지대 벗어나기 전", after_leaving: "안전지대 벗어난 뒤", none: "안전지대 없음" },
 };
 
 /** 칸 하나의 보기. 구분 질문이 있으면 질문의 보기만 남긴다. */
@@ -174,15 +283,36 @@ export function parseSeconds(text: string): number | null {
 }
 
 const SIGNALIZED_ONLY: readonly string[] = ["signal_A", "signal_B", "collision_signal_A", "collision_signal_B", "unprotected_left_sign"];
+const ROUNDABOUT_ONLY: readonly string[] = ["roundabout_lanes", "roundabout_move_A", "roundabout_move_B", "roundabout_lane_A", "roundabout_lane_B"];
+/** 일반 도로·고속도로 도표(차31~55)를 가르는 상황 칸. */
+const ROAD_ONLY: readonly string[] = [
+  "center_line_crossing_A",
+  "center_line_crossing_B",
+  "door_open_A",
+  "door_open_B",
+  "overtake_line",
+  "u_turn_zone",
+  "u_turn_timing",
+  "lane_reduction",
+  "shoulder",
+  "secondary_collision",
+  "bus_stop",
+  "safety_zone",
+];
+const ROADS: readonly string[] = ["straight_road", "highway"];
 
 /**
  * 이 사고에 쓰이는 칸인지 — 신호(진입·충돌 순간)·비보호 좌회전 표지는 신호 있는 교차로에서만, 도로 관계·먼저 들어온 차는
- * 신호 없는 교차로에서만 본다. 장소를 모르면 모두 쓰는 칸으로 본다.
+ * 신호 없는 교차로에서만, 회전교차로 칸은 회전교차로에서만, 중앙선 침범·추월 차선·갓길 같은 도로 상황 칸은 일반 도로·고속도로에서만 본다.
+ * 정체는 도로와 신호 없는 교차로(차61-1)에서, 이륜차·긴급자동차는 어디서나 본다. 장소를 모르면 모두 쓰는 칸으로 본다.
  */
 export function isRelevant(key: string, locationType: Value): boolean {
   if (locationType === null) return true;
   if (SIGNALIZED_ONLY.includes(key)) return locationType === "signalized_intersection";
   if (key === "road_priority" || key === "entry_order") return locationType === "unsignalized_intersection";
+  if (ROUNDABOUT_ONLY.includes(key)) return locationType === "roundabout";
+  if (ROAD_ONLY.includes(key)) return ROADS.includes(String(locationType));
+  if (key === "traffic_jam") return ROADS.includes(String(locationType)) || locationType === "unsignalized_intersection";
   return true;
 }
 
@@ -310,10 +440,10 @@ export function setInsured(mapping: PartyMapping, insuredIsEgo: boolean): PartyM
   return { ...mapping, insured_party_id: insuredIsEgo ? ego : other };
 }
 
+/** 화면 이름이 있는 카드 칸 이름(movement_A 등). 앞뒤가 낱말 경계일 때만 바꾼다 — collision_signal_A 속 signal_A는 그대로다. */
+const FIELD_KEY_PATTERN = new RegExp(`\\b(${Object.keys(LABELS).join("|")})\\b`, "g");
+
 /** BE 메시지 속 카드 칸 이름(movement_A 등)을 화면 이름으로 바꾼다. */
 export function readableMessage(message: string): string {
-  return message.replace(
-    /\b(accident_type|location_type|signal_[AB]|collision_signal_[AB]|unprotected_left_sign|road_priority|entry_order|movement_[AB]|lane_marking_[AB]|relative_position|night|collision_time_ms|narrative)\b/g,
-    (key) => cardLabel(key),
-  );
+  return message.replace(FIELD_KEY_PATTERN, (key) => cardLabel(key));
 }
