@@ -34,8 +34,9 @@ export function IntakeTable({ intakes, staff }: { intakes: IntakeView[]; staff: 
           <Th>접수</Th>
           <Th>사고 장소 · 내용</Th>
           <Th>단계</Th>
-          <Th>대물 담당</Th>
-          <Th>대인 담당</Th>
+          {/* 관제 화면에서 지도 옆 좁은 칸(760px)에 놓여도 머리글이 「대물 담 / 당」으로 꺾이지 않게 한다 */}
+          <Th className="whitespace-nowrap">대물 담당</Th>
+          <Th className="whitespace-nowrap">대인 담당</Th>
           <Th>배정</Th>
           <Th>
             <span className="sr-only">동작</span>
