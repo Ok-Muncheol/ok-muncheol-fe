@@ -10,7 +10,7 @@
 import { Button, ButtonLink, Notice } from "@/ui/controls";
 import { EvidencePanel } from "@/features/evidence/evidence-panel";
 import type { JudgmentResult, PartyMapping } from "@/lib/api/types";
-import { cardLabel, chartPartyName, readableReason, type EgoName } from "@/lib/facts/card";
+import { cardLabel, chartPartyName, readableReason, reasonParts, type EgoName } from "@/lib/facts/card";
 import { evidenceDecisions, judgmentEvidence, splitSwapHints } from "@/lib/judgment/view";
 
 export const FAULT_RESULT_ID = "fault-result";
@@ -39,7 +39,7 @@ export function FaultResult({ result, mapping, ego, stale, reportHref, onEditCar
         // 이전 카드 기준 결과로는 다음 단계로 넘어가지 않는다.
         <Ratio result={result} mapping={mapping} ego={ego} reportHref={stale ? null : reportHref} onEditCard={stale ? undefined : onEditCard} sample={sample} />
       ) : (
-        <NotReady result={result} mapping={mapping} ego={ego} />
+        <NotReady result={result} mapping={mapping} ego={ego} onEditCard={stale ? undefined : onEditCard} />
       )}
     </section>
   );
@@ -245,7 +245,24 @@ function Arrow() {
   );
 }
 
-function NotReady({ result, mapping, ego }: { result: JudgmentResult; mapping: PartyMapping; ego?: EgoName }) {
+/** 보류 사유 한 줄 — 칸 이름은 위 카드의 그 칸으로 가는 링크다. 누르면 카드를 수정 상태로 열고(열 수 있을 때) 그 칸으로 올라간다. */
+function ReasonLine({ reason, mapping, ego, onEditCard }: { reason: string; mapping: PartyMapping; ego?: EgoName; onEditCard?: () => void }) {
+  return (
+    <>
+      {reasonParts(reason, mapping, ego).map((part, i) =>
+        typeof part === "string" ? (
+          part
+        ) : (
+          <a key={i} href={`#fact-${part.key}`} onClick={onEditCard} className="font-semibold underline underline-offset-4">
+            {part.label}
+          </a>
+        ),
+      )}
+    </>
+  );
+}
+
+function NotReady({ result, mapping, ego, onEditCard }: { result: JudgmentResult; mapping: PartyMapping; ego?: EgoName; onEditCard?: () => void }) {
   const deferred = result.status === "deferred";
   const { reasons, swapHints } = splitSwapHints(result.reasons);
   return (
@@ -256,7 +273,9 @@ function NotReady({ result, mapping, ego }: { result: JudgmentResult; mapping: P
       {reasons.length > 0 && (
         <ul className="flex flex-col gap-1">
           {reasons.map((reason, i) => (
-            <li key={i}>{readableReason(reason, mapping, ego)}</li>
+            <li key={i}>
+              <ReasonLine reason={reason} mapping={mapping} ego={ego} onEditCard={onEditCard} />
+            </li>
           ))}
         </ul>
       )}
@@ -264,7 +283,9 @@ function NotReady({ result, mapping, ego }: { result: JudgmentResult; mapping: P
         <Notice tone="warning" title="도표 A/B를 맞바꾸면">
           <ul className="flex flex-col gap-1">
             {swapHints.map((hint, i) => (
-              <li key={i}>{readableReason(hint, mapping, ego)}</li>
+              <li key={i}>
+                <ReasonLine reason={hint} mapping={mapping} ego={ego} onEditCard={onEditCard} />
+              </li>
             ))}
           </ul>
           <p className="mt-2 text-caption">
@@ -286,7 +307,7 @@ function NotReady({ result, mapping, ego }: { result: JudgmentResult; mapping: P
           </ul>
         </div>
       )}
-      <p className="text-caption text-ink-muted">사실이 틀렸다면 위 카드에서 「수정하기」로 고친 뒤 「확정하고 과실 비율 판단」을 다시 눌러 주세요.</p>
+      <p className="text-caption text-ink-muted">칸 이름을 누르면 위 카드의 그 칸으로 가요. 값을 고친 뒤 「확정하고 과실 비율 판단」을 다시 눌러 주세요.</p>
     </div>
   );
 }

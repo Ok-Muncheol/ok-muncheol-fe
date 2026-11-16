@@ -508,7 +508,30 @@ const PY_LIST = /\['([^'\]]+(?:', '[^'\]]+)*)'\]/g;
  * _A·_B를 맞바꿔 카드 칸으로 읽는다(BE card_fields.is_swapped). 매핑은 판단한 카드의 것을 준다.
  */
 export function readableReason(reason: string, mapping: PartyMapping, ego: EgoName = VIDEO_EGO): string {
+  return reasonParts(reason, mapping, ego)
+    .map((part) => (typeof part === "string" ? part : part.label))
+    .join("");
+}
+
+/** 판단 사유의 한 토막 — 글자, 또는 카드 칸(칸 이름 key와 화면 이름 label). */
+export type ReasonPart = string | { key: string; label: string };
+
+/**
+ * readableReason과 같은 글을 토막으로 — 칸 이름 자리는 카드 칸(key)을 함께 준다. 화면이 그 칸(#fact-{key})으로 가는 링크를 건다.
+ * key는 카드 칸 이름이다(도표 A가 카드 B 차면 _A·_B를 맞바꾼 것).
+ */
+export function reasonParts(reason: string, mapping: PartyMapping, ego: EgoName = VIDEO_EGO): ReasonPart[] {
   const swapped = mapping.video_ego_party_id !== null && mapping.chart_party_A_id === mapping.video_ego_party_id;
-  const label = (key: string) => (Object.hasOwn(LABELS, key) ? cardLabel(swapped ? otherSide(key) : key, ego) : key);
-  return reason.replace(PY_LIST, (_, items: string) => `(${items.split("', '").map(label).join(", ")})`).replace(FIELD_KEY_PATTERN, label);
+  // 파이썬 목록은 괄호 목록으로 — 칸 이름은 그대로 두고 아래에서 토막 낸다
+  const text = reason.replace(PY_LIST, (_, items: string) => `(${items.split("', '").join(", ")})`);
+  const parts: ReasonPart[] = [];
+  let last = 0;
+  for (const match of text.matchAll(FIELD_KEY_PATTERN)) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    const key = swapped ? otherSide(match[0]) : match[0];
+    parts.push({ key, label: cardLabel(key, ego) });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
 }
