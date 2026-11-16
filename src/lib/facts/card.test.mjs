@@ -176,3 +176,31 @@ test("resetFields는 확정 전 카드는 받은 그대로, 확정한 카드는 
   for (const key of Object.keys(reset)) assert.equal(reset[key].verification_status, "unverified");
   assert.equal(fields.movement_B.value, "left_turn"); // 받은 카드는 바꾸지 않는다
 });
+
+test("교차로 밖 도표 칸(11/16)은 이름·보기가 있고 참거짓 칸은 bool로 저장한다", () => {
+  assert.equal(cardLabel("two_wheeler_A"), "상대 차 이륜차 여부");
+  assert.equal(cardLabel("roundabout_move_B", "가입자 차"), "가입자 차 회전교차로 진행");
+  assert.deepEqual(cardOptions("overtake_line").map(([v]) => v), ["yellow_solid", "yellow_dashed", "white_solid", "no_passing_zone", "none"]);
+  assert.deepEqual(cardOptions("roundabout_lanes", ["two_plus"]), [["two_plus", "2차로 이상"]]);
+  assert.equal(cardValueLabel("movement_A", "parking_out"), "주차구획에서 출차");
+  assert.equal(cardValueLabel("location_type", "parking_lot"), "주차장");
+  for (const key of ["two_wheeler_B", "emergency_vehicle_A", "center_line_crossing_A", "door_open_B", "traffic_jam", "bus_stop"]) {
+    assert.equal(parseOption(key, "true"), true, key);
+    assert.equal(cardValueLabel(key, false), "아니요", key);
+  }
+  assert.equal(parseOption("u_turn_zone", "signal"), "signal", "값 칸은 글자 그대로");
+  assert.equal(readableMessage("남은 칸: two_wheeler_A, roundabout_lanes, collision_signal_B"), "남은 칸: 상대 차 이륜차 여부, 회전 차로 수, 블랙박스 차 충돌 순간 신호");
+});
+
+test("isRelevant는 회전교차로 칸과 도로 상황 칸을 그 장소에서만 쓴다", () => {
+  assert.equal(isRelevant("roundabout_lanes", "roundabout"), true);
+  assert.equal(isRelevant("roundabout_lanes", "straight_road"), false);
+  assert.equal(isRelevant("overtake_line", "straight_road"), true);
+  assert.equal(isRelevant("shoulder", "highway"), true);
+  assert.equal(isRelevant("center_line_crossing_A", "signalized_intersection"), false);
+  assert.equal(isRelevant("traffic_jam", "unsignalized_intersection"), true, "차61-1은 신호 없는 교차로의 정체");
+  assert.equal(isRelevant("traffic_jam", "parking_lot"), false);
+  assert.equal(isRelevant("two_wheeler_A", "parking_lot"), true, "이륜차·긴급자동차는 어디서나");
+  assert.equal(isRelevant("emergency_vehicle_B", "signalized_intersection"), true);
+  assert.equal(isRelevant("signal_A", "straight_road"), false);
+});
