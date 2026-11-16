@@ -247,7 +247,8 @@ function InjuryForm({ initial, busy, onSave, onCancel }: { initial?: InjuryResul
   const [label, setLabel] = useState(initial?.label ?? "");
   const [grade, setGrade] = useState(initial?.grade ? String(initial.grade) : "");
   const [cost, setCost] = useState(initial?.treatment_cost != null ? String(initial.treatment_cost) : "");
-  const [driver, setDriver] = useState<"" | "yes" | "no">("");
+  // 고칠 때는 이전 운전자 여부로 시작한다 — 빈칸(모름)으로 시작하면 다시 저장할 때 null로 덮여 12~14급에 운전자 확인이 다시 붙는다
+  const [driver, setDriver] = useState<"" | "yes" | "no">(initial?.is_driver === true ? "yes" : initial?.is_driver === false ? "no" : "");
   const treatment = parseWon(cost);
   const valid = treatment !== undefined;
   return (
