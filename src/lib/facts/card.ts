@@ -473,3 +473,24 @@ const FIELD_KEY_PATTERN = new RegExp(`\\b(${Object.keys(LABELS).join("|")})\\b`,
 export function readableMessage(message: string): string {
   return message.replace(FIELD_KEY_PATTERN, (key) => cardLabel(key));
 }
+
+/** 쪽이 붙은 칸의 반대쪽 칸(movement_A ↔ movement_B). 쪽이 없는 칸은 그대로다. */
+function otherSide(key: string): string {
+  if (key.endsWith("_A")) return `${key.slice(0, -1)}B`;
+  if (key.endsWith("_B")) return `${key.slice(0, -1)}A`;
+  return key;
+}
+
+/** BE 판단 사유가 칸 이름 목록을 적는 파이썬 목록 모양 — ['movement_A', 'relative_position']. */
+const PY_LIST = /\['([^'\]]+(?:', '[^'\]]+)*)'\]/g;
+
+/**
+ * BE 판단 사유를 화면 글로 — 칸 이름은 카드 칸 이름(「상대 차 움직임」 등)으로, 파이썬 목록은 괄호 목록으로 바꾼다.
+ * 판단 사유는 도표 A/B 기준 칸 이름을 쓴다(BE graph.py). 도표 A가 카드 B 차(블랙박스 차 · 가입자 차)면
+ * _A·_B를 맞바꿔 카드 칸으로 읽는다(BE card_fields.is_swapped). 매핑은 판단한 카드의 것을 준다.
+ */
+export function readableReason(reason: string, mapping: PartyMapping, ego: EgoName = VIDEO_EGO): string {
+  const swapped = mapping.video_ego_party_id !== null && mapping.chart_party_A_id === mapping.video_ego_party_id;
+  const label = (key: string) => (Object.hasOwn(LABELS, key) ? cardLabel(swapped ? otherSide(key) : key, ego) : key);
+  return reason.replace(PY_LIST, (_, items: string) => `(${items.split("', '").map(label).join(", ")})`).replace(FIELD_KEY_PATTERN, label);
+}

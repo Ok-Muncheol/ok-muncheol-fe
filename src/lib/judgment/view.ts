@@ -161,6 +161,20 @@ export function answeredValues(questions: readonly QuestionView[]): Record<strin
   return values;
 }
 
+/* ---------- 판정 사유 ---------- */
+
+/** 고를 도표가 없을 때 BE가 도표 A/B를 맞바꿔 대조한 사유 줄의 머리말(BE chart_scope.REASON_SWAP_HINT). */
+export const SWAP_HINT = "도표 A/B를 맞바꾸면";
+
+/** 판정 사유를 본래 사유와 도표 A/B 맞바꿈 대조 줄(머리말을 뗀 것)로 나눈다. 화면은 맞바꿈 줄을 따로 모아 보인다. */
+export function splitSwapHints(reasons: readonly string[]): { reasons: string[]; swapHints: string[] } {
+  const prefix = `${SWAP_HINT} `;
+  return {
+    reasons: reasons.filter((r) => !r.startsWith(prefix)),
+    swapHints: reasons.filter((r) => r.startsWith(prefix)).map((r) => r.slice(prefix.length)),
+  };
+}
+
 /* ---------- 판정 근거 ---------- */
 
 /** 판단 화면에서 판정 근거로 이동하는 앵커 */

@@ -14,6 +14,7 @@ import {
   judgmentEvidence,
   partyRoles,
   runBadgeStatus,
+  splitSwapHints,
   stageLabel,
   stageSteps,
   validationLayers,
@@ -176,4 +177,18 @@ test("판정 근거는 모두 '판단에 사용'이고 이유 칸에는 BE 값(�
     c1: { status: "selected", reason: "판정 도표 S-1의 근거" },
     c2: { status: "selected", reason: "판정 도표 S-1의 근거" },
   });
+});
+
+test("판정 사유에서 도표 A/B 맞바꿈 대조 줄(BE swap_hints)을 머리말을 떼어 따로 모은다", () => {
+  const reasons = [
+    "검수한 도표 근거 없음",
+    "차43-2: 카드와 불일치 ['movement_A', 'movement_B', 'relative_position']",
+    "도표 A/B를 맞바꾸면 남는 도표: 차43-1 「차로 감소 도로 (합류) 사고」",
+    "도표 A/B를 맞바꾸면 차43-2 「후행 직진 대 선행 진로변경」: 카드와 불일치 ['relative_position']",
+  ];
+  assert.deepEqual(splitSwapHints(reasons), {
+    reasons: reasons.slice(0, 2),
+    swapHints: ["남는 도표: 차43-1 「차로 감소 도로 (합류) 사고」", "차43-2 「후행 직진 대 선행 진로변경」: 카드와 불일치 ['relative_position']"],
+  });
+  assert.deepEqual(splitSwapHints(["수치 검증 실패"]), { reasons: ["수치 검증 실패"], swapHints: [] });
 });
