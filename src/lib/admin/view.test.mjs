@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  REGIONS, accountRole, adminHref, assignable, binLabel, byCount, detailFlags, detailSummary, hasDetails, highValueFor, intakeFilter, mapBinWidth, mapStep,
+  REGIONS, accountRole, adminHref, assignable, binLabel, byCount, detailFlags, hasDetails, highValueFor, intakeFilter, mapBinWidth, mapStep,
   needsInjuryAdjuster, parseAdminView, regionToday, shortTime, specialtyLabels, staffName, staffOptionLabel, won,
 } from "./view.ts";
 
@@ -89,8 +89,6 @@ test("참고 정보가 모두 비었으면 없는 것으로 본다 — 예전 �
   assert.equal(hasDetails(details({ estimated_damage: 0 })), true);
   assert.deepEqual(detailFlags(NONE), []);
   assert.deepEqual(detailFlags(undefined), []);
-  assert.equal(detailSummary(NONE), "");
-  assert.equal(detailSummary(undefined), "");
 });
 
 test("고액 사건 — 대물은 예상 손해액 3,000만 원 이상, 대인은 중상·사망", () => {
@@ -114,13 +112,6 @@ test("표식 — 고액 사건, 수입차, 다중 추돌, 대인배상Ⅱ 미가
   const flags = detailFlags(details({ policy: { ...POLICY, bodily_injury_ii: false }, policyholder: { accidents_3y: 0, complaints: 2, long_term: false } }));
   assert.deepEqual(flags.map((flag) => flag.label), ["대인배상Ⅱ 미가입", "민원 2회"]);
   assert.ok(flags.every((flag) => flag.tone === "warning"));
-});
-
-test("목록 한 줄 요약은 있는 값만 잇는다", () => {
-  assert.equal(detailSummary(details({ estimated_damage: 35_000_000, vehicle_type: "imported", vehicle_count: 3, injury_severity: "serious" })), "예상 3,500만 원 · 수입차 3대 · 중상");
-  assert.equal(detailSummary(details({ vehicle_count: 2 })), "차량 2대");
-  assert.equal(detailSummary(details({ vehicle_type: "motorcycle" })), "이륜차");
-  assert.equal(detailSummary(details({ policy: POLICY })), "");
 });
 
 test("담당자 속성 — 전문 분야 이름, 고르기 목록의 한 줄", () => {
