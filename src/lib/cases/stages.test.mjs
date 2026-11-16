@@ -17,7 +17,7 @@ import {
 
 const versions = { case_id: "SYN-1", fact_card_version: 1, judgment_version: null, report_version: null };
 const base = {
-  case_id: "SYN-1", accident_date: "2026-11-01T10:00:00+09:00", created_at: "2026-11-01T12:00:00+09:00", input_path: "video", stage: "intake",
+  case_id: "SYN-1", accident_date: "2026-11-01T10:00:00+09:00", created_at: "2026-11-01T12:00:00+09:00", stage: "intake",
   task_status: null, judgment_status: null, approval_status: null, open_questions: 0, versions, updated_at: "2026-11-09T09:00:00+09:00",
 };
 const make = (over) => ({ ...base, ...over, versions: { ...versions, ...(over.versions ?? {}) } });
@@ -133,8 +133,6 @@ test("사건 목록은 고정한 사건을 따로 위에 두고 둘 다 접수 �
 test("boardStatus는 단계마다 할 일과 상태를 가른다", async () => {
   const { boardStatus } = await import("./stages.ts");
   assert.deepEqual(boardStatus(make({ stage: "intake" })), { label: "영상 업로드 대기", tone: "turn" });
-  // 「입력 대기」는 없다 — 배정 시스템이 만드는 사건은 모두 영상 사건이다
-  assert.equal(boardStatus(make({ stage: "intake", input_path: "manual" })).label, "영상 업로드 대기");
   assert.equal(boardStatus(make({ stage: "analysis", task_status: "running" })).tone, "running");
   assert.equal(boardStatus(make({ stage: "analysis", task_status: "failed" })).tone, "failed");
   assert.equal(boardStatus(make({ stage: "judgment", task_status: "waiting_for_confirmation", open_questions: 2 })).label, "질문 2건");

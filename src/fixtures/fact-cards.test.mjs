@@ -21,9 +21,8 @@ test("사실 카드 단계 사건마다 확정 전 카드가 하나 있고 보�
   }
 });
 
-test("직접 입력·진술 칸에는 모델 값·확신도·프레임이 없고, 영상 없는 사건에는 영상 칸·프레임·촬영 차량이 없다", () => {
+test("직접 입력·진술 칸에는 모델 값·확신도·프레임이 없고, 영상 분석 칸이 없는 카드에는 근거 장면·촬영 차량이 없다", () => {
   for (const card of cards) {
-    const summary = inFacts.find((c) => c.case_id === card.case_id);
     for (const [key, field] of Object.entries(card.fields)) {
       const at = `${card.case_id}.${key}`;
       if (field.source === "vision") {
@@ -33,9 +32,9 @@ test("직접 입력·진술 칸에는 모델 값·확신도·프레임이 없고
         assert.equal(field.model_confidence, null, `${at}: 수동 입력 확신도는 해당 없음`);
         assert.deepEqual(field.evidence_frame_ids, [], at);
       }
-      if (summary.input_path === "manual") assert.notEqual(field.source, "vision", at);
     }
-    if (summary.input_path === "manual") {
+    // 영상 분석 칸(출처 vision)이 없으면 담당자가 칸을 모두 채운 카드다(groupFields의 fromVideo와 같은 기준)
+    if (!Object.values(card.fields).some((f) => f.source === "vision")) {
       assert.deepEqual(card.evidence_frames, [], card.case_id);
       assert.equal(card.party_mapping.video_ego_party_id, null, card.case_id);
     }

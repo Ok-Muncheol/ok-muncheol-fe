@@ -186,10 +186,11 @@ export default function DesignPage() {
             <Field id="design-accident-date" label="사고 일시" required hint="약관 적용판은 사고 일시 기준으로 고른다">
               <Input id="design-accident-date" type="datetime-local" />
             </Field>
-            <Field id="design-input-path" label="입력 경로">
-              <Select id="design-input-path" defaultValue="video">
-                <option value="video">영상 업로드</option>
-                <option value="manual">사실 카드 직접 입력</option>
+            <Field id="design-driver" label="차량운전자 여부">
+              <Select id="design-driver" defaultValue="">
+                <option value="">모름</option>
+                <option value="yes">운전자</option>
+                <option value="no">운전자 아님(동승자 등)</option>
               </Select>
             </Field>
             <Field id="design-reason" label="수정 사유" error="수정 사유를 적어야 저장할 수 있다">

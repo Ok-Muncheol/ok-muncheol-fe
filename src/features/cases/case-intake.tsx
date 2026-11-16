@@ -4,7 +4,7 @@
  * A: 새 사건 — 사고 날짜와 블랙박스 영상만 받는다. 「분석 시작」 한 번으로 사건 생성 → 업로드 URL 발급 → 영상 PUT → 분석 접수를 잇고,
  * 같은 자리가 「영상 분석 중이에요」로 바뀐다. 사건이 생기면 주소만 /cases/{id}로 바꿔(history.replaceState — 화면은 다시 그리지 않아
  * 업로드가 끊기지 않는다) 새로고침해도 사건 화면이 같은 상태를 서버에서 다시 읽어 그린다. 분석이 끝나면 판단 화면으로 넘어간다.
- * 사건 이름은 사고 날짜다(caseTitle). 영상 없는 사건(직접 입력)은 아직 받지 않는다.
+ * 사건 이름은 사고 날짜다(caseTitle). 사건은 모두 영상으로 시작하고, 당사자 진술은 판단 화면의 사실 카드에서 반영한다.
  * 배정된 사건(/cases/[id])은 단계와 상관없이 늘 이 화면이 접수 화면이다 — 머리(CaseHeader)는 사건 화면이 그리고, 여기는
  * 위에서부터 영상(올리기 칸 · 고른 영상 · 올린 영상) → 상태 한 줄(분석 시작 · 올리는 중 · 분석 중 · 실패 · 분석 완료와 다음 단계) → 사건 정보 상자다.
  * 견본 모드는 BE에 보내지 않고 진행만 흉내 낸 뒤 견본 사건의 판단 화면으로 간다.
@@ -30,7 +30,6 @@ export type ExistingCase = {
   assignedAt?: string | null;
   taskStatus: TaskStatus | null;
   error?: ApiError | null;
-  inputPath: "video" | "manual";
   updatedAt: string;
   /** 다음 단계 버튼이 가는 곳(검토 보고서 버전)을 정한다 */
   versions: VersionRef;
@@ -81,7 +80,6 @@ function CaseInfo({ existing, analysis }: { existing: ExistingCase; analysis: st
     ["사건번호", <span key="id" className="font-mono tabular-nums">{existing.caseId}</span>],
     ["사고 일시", existing.accidentDate ? when(existing.accidentDate) : "모름"],
     ["배정 일시", existing.assignedAt ? when(existing.assignedAt) : "모름"],
-    ["입력 경로", existing.inputPath === "video" ? "블랙박스 영상" : "사실 카드 직접 입력"],
     ["영상 분석", analysis],
     ["최근 변경", when(existing.updatedAt)],
   ];
@@ -200,20 +198,17 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   const fileInput = useRef<HTMLInputElement>(null);
 
   const title = hasCase || phase.kind !== "form" ? caseTitle(date) : "새 사건";
-  // 분석이 끝난 사건(사실 카드 · 판단 · 검토 보고서 단계)과 영상 없이 들어온 사건은 올리기 대신 올린 영상과 다음 단계 버튼을 보인다.
-  const settled = existing !== undefined && (existing.inputPath === "manual" || !isBeforeCard(existing.stage));
-  const analysis =
-    existing?.inputPath === "manual"
-      ? "해당 없음"
-      : settled
-        ? "완료"
-        : phase.kind === "uploading"
-          ? "영상 올리는 중"
-          : phase.kind === "analyzing"
-            ? "분석 중"
-            : error
-              ? "실패"
-              : "영상 대기";
+  // 분석이 끝난 사건(사실 카드 · 판단 · 검토 보고서 단계)은 올리기 대신 올린 영상과 다음 단계 버튼을 보인다.
+  const settled = existing !== undefined && !isBeforeCard(existing.stage);
+  const analysis = settled
+    ? "완료"
+    : phase.kind === "uploading"
+      ? "영상 올리는 중"
+      : phase.kind === "analyzing"
+        ? "분석 중"
+        : error
+          ? "실패"
+          : "영상 대기";
 
   // 영상 미리보기 주소는 바꾸거나 떠나면 브라우저 메모리를 돌려준다.
   useEffect(
@@ -304,10 +299,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
     try {
       if (!caseId.current) {
         setPhase({ kind: "uploading", progress: 0 });
-        const created = (await api.createCase({
-          accident_date: date,
-          input_path: "video",
-        })) as { case_id: string };
+        const created = (await api.createCase({ accident_date: date })) as { case_id: string };
         caseId.current = created.case_id;
         setHasCase(true);
         window.history.replaceState(null, "", `/cases/${encodeURIComponent(created.case_id)}`);
@@ -349,19 +341,13 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
     const next = NEXT_LABEL[existing.stage];
     return (
       <div className="flex w-full max-w-3xl flex-col gap-6">
-        {existing.inputPath === "video" && <UploadedVideo src={existing.videoUrl ?? null} />}
+        <UploadedVideo src={existing.videoUrl ?? null} />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="flex items-center gap-2 text-heading font-semibold">
-            {existing.inputPath === "video" ? (
-              <>
-                <svg aria-hidden viewBox="0 0 16 16" className="size-4 text-primary-strong" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m3.5 8.5 3 3 6-7" />
-                </svg>
-                영상 분석 완료
-              </>
-            ) : (
-              "사실 카드를 직접 입력한 사건"
-            )}
+            <svg aria-hidden viewBox="0 0 16 16" className="size-4 text-primary-strong" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="m3.5 8.5 3 3 6-7" />
+            </svg>
+            영상 분석 완료
           </p>
           {next && (
             <ButtonLink href={stageHref({ case_id: existing.caseId, stage: existing.stage, versions: existing.versions })} className="h-10 px-6">

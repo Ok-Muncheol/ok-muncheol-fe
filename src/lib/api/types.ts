@@ -29,7 +29,7 @@ export type UploadTicket = {
   upload_url: string;
   expires_in: number;
 };
-/** 사건이 지금 어느 단계에 있는지 — README 「범위와 사용자 흐름」 순서. 영상 없는 사건은 analysis를 건너뛴다. */
+/** 사건이 지금 어느 단계에 있는지 — README 「범위와 사용자 흐름」 순서. */
 export type CaseStage = "intake" | "analysis" | "facts" | "judgment" | "report";
 /**
  * 담당 사건 보드 한 칸(GET /cases 응답 초안). BE 계약 확정 전 FE 제안이라 같은 이름으로 BE에 맞춘다.
@@ -37,7 +37,7 @@ export type CaseStage = "intake" | "analysis" | "facts" | "judgment" | "report";
  * created_at은 접수 시각(BE cases.created_at)이고 사건 목록을 접수 순으로 늘어놓는 기준이다.
  */
 export type CaseSummary = {
-  case_id: string; accident_date: string; created_at: string; input_path: "video" | "manual";
+  case_id: string; accident_date: string; created_at: string;
   stage: CaseStage;
   task_status: TaskStatus | null;
   judgment_status: JudgmentStatus | null;
