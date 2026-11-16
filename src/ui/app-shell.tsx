@@ -37,8 +37,8 @@ type NavItem = { href: string; label: string; icon: ReactNode };
 
 /**
  * 주 메뉴 — 계정 역할(토큰 app_metadata.staff_role)마다 따로 둔다. 역할이 없는 계정과 로그인 전은 담당자 메뉴다.
- * 관리자에게는 사건이 배정되지 않아(BE는 담당자에게만 배정한다) 담당 사건·완료 사건이 늘 비므로 사건 관제만 둔다.
- * 메뉴는 보이는 것만 가른다 — 사건 관제 화면과 API는 관리자가 아니면 막힌다(src/app/admin/page.tsx · BE /admin).
+ * 관리자에게는 사건이 배정되지 않아(BE는 담당자에게만 배정한다) 담당 사건·완료 사건이 늘 비므로 사건 관제와 담당자(담당자별 업무량)만 둔다.
+ * 메뉴는 보이는 것만 가른다 — 두 화면과 API는 관리자가 아니면 막힌다(src/app/admin/ · BE /admin).
  * 「사건 접수」 탭은 두지 않는다 — 현업에서는 사건이 담당자에게 배정된 뒤 워크플로우가 시작되므로
  * 보상 담당자가 사건을 만들지 않는다. 접수 화면(/cases/new, 정지원)은 경로로만 남는다.
  */
@@ -47,7 +47,19 @@ const NAV: Record<StaffRole, NavItem[]> = {
     { href: "/cases", label: "담당 사건", icon: <path d="M3 5.5h14M3 10h14M3 14.5h9" /> },
     { href: "/done", label: "완료 사건", icon: <path d="m4 10.5 4 4 8-9" /> },
   ],
-  admin: [{ href: "/admin", label: "사건 관제", icon: <path d="M3 16V9m4.7 7V4m4.6 12v-5M17 16V7" /> }],
+  admin: [
+    { href: "/admin", label: "사건 관제", icon: <path d="M3 16V9m4.7 7V4m4.6 12v-5M17 16V7" /> },
+    {
+      href: "/admin/staff",
+      label: "담당자",
+      icon: (
+        <>
+          <circle cx="8" cy="7" r="3" />
+          <path d="M2.5 16.5c.6-2.8 2.8-4.5 5.5-4.5s4.9 1.7 5.5 4.5M13 4.3a3 3 0 0 1 0 5.4M15 12.4c1.4.7 2.2 2.1 2.5 4.1" />
+        </>
+      ),
+    },
+  ],
 };
 /** 개발 배포에서만 — 역할과 상관없이 맨 끝에 붙는다. */
 const DEV_NAV: NavItem = { href: "/dev", label: "개발 미리보기", icon: <path d="m7 6-4 4 4 4M13 6l4 4-4 4" /> };
@@ -63,7 +75,10 @@ export function AppShell({ children, showDev, account }: { children: ReactNode; 
   const onProfile = pathname === "/profile";
   const items = [...NAV[account?.staffRole ?? "adjuster"], ...(showDev ? [DEV_NAV] : [])];
   // 하위 경로도 그 메뉴다 — /cases/[id]/… 는 담당 사건, /dev/corpora는 개발 미리보기.
-  const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  // 메뉴 경로가 겹치면(/admin과 /admin/staff) 더 긴 쪽 하나만 지금 위치다 — /admin/staff에서 사건 관제까지 켜지지 않게.
+  const matches = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const currentHref = items.reduce<string | null>((best, item) => (matches(item.href) && item.href.length > (best?.length ?? 0) ? item.href : best), null);
+  const isCurrent = (href: string) => href === currentHref;
 
   return (
     <div className="min-h-dvh transition-[padding] duration-200 motion-reduce:transition-none lg:pl-60 lg:in-data-[sidebar=closed]:pl-14 print:pl-0!">
