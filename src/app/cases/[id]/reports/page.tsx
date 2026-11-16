@@ -6,6 +6,7 @@
  */
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { CaseNo } from "@/components/case-no";
 import { getCaseSummary, isSampleSource } from "@/features/cases/case-source";
 import { CaseHeader } from "@/features/cases/case-header";
 import { getLatestJudgmentRun } from "@/features/judgment/judgment-source";
@@ -23,7 +24,7 @@ export default async function ReportsPage(props: PageProps<"/cases/[id]/reports"
   if (!summary && !live) {
     return (
       <>
-        <PageHeader eyebrow="담당 사건" title={<span className="font-mono">{id}</span>} />
+        <PageHeader eyebrow="담당 사건" title={<CaseNo id={id} />} />
         <Notice tone="warning" title="사건을 찾지 못했다">
           담당 사건 목록에 없는 번호다.{" "}
           <ButtonLink href="/cases" variant="quiet" size="sm">

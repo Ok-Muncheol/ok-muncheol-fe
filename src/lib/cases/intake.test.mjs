@@ -1,7 +1,7 @@
 // 새 사건 화면 규칙 테스트. Node가 .ts의 타입만 지우고 실행한다(런타임 import 없음).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MAX_VIDEO_BYTES, caseTitle, todayInKorea, videoContentType, videoProblem } from "./intake.ts";
+import { MAX_VIDEO_BYTES, caseNo, caseTitle, todayInKorea, videoContentType, videoProblem } from "./intake.ts";
 
 const now = new Date("2026-11-12T10:00:00+09:00");
 
@@ -19,6 +19,16 @@ test("caseTitle은 날짜가 없거나 읽을 수 없으면 날짜 모르는 사
   assert.equal(caseTitle(null, now), "날짜 모르는 사고");
   assert.equal(caseTitle("", now), "날짜 모르는 사고");
   assert.equal(caseTitle("어제", now), "날짜 모르는 사고");
+});
+
+test("caseNo는 UUID 사건 ID를 앞 8자리로 줄이고 청구 번호는 사건 ID 부분만 줄이며 UUID가 아닌 ID는 그대로 둔다", () => {
+  const id = "3f8a2c1d-5b6e-4f70-9a81-0c2d3e4f5a6b";
+  assert.equal(caseNo(id), "3f8a2c1d");
+  assert.equal(caseNo(`${id}-C2`), "3f8a2c1d-C2");
+  assert.equal(caseNo(id.toUpperCase()), "3F8A2C1D");
+  assert.equal(caseNo("SYN-2026-0105"), "SYN-2026-0105");
+  assert.equal(caseNo("SYN-2026-0105-C1"), "SYN-2026-0105-C1");
+  assert.equal(caseNo("3f8a2c1d"), "3f8a2c1d");
 });
 
 test("videoContentType은 형식이 비면 확장자로 고르고 받지 않는 형식은 null이다", () => {

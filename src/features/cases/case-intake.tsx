@@ -13,6 +13,7 @@
  */
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { CaseNo } from "@/components/case-no";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
 import type { ApiError, CaseStage, TaskStatus, VersionRef } from "@/lib/api/types";
@@ -83,7 +84,7 @@ const NEXT_LABEL: Partial<Record<CaseStage, string>> = {
  */
 function CaseInfo({ existing, analysis }: { existing: ExistingCase; analysis: string }) {
   const rows: [string, ReactNode][] = [
-    ["사건번호", <span key="id" className="font-mono tabular-nums">{existing.caseId}</span>],
+    ["사건번호", <CaseNo key="id" id={existing.caseId} />],
     ["사고 일시", existing.accidentDate ? when(existing.accidentDate) : "모름"],
     ["배정 일시", existing.assignedAt ? when(existing.assignedAt) : "모름"],
     ["영상 분석", analysis],

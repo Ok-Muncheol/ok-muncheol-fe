@@ -129,7 +129,7 @@ BE에서 관리한다. 변수명은 `.env.example`에 있다(`NEXT_PUBLIC_BACKEN
 | 그림자 | `shadow-card`(카드) · `shadow-raised`(팝오버·드롭다운) |
 | 반경 | `rounded-card` 12 · `rounded-control` 8(버튼·입력) · `rounded-badge` 6 (px) |
 | 글자 크기 | `text-title` 22 · `text-heading` 17 · `text-body` 14 · `text-caption` 12 (px) |
-| 글꼴 | 기본 `font-sans`, 사건 ID·금액·버전·비율은 `font-mono tabular-nums` |
+| 글꼴 | 기본 `font-sans`, 사건 ID·금액·버전·비율은 `font-mono tabular-nums`. 사건 ID는 `CaseNo`(`src/components/case-no.tsx`)로 앞 8자리만 보인다(주소·API는 전체 ID) |
 
 | 톤 | 뜻 | 예 |
 | --- | --- | --- |

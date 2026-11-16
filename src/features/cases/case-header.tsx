@@ -6,6 +6,7 @@
  */
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { CaseNo } from "@/components/case-no";
 import type { BoardColumnKey } from "@/lib/cases/stages";
 import { caseTitle, koreanDay } from "@/lib/cases/intake";
 import { CaseStepper, type StepperCase } from "./case-stepper";
@@ -26,7 +27,7 @@ export function CaseHeader({ info, progress, viewing, badge }: { info: CaseHeadI
         {badge}
       </h1>
       <p className="mt-1 text-caption text-ink-muted">
-        <span className="font-mono tabular-nums">{info.caseId}</span>
+        <CaseNo id={info.caseId} />
         {info.accidentDate && <> · 사고 {koreanDay(info.accidentDate)}</>}
         {info.assignedAt && <> · {koreanDay(info.assignedAt)} 배정</>}
       </p>

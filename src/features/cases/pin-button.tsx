@@ -5,6 +5,7 @@
  * 보내는 동안에는 바뀔 모양을 먼저 보이고(낙관적 표시) 다시 눌러도 보내지 않는다 — 두 번 눌러 고정이 도로 풀리지 않게 한다.
  */
 import { useFormStatus } from "react-dom";
+import { caseNo } from "@/lib/cases/intake";
 import { PinIcon } from "./pin-icon";
 
 export function PinButton({ caseId, pinned }: { caseId: string; pinned: boolean }) {
@@ -24,7 +25,7 @@ export function PinButton({ caseId, pinned }: { caseId: string; pinned: boolean 
       }`}
     >
       <PinIcon filled={shown} />
-      <span className="sr-only">{caseId} 고정</span>
+      <span className="sr-only">{caseNo(caseId)} 고정</span>
     </button>
   );
 }
