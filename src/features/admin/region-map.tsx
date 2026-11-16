@@ -1,8 +1,9 @@
 /**
  * B 통합: 사건 관제 — 오늘 지역별 접수. 시·도마다 오늘 0시부터 들어온 접수 수를 지도의 면 색(지도 단계 map-0~4)과 라벨로 보이고,
  * 많은 순 목록(막대)을 함께 둔다. 지역(면·라벨·목록 줄)을 누르면 접수 건 목록을 그 지역으로 거른다(지역 칩과 같은 주소).
- * 배치는 카드 자기 폭으로 고른다(컨테이너 쿼리) — 데스크톱 관제 화면처럼 접수 건 왼쪽 좁은 칸에 들어가면 설명 · 지도 · 목록을 위아래로 쌓고,
- * 카드가 넓으면(36rem 이상 — 접수 건 위에 한 줄로 놓일 때) 지도 옆에 설명·목록을 둔다.
+ * 배치는 카드 자기 폭으로 고른다(컨테이너 쿼리) — 데스크톱 관제 화면처럼 접수 건 왼쪽 좁은 칸에 들어가면 지도 · 목록을 위아래로 쌓고,
+ * 카드가 넓으면(36rem 이상 — 접수 건 위에 한 줄로 놓일 때) 지도 옆에 목록을 둔다.
+ * 카드에는 보이는 제목·설명을 두지 않는다. 제목 「오늘 지역별 접수」는 화면 낭독기가 읽는 숨은 제목(sr-only h2)으로만 남긴다.
  * 지도는 눈으로 보는 그림이라 화면 낭독기·키보드에서는 감추고(aria-hidden · tabIndex -1) 같은 값을 목록이 읽힌다.
  * 경계는 korea-map.ts(통계청 SGIS 2018 · 공공누리 제1유형 — 출처를 지도 아래에 적는다)이고 라벨 자리는 아래 LABELS에서 손으로 맞췄다.
  */
@@ -46,14 +47,12 @@ export function RegionMap({ today, selected, hrefFor }: { today: RegionToday; se
   const picked = today.regions.find((r) => r.region === selected);
 
   return (
-    <Card title="오늘 지역별 접수">
-      {/* 카드가 넓으면 지도 | 설명·목록 두 칸(지도가 두 줄을 차지한다), 좁으면 설명 · 지도 · 목록 순으로 쌓는다 */}
+    <Card>
+      <h2 className="sr-only">오늘 지역별 접수</h2>
+      {/* 카드가 넓으면 지도 | 목록 두 칸, 좁으면 지도 · 목록 순으로 쌓는다 */}
       <div className="@container">
-        <div className="grid gap-x-10 gap-y-4 @xl:grid-cols-[18rem_minmax(0,1fr)] @xl:grid-rows-[auto_1fr]">
-          <p className="text-caption break-keep text-ink-muted @xl:col-start-2 @xl:row-start-1 @xl:px-2">
-            오늘 0시부터 들어온 접수를 사고 장소의 시·도로 셉니다. 지역을 누르면 접수 건 목록을 그 지역으로 거릅니다.
-          </p>
-          <div className="mx-auto w-full max-w-[18rem] @xl:col-start-1 @xl:row-span-2 @xl:row-start-1 @xl:mx-0">
+        <div className="grid gap-x-10 gap-y-4 @xl:grid-cols-[18rem_minmax(0,1fr)]">
+          <div className="mx-auto w-full max-w-[18rem] @xl:mx-0">
             <div aria-hidden className="relative w-full" style={{ aspectRatio: `${MAP_WIDTH} / ${MAP_HEIGHT}` }}>
               <svg viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} className="absolute inset-0 size-full">
                 {today.regions.map(({ region, count, step }) => (
@@ -126,7 +125,7 @@ export function RegionMap({ today, selected, hrefFor }: { today: RegionToday; se
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-xl min-w-0 @xl:col-start-2 @xl:row-start-2 @xl:mx-0 @xl:max-w-none">
+          <div className="mx-auto w-full max-w-xl min-w-0 @xl:mx-0 @xl:max-w-none">
             <p className="mb-1 flex justify-between px-2 text-caption font-semibold text-ink-muted">
               <span>많은 순</span>
               <span>건</span>
