@@ -21,7 +21,6 @@ import {
   readableReason,
   remainingReview,
   resetFields,
-  setInsured,
   swapChartParties,
   withAnswers,
 } from "./card.ts";
@@ -156,8 +155,8 @@ test("buildCardPatch는 바뀐 칸만 싣고 매핑은 바뀌었을 때만 싣�
 test("chartPartyName은 도표 A/B에 차 이름과 가입자를 붙인다", () => {
   assert.equal(chartPartyName(mapping, "A"), "상대 차");
   assert.equal(chartPartyName(mapping, "B"), "블랙박스 차(가입자)");
-  const other = setInsured(mapping, false);
-  assert.equal(other.insured_party_id, "P2");
+  // 가입자는 블랙박스 차로 고정이지만, 이전에 상대 차로 저장한 카드도 그대로 읽는다
+  const other = { ...mapping, insured_party_id: "P2" };
   assert.equal(chartPartyName(other, "A"), "상대 차(가입자)");
 });
 
