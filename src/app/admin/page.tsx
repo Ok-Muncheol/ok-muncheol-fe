@@ -55,10 +55,11 @@ export default async function AdminPage(props: PageProps<"/admin">) {
         <Stat label="진행 중" value={summary.open} tone="info" />
         <Stat label="미배정" value={summary.unassigned} tone={summary.unassigned > 0 ? "warning" : "neutral"} />
         <Stat label="오늘 접수" value={summary.received_today} />
-        <Stat label="오늘 완료" value={summary.closed_today} tone="success" />
         {stageGroupCounts(summary.by_stage).map(({ key, label, count }) => (
           <Stat key={key} label={label} value={count} />
         ))}
+        {/* 오늘 완료는 맨 끝 — 오늘 접수 → 단계(접수·판단·검토 보고서) → 오늘 완료로 접수 건이 지나는 순서대로 읽힌다 */}
+        <Stat label="오늘 완료" value={summary.closed_today} tone="success" />
       </StatStrip>
 
       <div className="@container">
