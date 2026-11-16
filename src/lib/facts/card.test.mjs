@@ -61,7 +61,7 @@ test("groupFields는 영상 카드의 담당자 입력 칸을 따로 묶고, 질
   const asked = groupFields(fields, fields, ["lane_marking_A"]);
   assert.deepEqual(asked.review, ["lane_marking_A"], "판단이 물은 칸은 확인할 칸");
   assert.deepEqual(asked.manual, ["lane_marking_A", "collision_signal_A"], "물은 칸은 담당자 입력 묶음 안에서 앞");
-  // 직접 입력 사건은 모든 칸이 manual이라 따로 묶지 않는다
+  // 영상 분석 칸이 없는 카드(모든 칸이 manual)는 따로 묶지 않는다
   const typed = { movement_A: manual("straight"), lane_marking_A: manual(null) };
   assert.deepEqual(groupFields(typed, typed).manual, []);
 });

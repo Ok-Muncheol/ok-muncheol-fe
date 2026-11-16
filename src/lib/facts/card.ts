@@ -169,11 +169,11 @@ export function isRelevant(key: string, locationType: Value): boolean {
 export type FieldGroups = { review: string[]; rest: string[]; manual: string[]; unused: string[] };
 
 /**
- * 칸 묶기 — 화면은 두 묶음이다. rest: AI가 채운 값(직접 입력 사건이면 입력한 값), manual: 담당자 입력 칸,
+ * 칸 묶기 — 화면은 두 묶음이다. rest: AI가 채운 값(영상 분석 칸이 없는 카드면 담당자가 채운 값), manual: 담당자 입력 칸,
  * unused: 이 사고와 상관없는 칸(접어 둔다). review는 따로 빼는 묶음이 아니라 표시다 — 확인이 필요한 칸(BE needs_review, 구분 질문이 걸린 칸)은
  * 자기 묶음 안에서 맨 앞에 두고(그 안에서는 카드 칸 순서) 화면이 표시한다. 확인할 칸은 상관없어 보여도 unused로 접지 않는다(BE가 확정을 막는다).
  * manual은 영상 카드에서 비전이 채우지 않는 칸(충돌 순간 신호 · 차로 노면표시 · 비보호 좌회전 표지, 카드 v1 — 출처 manual)이다.
- * 확정을 막지 않는 선택 칸이라 AI가 채운 값과 섞지 않는다. 직접 입력 사건(모든 칸이 manual)은 rest다.
+ * 확정을 막지 않는 선택 칸이라 AI가 채운 값과 섞지 않는다. 영상 분석 칸이 없는 카드(모든 칸이 manual)는 rest다.
  * 확인이 필요한 칸은 상관없어 보여도 위에 둔다(BE가 확정을 막는다). 묶음은 원래 카드 상태로 정해 고르는 동안 칸이 움직이지 않는다.
  */
 export function groupFields(original: Fields, draft: Fields, asked: readonly string[] = []): FieldGroups {

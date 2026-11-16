@@ -29,8 +29,8 @@ export default async function CasePage(props: PageProps<"/cases/[id]">) {
     );
   }
 
-  // 분석이 끝난 영상 사건은 올린 영상 자리에 분석이 만든 미리보기 영상을 둔다(보기 주소 1시간 — 열 때마다 새로 읽는다).
-  const evidence = summary.input_path === "video" && !isBeforeCard(summary.stage) ? await getEvidence(summary.case_id) : null;
+  // 분석이 끝난 사건은 올린 영상 자리에 분석이 만든 미리보기 영상을 둔다(보기 주소 1시간 — 열 때마다 새로 읽는다).
+  const evidence = !isBeforeCard(summary.stage) ? await getEvidence(summary.case_id) : null;
 
   return (
     <>
@@ -44,7 +44,6 @@ export default async function CasePage(props: PageProps<"/cases/[id]">) {
           assignedAt: summary.created_at,
           taskStatus: summary.task_status,
           error: summary.analysis?.error ?? null,
-          inputPath: summary.input_path,
           updatedAt: summary.updated_at,
           versions: summary.versions,
           videoUrl: evidence?.preview_url ?? null,
