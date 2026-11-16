@@ -10,6 +10,7 @@
  */
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { CaseNo } from "@/components/case-no";
 import { StatusLabel } from "@/components/status-label";
 import type { CaseSummary } from "@/lib/api/types";
 import { caseTitle } from "@/lib/cases/intake";
@@ -161,7 +162,7 @@ function CaseRow({ summary: c, pinned }: { summary: CaseSummary; pinned: boolean
             {caseTitle(c.accident_date)}
           </Link>
           <p className="text-caption text-ink-muted">
-            <span className="font-mono tabular-nums">{c.case_id}</span> · <time dateTime={c.created_at}>{shortDay(c.created_at)}</time> 배정
+            <CaseNo id={c.case_id} /> · <time dateTime={c.created_at}>{shortDay(c.created_at)}</time> 배정
           </p>
         </div>
       </div>

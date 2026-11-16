@@ -6,6 +6,7 @@
  * 사건 요약은 견본 또는 BE GET /cases/{id}(case-source)로 읽어 새로고침해도 같은 상태로 그린다.
  */
 import Link from "next/link";
+import { CaseNo } from "@/components/case-no";
 import { CaseHeader } from "@/features/cases/case-header";
 import { CaseIntake } from "@/features/cases/case-intake";
 import { getCaseSummary, isSampleSource } from "@/features/cases/case-source";
@@ -25,7 +26,7 @@ export default async function CasePage(props: PageProps<"/cases/[id]">) {
         </Link>
         <h1 className="mt-3 text-title font-bold tracking-tight">사건을 찾지 못했어요</h1>
         <p className="mt-2 text-body text-ink-muted">
-          담당 사건 목록에서 다시 골라 주세요. <span className="font-mono tabular-nums">{id}</span>
+          담당 사건 목록에서 다시 골라 주세요. <CaseNo id={id} />
         </p>
       </div>
     );

@@ -53,6 +53,16 @@ export function caseTitle(accidentDate: string | null | undefined, now: Date = n
   return `${year}${MONTH_DAY.format(date)} 사고`;
 }
 
+const UUID_HEAD = /^([0-9a-f]{8})-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+/**
+ * 화면에 보이는 사건 번호 — 사건 ID는 UUID(36자)라 앞 8자리만 보인다(예: "3f8a2c1d"). 주소·API에는 전체 ID를 그대로 쓴다.
+ * 16진수 8자리면 경우의 수가 약 43억이라 사건이 1천 건이어도 둘이 겹칠 확률은 0.01% 남짓이다. 겹쳐도 주소는 달라 다른 사건이 열리지는 않는다.
+ * 청구 번호("{사건 ID}-C1")처럼 사건 ID로 시작하는 번호는 그 부분만 줄인다. 견본 ID("SYN-2026-0105")처럼 UUID가 아니면 그대로다.
+ */
+export function caseNo(id: string): string {
+  return id.replace(UUID_HEAD, "$1");
+}
+
 const KOREAN_DAY = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", timeZone: "Asia/Seoul" });
 /** 사건 정보 줄의 날짜 — "2026년 11월 8일". 날짜만 온 값("2026-11-08")은 한국 날짜로 읽는다. 읽을 수 없으면 받은 값 그대로. */
 export function koreanDay(iso: string): string {

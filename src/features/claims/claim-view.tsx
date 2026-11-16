@@ -1,9 +1,10 @@
 /**
  * A·D: 구상 청구서 — 확인 완료한 검토 보고서로 BE가 만든 청구서(ClaimPackage)를 문서 한 장처럼 보인다.
- * 위는 청구번호 · 상대방 · 확인 기록, 가운데는 금액 표(자차 보험금 × 상대 과실 = 청구액), 아래는 근거 조항 · 증빙 · 빠진 증빙 · 기본 가정.
+ * 위는 청구번호(사건 ID 부분은 앞 8자리 — CaseNo) · 상대방 · 확인 기록, 가운데는 금액 표(자차 보험금 × 상대 과실 = 청구액), 아래는 근거 조항 · 증빙 · 빠진 증빙 · 기본 가정.
  * 예시 규칙이면 「약관 검수 전 초안」을 눈에 띄게 둔다. 인쇄하면 앱 메뉴 없이 이 문서만 나온다(app-shell의 print:hidden).
  * 금액은 BE 값 그대로다(FE가 계산하지 않는다).
  */
+import { CaseNo } from "@/components/case-no";
 import type { ClaimPackage } from "@/lib/api/types";
 
 const dateTime = new Intl.DateTimeFormat("ko-KR", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Seoul" });
@@ -24,7 +25,7 @@ export function ClaimView({ claim }: { claim: ClaimPackage }) {
         <div>
           <p className="text-caption text-ink-muted">구상 청구서</p>
           <h2 className="mt-0.5 text-title font-bold tracking-tight">
-            <span className="font-mono tabular-nums">{row?.claim_no ?? `${claim.case_id}-C${claim.package_version}`}</span>
+            <CaseNo id={row?.claim_no ?? `${claim.case_id}-C${claim.package_version}`} />
           </h2>
           <p className="mt-1 text-caption text-ink-muted">
             검토 보고서 v{claim.report_version} 기준 · 청구서 {claim.package_version}판 · {when(claim.created_at)}
