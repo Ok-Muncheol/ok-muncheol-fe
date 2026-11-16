@@ -2,15 +2,16 @@
  * A·B: 사건 작업 화면 아래쪽의 판단 결과 — 하단 버튼 「과실 비율 보기」가 여기(#fault-result)로 내려온다.
  * 판정 셋을 다르게 그린다: 초안 작성 가능(과실 비율·적용 도표·수정요소·사유), 추가 확인 필요(사유·확인할 칸 → 위 카드의 칸),
  * 판단 보류(사유). 비율·가감치·도표는 BE 값 그대로다 — FE가 계산하지 않는다. 도표 A/B는 매핑으로 「상대 차」「블랙박스 차」 이름을 붙인다
- * (영상 없이 진행한 카드는 「블랙박스 차」 대신 「가입자 차」 — ego).
+ * (영상 없이 진행한 카드는 「블랙박스 차」 대신 「가입자 차」 — ego). 사유 속 칸 이름(movement_A 등)도 매핑으로 카드 칸 이름을 붙인다(readableReason).
+ * 고를 도표가 없을 때 BE가 도표 A/B를 맞바꿔 대조한 줄은 따로 모아 「맞바꾸기」를 안내한다.
  * 위 카드가 판단 뒤에 바뀌었으면(stale) 흐리게 두고 이전 카드 기준이라고 알린다.
  * 다음 단계는 비율 제목 줄 오른쪽에 둔다 — 「검토 보고서 보기 →」(보고서 화면으로 넘어간다)와 「사실 카드 고치기」(위 카드를 다시 연다).
  */
-import { Button, ButtonLink } from "@/ui/controls";
+import { Button, ButtonLink, Notice } from "@/ui/controls";
 import { EvidencePanel } from "@/features/evidence/evidence-panel";
 import type { JudgmentResult, PartyMapping } from "@/lib/api/types";
-import { cardLabel, chartPartyName, type EgoName } from "@/lib/facts/card";
-import { evidenceDecisions, judgmentEvidence } from "@/lib/judgment/view";
+import { cardLabel, chartPartyName, readableReason, type EgoName } from "@/lib/facts/card";
+import { evidenceDecisions, judgmentEvidence, splitSwapHints } from "@/lib/judgment/view";
 
 export const FAULT_RESULT_ID = "fault-result";
 /** 비율 제목 줄 — 이 줄이 화면 위로 지나가면 아래 떠 있는 바가 「검토 보고서 보기」를 대신 보인다. */
@@ -38,7 +39,7 @@ export function FaultResult({ result, mapping, ego, stale, reportHref, onEditCar
         // 이전 카드 기준 결과로는 다음 단계로 넘어가지 않는다.
         <Ratio result={result} mapping={mapping} ego={ego} reportHref={stale ? null : reportHref} onEditCard={stale ? undefined : onEditCard} sample={sample} />
       ) : (
-        <NotReady result={result} ego={ego} />
+        <NotReady result={result} mapping={mapping} ego={ego} />
       )}
     </section>
   );
@@ -161,9 +162,9 @@ function Ratio({
           <div className="md:col-span-2">
             <dt className="text-caption font-semibold text-ink-muted">판단 사유</dt>
             <dd className="mt-1">
-              <ul className="flex flex-col gap-1">
+              <ul className="flex flex-col gap-1 break-keep">
                 {result.reasons.map((reason, i) => (
-                  <li key={i}>{reason}</li>
+                  <li key={i}>{readableReason(reason, mapping, ego)}</li>
                 ))}
               </ul>
             </dd>
@@ -244,19 +245,32 @@ function Arrow() {
   );
 }
 
-function NotReady({ result, ego }: { result: JudgmentResult; ego?: EgoName }) {
+function NotReady({ result, mapping, ego }: { result: JudgmentResult; mapping: PartyMapping; ego?: EgoName }) {
   const deferred = result.status === "deferred";
+  const { reasons, swapHints } = splitSwapHints(result.reasons);
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 break-keep">
       <h2 id="fault-result-title" className="text-heading font-semibold">
         {deferred ? "판단을 보류했어요" : "추가 확인이 필요해요"}
       </h2>
-      {result.reasons.length > 0 && (
+      {reasons.length > 0 && (
         <ul className="flex flex-col gap-1">
-          {result.reasons.map((reason, i) => (
-            <li key={i}>{reason}</li>
+          {reasons.map((reason, i) => (
+            <li key={i}>{readableReason(reason, mapping, ego)}</li>
           ))}
         </ul>
+      )}
+      {swapHints.length > 0 && (
+        <Notice tone="warning" title="도표 A/B를 맞바꾸면">
+          <ul className="flex flex-col gap-1">
+            {swapHints.map((hint, i) => (
+              <li key={i}>{readableReason(hint, mapping, ego)}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-caption">
+            지금 도표 A는 {chartPartyName(mapping, "A", ego)}예요. 위 카드에서 「수정하기」를 누른 뒤 「도표 A」 옆 「맞바꾸기」로 바꿀 수 있어요.
+          </p>
+        </Notice>
       )}
       {result.questions.length > 0 && (
         <div>

@@ -16,7 +16,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError } from "@/lib/api/client";
 import type { CaseFacts, InjuredPersonDoc, PartyMapping, PropertyDamageInputDoc, ReportSection, ReviewReport } from "@/lib/api/types";
-import { cardLabel, cardValueLabel, chartPartyName, type EgoName } from "@/lib/facts/card";
+import { cardLabel, cardValueLabel, chartPartyName, readableReason, type EgoName } from "@/lib/facts/card";
 import { Button, ButtonLink, Input, Spinner } from "@/ui/controls";
 import { UploadError, uploadFile } from "@/features/cases/upload";
 import { LiabilityBlock, type MedicalKind } from "./liability-block";
@@ -235,7 +235,7 @@ export function ReportView({ caseId, report, live, ego, claimHref }: { caseId: s
             {j.reasons.length > 0 ? (
               <ul className="flex flex-col gap-0.5">
                 {j.reasons.map((r, i) => (
-                  <li key={i}>{r}</li>
+                  <li key={i}>{readableReason(r, mapping, ego)}</li>
                 ))}
               </ul>
             ) : (

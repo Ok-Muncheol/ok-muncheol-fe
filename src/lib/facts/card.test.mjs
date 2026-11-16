@@ -17,6 +17,7 @@ import {
   parseSeconds,
   pick,
   readableMessage,
+  readableReason,
   remainingReview,
   resetFields,
   setInsured,
@@ -161,6 +162,32 @@ test("보기·값 글자와 초 입력", () => {
 
 test("readableMessage는 BE 메시지의 칸 이름을 화면 이름으로 바꾼다", () => {
   assert.equal(readableMessage("확인이 필요한 칸이 남았습니다: movement_A, signal_B"), "확인이 필요한 칸이 남았습니다: 상대 차 움직임, 블랙박스 차 신호");
+});
+
+test("readableReason은 판단 사유의 도표 칸 이름을 매핑에 맞는 카드 칸 이름으로, 파이썬 목록을 괄호 목록으로 바꾼다", () => {
+  // 기본 매핑: 도표 A = 상대 차(카드 A), 도표 B = 블랙박스 차(카드 B)
+  const mapping = { video_ego_party_id: "P1", insured_party_id: null, chart_party_A_id: "P2", chart_party_B_id: "P1" };
+  assert.equal(
+    readableReason("차43-2: 카드와 불일치 ['movement_A', 'movement_B', 'relative_position']", mapping),
+    "차43-2: 카드와 불일치 (상대 차 움직임, 블랙박스 차 움직임, 상대 차가 온 쪽)",
+  );
+  assert.equal(readableReason("도표 선택 칸 미확인: movement_B", mapping), "도표 선택 칸 미확인: 블랙박스 차 움직임");
+  // 도표 A가 블랙박스 차면 도표 칸 _A는 카드 B(블랙박스 차) 칸이다(BE card_fields.is_swapped)
+  const swapped = swapChartParties(mapping);
+  assert.equal(
+    readableReason("S-1 선택: 확인한 칸 4개 일치 (accident_type, location_type, movement_A, movement_B)", swapped),
+    "S-1 선택: 확인한 칸 4개 일치 (사고 유형, 사고 장소, 블랙박스 차 움직임, 상대 차 움직임)",
+  );
+  assert.equal(
+    readableReason("emergency_vehicle_A: 담당자 표시 없음 — 촬영 차(가입자 차)라 '아니오'로 봄", swapped),
+    "블랙박스 차 긴급자동차(긴급 운행) 여부: 담당자 표시 없음 — 촬영 차(가입자 차)라 '아니오'로 봄",
+  );
+  assert.equal(readableReason("B-1 「synthetic B-1」: 카드와 불일치 ['two_wheeler_B']", swapped), "B-1 「synthetic B-1」: 카드와 불일치 (상대 차 이륜차 여부)");
+  // 영상 없이 진행한 카드는 카드 B를 가입자 차로 부른다
+  assert.equal(readableReason("카드와 불일치 ['movement_B']", mapping, "가입자 차"), "카드와 불일치 (가입자 차 움직임)");
+  // 모르는 낱말과 칸 이름 속 칸 이름(collision_signal_A 속 signal_A)은 그대로 둔다
+  assert.equal(readableReason("U-1: 확인 불가 칸 ['collision_signal_A', 'foo_A']", swapped), "U-1: 확인 불가 칸 (블랙박스 차 충돌 순간 신호, foo_A)");
+  assert.equal(readableReason("검수한 도표 근거 없음", mapping), "검수한 도표 근거 없음");
 });
 
 test("withDefaultChart는 비어 있는 도표 A/B를 상대 차 · 블랙박스 차로 채운다", async () => {
