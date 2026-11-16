@@ -1,10 +1,10 @@
 /**
  * A·B: 사건 작업 화면 — 사실 카드 확인부터 과실 비율 판단까지 한 화면이다(src/features/facts/case-workspace.tsx).
- * 위에는 영상(근거 장면)과 사실 카드, 아래 가운데에 떠 있는 버튼 하나(확인 완료 → 판단 중 → 과실 비율 보기), 그 아래 판단 결과.
+ * 위에는 영상(분석 미리보기)과 사실 카드, 아래 가운데에 떠 있는 버튼 하나(확인 완료 → 판단 중 → 과실 비율 보기), 그 아래 판단 결과.
  * 영상 분석이 끝나면 새 사건 화면이 여기로 넘어온다. 카드가 아직 없는 사건은 접수 화면(/cases/[id] — 올리기 · 분석 중)으로 보낸다.
  * 판단은 judgment-source(견본 또는 BE GET /cases/{id}/judgment), 카드는 fact-source(견본 또는 BE GET /cases/{id}/fact-card)로 읽고,
  * 저장·확정·판단 접수 뒤에는 다시 읽는다. 판정 · 과실은 BE 값만 그린다. 검증 3겹과 근거 질의응답은 검토 보고서 화면에 있다.
- * TODO: Realtime 변경 알림이 오면 다시 읽는다. TODO(A): 영상 재생(H.264 사본 재생 URL)·근거 장면 이미지, 수정 이력.
+ * TODO: Realtime 변경 알림이 오면 다시 읽는다. TODO(A): 수정 이력.
  */
 import { redirect } from "next/navigation";
 import { CaseHeader } from "@/features/cases/case-header";

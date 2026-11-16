@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * A: 사건 작업 화면(/cases/[id]/judgment) — 위에는 영상(근거 장면)과 사실 카드, 그 아래에 판단 영역(판단 중 · 결과).
+ * A: 사건 작업 화면(/cases/[id]/judgment) — 위에는 영상(분석 미리보기)과 사실 카드, 그 아래에 판단 영역(판단 중 · 결과).
  * AI가 채운 칸은 AI 값을 미리 골라 두므로 맞으면 칸마다 누르지 않아도 된다 — 확정하면 그 값으로 확인한다(acceptAiValues).
  * AI가 채우지 못한 확인 필요 칸(모름)과 구분 질문 칸만 담당자가 골라야 확정할 수 있다.
  * 흐름: 칸을 확인 · 고침 → 카드 맨 아래 「확정하고 과실 비율 판단」(고친 칸 · AI 값 확인 저장 → 카드 확정 → 판단 접수를 한 번에) →
@@ -34,7 +34,6 @@ import {
   withDefaultChart,
 } from "@/lib/facts/card";
 import { answeredValues } from "@/lib/judgment/view";
-import { frameTime } from "@/lib/facts/view";
 import { Button, ButtonLink, Spinner } from "@/ui/controls";
 import { FACT_CARD_FOOTER_ID, FactCardPanel } from "./fact-card-panel";
 
@@ -88,7 +87,6 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
-  const [frame, setFrame] = useState<string | null>(null);
   /** 「초기화」 횟수 — 바뀌면 카드 칸을 처음 상태로 다시 그린다 */
   const [resetKey, setResetKey] = useState(0);
   const [sampleResult, setSampleResult] = useState<JudgmentResult | null>(null);
@@ -342,7 +340,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
       {loadError && <p className="mb-4 text-body text-danger">판단 기록을 불러오지 못했어요. {loadError.message}</p>}
 
       <div className={hasVideo ? "grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]" : "mx-auto max-w-3xl"}>
-        {hasVideo && <Media card={card} draft={draft} evidence={evidence} selected={frame} onSelect={setFrame} />}
+        {hasVideo && <Media evidence={evidence} />}
         <FactCardPanel
           card={card}
           draft={draft}
@@ -466,78 +464,19 @@ function BottomBar({ children }: { children: ReactNode }) {
 }
 
 /**
- * 왼쪽 영상 칸 — 위는 분석이 만든 H.264 미리보기 영상, 아래는 근거 장면 목록(사진 · 시각 · 이 장면을 근거로 쓴 칸).
- * 근거 장면을 누르면 영상이 그 장면으로 가서 멈춘다.
- * 보기 주소는 BE GET /cases/{id}/evidence(1시간 서명 URL — 화면을 열 때마다 새로 읽는다)이고, 없으면(견본 · 파일 없음) 빈 자리와 시각만 보인다.
+ * 왼쪽 영상 칸 — 분석이 만든 H.264 미리보기 영상이다.
+ * 보기 주소는 BE GET /cases/{id}/evidence(1시간 서명 URL — 화면을 열 때마다 새로 읽는다)이고, 없으면(견본 · 파일 없음) 빈 자리다.
+ * 근거 장면 목록은 두지 않는다 — 카드의 근거 장면은 VLM에 보내는 고정 12프레임(모든 영상에서 같은 시각)이고
+ * 모든 칸이 같은 12장을 가리켜 칸별 근거가 아니다(BE workers/vision/prompts.py FRAMES_V02). 장면 이동은 영상 재생 막대로 한다.
  */
-function Media({
-  card,
-  draft,
-  evidence,
-  selected,
-  onSelect,
-}: {
-  card: FactCard;
-  draft: Record<string, FactField>;
-  evidence: EvidenceView | null;
-  selected: string | null;
-  onSelect: (id: string) => void;
-}) {
-  const video = useRef<HTMLVideoElement>(null);
-  const frames = [...card.evidence_frames].sort((a, b) => a.timestamp_ms - b.timestamp_ms);
-  const photos = new Map((evidence?.frames ?? []).map((f) => [f.frame_id, f.url]));
+function Media({ evidence }: { evidence: EvidenceView | null }) {
   const preview = evidence?.preview_url ?? null;
-
-  // 고른 장면으로 영상을 옮긴다.
-  useEffect(() => {
-    const at = card.evidence_frames.find((f) => f.frame_id === selected)?.timestamp_ms;
-    if (at === undefined || !video.current) return;
-    video.current.pause();
-    video.current.currentTime = at / 1000;
-  }, [selected, card.evidence_frames]);
-
   return (
-    <aside aria-label="영상" className="flex flex-col gap-3 lg:sticky lg:top-8">
+    <aside aria-label="영상" className="lg:sticky lg:top-8">
       {preview ? (
-        <video ref={video} src={preview} controls muted playsInline preload="metadata" className="aspect-video w-full rounded-card bg-black" />
+        <video src={preview} controls muted playsInline preload="metadata" className="aspect-video w-full rounded-card bg-black" />
       ) : (
         <div className="flex aspect-video items-center justify-center rounded-card bg-surface-muted text-caption text-ink-muted">영상 미리보기가 아직 없어요</div>
-      )}
-      {frames.length > 0 && (
-        <div>
-          <h2 className="text-caption font-semibold text-ink-muted">근거 장면</h2>
-          <ol className="mt-1 flex flex-col gap-0.5">
-            {frames.map((f) => {
-              const fields = Object.keys(draft).filter((key) => draft[key].evidence_frame_ids.includes(f.frame_id));
-              const photo = photos.get(f.frame_id) ?? null;
-              const active = selected === f.frame_id;
-              return (
-                <li key={f.frame_id}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(f.frame_id)}
-                    aria-pressed={active}
-                    className={`flex w-full items-center gap-3 rounded-control p-1.5 text-left transition-colors hover:bg-surface-muted ${active ? "bg-primary-soft" : ""}`}
-                  >
-                    {photo && (
-                      // 서명 URL(외부 Storage 주소)이라 next/image 대신 그대로 그린다.
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={photo}
-                        alt={`${frameTime(f.timestamp_ms)} 장면`}
-                        className={`aspect-video w-24 shrink-0 rounded-badge bg-surface-muted object-cover ${active ? "ring-2 ring-primary-strong" : ""}`}
-                      />
-                    )}
-                    <span className="min-w-0">
-                      <span className="block font-semibold tabular-nums">{frameTime(f.timestamp_ms)}</span>
-                      <span className="block text-caption text-ink-muted">{fields.length > 0 ? fields.map((key) => cardLabel(key)).join(" · ") : "연결된 칸 없음"}</span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
       )}
     </aside>
   );
