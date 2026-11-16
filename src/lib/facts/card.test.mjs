@@ -237,3 +237,14 @@ test("isRelevant는 회전교차로 칸과 도로 상황 칸을 그 장소에서
   assert.equal(isRelevant("emergency_vehicle_B", "signalized_intersection"), true);
   assert.equal(isRelevant("signal_A", "straight_road"), false);
 });
+
+test("진로 변경 순서 칸(BE #261)은 이름·보기가 있고 일반 도로·고속도로에서 쓴다", () => {
+  assert.equal(cardLabel("lane_change_timing"), "두 차 진로 변경 순서");
+  assert.deepEqual(cardOptions("lane_change_timing").map(([v]) => v), ["simultaneous", "follower_first", "leader_first"]);
+  assert.equal(cardValueLabel("lane_change_timing", "leader_first"), "같은 차로 앞차가 먼저");
+  assert.equal(parseOption("lane_change_timing", "follower_first"), "follower_first", "값 칸은 글자 그대로");
+  assert.equal(isRelevant("lane_change_timing", "straight_road"), true);
+  assert.equal(isRelevant("lane_change_timing", "signalized_intersection"), false);
+  assert.equal(readableMessage("남은 칸: lane_change_timing"), "남은 칸: 두 차 진로 변경 순서");
+});
+
