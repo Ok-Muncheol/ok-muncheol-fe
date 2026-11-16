@@ -80,7 +80,11 @@ export default function DesignPage() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/*
+        좁은 화면도 한 칸(grid-cols-1 — minmax(0, 1fr))으로 못박는다. 칸 규칙이 없으면 auto 칸이 단계 줄 표 견본의 최소 폭(40rem)만큼 넓어져
+        360px 화면이 658px로 가로 스크롤된다. 표는 제 상자 안에서 가로로 민다.
+      */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title="색 토큰" aside={<Badge>globals.css</Badge>}>
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {SWATCHES.map((swatch) => (
