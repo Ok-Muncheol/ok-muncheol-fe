@@ -15,7 +15,7 @@
 import type {
   AdminOverview, AgreedFaultInput, AnswerResult, ApiError, AssignmentInput, CaseFacts, CaseSummary, ClaimResult, ConfirmResult, CounterpartyInfo,
   EvidenceView, FactCard, FactPatch, IntakeDetail, IntakeFilter, IntakeInput, IntakeView, JudgmentRunView, JudgmentTaskView, QaAnswer,
-  QuestionAnswer, ReviewReport, UploadKind, UploadTicket,
+  PartnerMedicalRecord, QuestionAnswer, ReviewReport, UploadKind, UploadTicket,
 } from "./types";
 
 export interface ApiClient {
@@ -57,6 +57,8 @@ export interface ApiClient {
   addDocuments(caseId: string, documents: Record<string, unknown>[], caseFacts?: CaseFacts): Promise<ReviewReport | null>;
   /** POST /cases/{id}/estimates — requestUpload(kind=estimate)로 올린 견적서 PDF의 storage_path. BE가 Storage에서 받아 자동 추출·재산정한다 */
   uploadEstimate(caseId: string, storagePath: string, partyId: string): Promise<ReviewReport | null>;
+  /** GET /cases/{id}/partner-medical — 시연용 가데이터: 제휴 병원이 보내온 것으로 보이는 진료 정보(다친 사람마다). 저장하지 않는다 */
+  getPartnerMedical(caseId: string): Promise<PartnerMedicalRecord[]>;
   /** PATCH /cases/{id}/agreed-fault — 협의 과실 입력·해제 → 새 보고서(다시 확인 완료 필요) */
   setAgreedFault(caseId: string, input: AgreedFaultInput): Promise<ReviewReport>;
   /** GET /admin/overview — 담당자 목록(업무량)과 현황 숫자. 관리자가 아니면 403, 접수·배정 표가 없으면 503 dispatch_db_not_ready */
@@ -195,6 +197,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
       request("POST", `${caseUrl(caseId)}/documents`, { body: { documents, case_facts: caseFacts ?? null } }),
     uploadEstimate: (caseId, storagePath, partyId) =>
       request("POST", `${caseUrl(caseId)}/estimates`, { body: { storage_path: storagePath, party_id: partyId } }),
+    getPartnerMedical: (caseId) => request("GET", `${caseUrl(caseId)}/partner-medical`),
     setAgreedFault: (caseId, input) => request("PATCH", `${caseUrl(caseId)}/agreed-fault`, { body: input }),
     getAdminOverview: () => request("GET", "/admin/overview"),
     listAdminIntakes: (filter = {}) => {

@@ -7,7 +7,7 @@ import { isSampleSource } from "@/features/cases/case-source";
 import sample from "@/fixtures/reports.json";
 import { ApiRequestError, asApiError } from "@/lib/api/client";
 import { createServerApiClient } from "@/lib/api/server";
-import type { ApiError, ClaimPackage, ReviewReport } from "@/lib/api/types";
+import type { ApiError, ClaimPackage, PartnerMedicalRecord, ReviewReport } from "@/lib/api/types";
 
 const REPORTS = sample.reports as unknown as ReviewReport[];
 const CLAIMS = sample.claims as unknown as { case_id: string; report_version: number; package: ClaimPackage }[];
@@ -26,6 +26,20 @@ export async function getReport(caseId: string, version: number): Promise<{ repo
     if (error.status === 401) toLogin(`/cases/${encodeURIComponent(caseId)}/reports/${version}`);
     if (error.status === 404) return { report: null, error: null };
     return { report: null, error: asApiError(error) };
+  }
+}
+
+/**
+ * 시연용 가데이터 — 제휴 병원이 보내온 것으로 보이는 진료 정보(BE GET /cases/{id}/partner-medical). 실제 연동이 아니다.
+ * 견본 모드와 조회 실패는 빈 목록이다 — 보고서 화면을 막지 않는다(담당자가 직접 넣을 수 있다).
+ */
+export async function getPartnerMedical(caseId: string): Promise<PartnerMedicalRecord[]> {
+  if (isSampleSource()) return [];
+  try {
+    return await createServerApiClient().getPartnerMedical(caseId);
+  } catch (error) {
+    if (!(error instanceof ApiRequestError)) throw error;
+    return [];
   }
 }
 

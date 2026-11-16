@@ -9,7 +9,7 @@
  * 모르는 값은 0이 아니라 null로 보낸다. 입력이 없는 사건은 liability가 없고, 그때는 입력 버튼만 보인다.
  */
 import { useRef, useState, type ReactNode } from "react";
-import type { InjuredPersonDoc, InjuryResult, LiabilityFlag, LiabilityResult, LiabilityStatus, PropertyDamageInputDoc } from "@/lib/api/types";
+import type { InjuredPersonDoc, InjuryResult, LiabilityFlag, LiabilityResult, LiabilityStatus, PartnerMedicalRecord, PropertyDamageInputDoc } from "@/lib/api/types";
 import { Button, Input, Select, Spinner } from "@/ui/controls";
 
 const won = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${v.toLocaleString("ko-KR")}원`);
@@ -32,12 +32,15 @@ export type MedicalKind = "medical_certificate" | "medical_bill";
 
 export function LiabilityBlock({
   liability,
+  partnerMedical = [],
   busy,
   onSave,
   onEstimate,
   onMedical,
 }: {
   liability: LiabilityResult | null | undefined;
+  /** 시연용 가데이터 — 제휴 병원이 보내온 것으로 보이는 진료 정보. 아직 반영하지 않은 사람만 수신함에 보인다 */
+  partnerMedical?: PartnerMedicalRecord[];
   busy: boolean;
   onSave: (docs: (InjuredPersonDoc | PropertyDamageInputDoc)[]) => void;
   onEstimate: (file: File) => void;
@@ -47,6 +50,8 @@ export function LiabilityBlock({
   const injuries = liability?.injuries ?? [];
   const allDraft = injuries.length > 0 && injuries.every((i) => i.status === "draft");
   const [adding, setAdding] = useState(false);
+  // 제휴 병원 수신 중 아직 대인 입력에 없는 사람
+  const received = partnerMedical.filter((r) => !injuries.some((p) => p.person_id === r.person_id));
 
   return (
     <section aria-label="대물 · 대인 1차 판정" className="rounded-card border border-line bg-surface">
@@ -88,6 +93,7 @@ export function LiabilityBlock({
         {/* 대인 */}
         <div>
           <SubHead title="대인 · 다친 사람" />
+          {received.length > 0 && <PartnerInbox records={received} busy={busy} onApply={() => onSave(received.map(toInjuredDoc))} />}
           {injuries.length === 0 && !adding && <p className="mt-2 text-body text-ink-muted">아직 넣은 사람이 없어요.</p>}
           <ul className="mt-2 flex flex-col gap-3">
             {injuries.map((p) => (
@@ -127,6 +133,51 @@ export function LiabilityBlock({
         {liability?.notice && <p className="text-caption text-ink-faint">{liability.notice}</p>}
       </div>
     </section>
+  );
+}
+
+/** 제휴 병원 수신 1건 → 대인 입력. 받은 값 그대로 옮긴다(담당자가 반영한 뒤 「고치기」로 바꿀 수 있다). */
+const toInjuredDoc = (r: PartnerMedicalRecord): InjuredPersonDoc => ({
+  kind: "injured_person",
+  document_id: newId("injury"),
+  person_id: r.person_id,
+  label: r.label,
+  grade: r.grade,
+  treatment_cost: r.treatment_cost,
+  is_driver: r.is_driver,
+  received_at: now(),
+});
+
+/**
+ * 제휴 병원 수신함(시연용 가데이터) — 병원이 보내온 것으로 보이는 급수 · 치료관계비를 보여 주고, 담당자가 확인해 대인 입력으로 반영한다.
+ * 실제 병원 연동이 아니다(BE GET /cases/{id}/partner-medical).
+ */
+function PartnerInbox({ records, busy, onApply }: { records: PartnerMedicalRecord[]; busy: boolean; onApply: () => void }) {
+  return (
+    <div className="mt-2 rounded-control border border-line bg-surface-muted px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-body font-semibold">
+          제휴 병원 수신 <span className="tabular-nums">{records.length}</span>건
+          <span className="ml-2 text-caption font-normal text-ink-muted">시연용 가데이터</span>
+        </p>
+        <Button size="sm" disabled={busy} onClick={onApply}>
+          확인하고 반영
+        </Button>
+      </div>
+      <ul className="mt-2 flex flex-col gap-2">
+        {records.map((r) => (
+          <li key={r.person_id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-body">
+            <span className="font-semibold">{r.label}</span>
+            <span className="text-ink-muted">{r.hospital}</span>
+            <span className="text-caption text-ink-muted tabular-nums">
+              {r.treated_from} ~ {r.treated_to}
+            </span>
+            <span className="tabular-nums">{r.grade}급</span>
+            <span className="font-mono tabular-nums">{won(r.treatment_cost)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
