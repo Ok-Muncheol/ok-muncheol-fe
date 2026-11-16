@@ -278,7 +278,8 @@ function AssignForm({ intake, staff, onDone }: { intake: IntakeView; staff: Staf
             ))}
           </Select>
         </Field>
-        <Field id={`${id}-reason`} label="까닭" hint="배정 이력에 남습니다." required>
+        {/* 까닭 칸에 안내 글을 두지 않는다 — 한 줄 배치(아래 끝 맞춤)에서 이 칸만 안내 글만큼 입력칸이 올라간다. 적은 까닭은 줄의 상세에 보인다 */}
+        <Field id={`${id}-reason`} label="까닭" required>
           <Input id={`${id}-reason`} value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} placeholder="예: 담당자 부재로 이관" />
         </Field>
         <Button type="submit" disabled={!ready || sending}>
