@@ -14,7 +14,7 @@
  * 견본 모드는 BE에 보내지 않고 진행을 흉내 낸 뒤 견본 결과를 보인다.
  */
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { FAULT_RATIO_HEAD_ID, FaultResult } from "@/features/judgment/fault-result";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
@@ -96,6 +96,8 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   /** 카드 맨 아래 확정 줄이 화면에 보인다(처음엔 보인다고 둔다 — 아래 버튼이 깜빡이지 않게) */
   const [footerInView, setFooterInView] = useState(true);
   const judgmentKey = useRef<string | null>(null);
+  // 답만 보내고 다시 읽을 때(같은 판단이 이어지거나 다른 칸을 또 물을 때) — 다시 읽기가 끝나면 로딩을 끈다
+  const [reloading, startReload] = useTransition();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const runForCard = run && run.fact_card_version === card.version ? run : null;
@@ -121,7 +123,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   }, [live, running, router]);
 
   // 카드 저장 · 확정도 판단 준비라 따로 알리지 않고 처음부터 「과실 비율을 판단하고 있어요」로 보인다.
-  const judging = busy !== null || running;
+  const judging = busy !== null || running || reloading;
   const runFailed = !judging && runForCard?.status === "failed";
   const showArea = judging || runFailed || result !== null;
 
@@ -212,6 +214,12 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
     );
   }
 
+  /** 판단 상태를 BE에서 다시 읽는다. 다시 읽는 동안만 로딩(reloading)이고, 끝나면 결과나 새 질문이 보인다. */
+  function reload() {
+    setBusy(null);
+    startReload(() => router.refresh());
+  }
+
   async function confirmAndJudge() {
     setFailure(null);
     if (!live) {
@@ -234,8 +242,9 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
             unknown: value === null,
           });
         }
-        // 모두 「모르겠어요」면 같은 판단이 이어서 끝난다 — 다시 읽으면 결과가 보인다.
-        if (last && last.next_action !== "update_fact_card") return router.refresh();
+        // 모두 「모르겠어요」면 같은 판단이 이어서 끝나거나, 남은 도표를 가르는 다른 칸을 또 묻는다.
+        // 다른 칸을 물으면 판단 ID·상태가 그대로라 화면이 새로 그려지지 않으니 여기서 로딩을 끈다.
+        if (last && last.next_action !== "update_fact_card") return reload();
       }
       // 미리 골라 둔 AI 값 그대로 확인 — 값이 있는 확인 필요 칸은 저장해서 확인으로 바꾼다(BE는 needs_review 칸이 남으면 확정을 막는다).
       const fields = acceptAiValues(draft);
@@ -256,7 +265,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
       router.refresh();
     } catch (caught) {
       const error = asApiError(caught);
-      if (error.code === "judgment_in_progress") return router.refresh();
+      if (error.code === "judgment_in_progress") return reload();
       setFailure({
         message: friendly(error),
         conflict: error.code === "version_conflict",
@@ -278,7 +287,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
       router.refresh();
     } catch (caught) {
       const error = asApiError(caught);
-      if (error.code === "judgment_in_progress") return router.refresh();
+      if (error.code === "judgment_in_progress") return reload();
       setFailure({
         message: friendly(error),
         conflict: error.code === "version_conflict",
