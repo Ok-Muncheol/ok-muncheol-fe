@@ -119,8 +119,11 @@ function sizeText(bytes: number): string {
  * 고른 영상 미리보기. 블랙박스 영상은 MPEG-4 Part 2(mp4v) 코덱이 흔한데 Chrome·Edge는 이걸 재생하지 못한다
  * (팀 데이터셋 AI Hub 영상이 모두 mp4v다). 그런 영상은 까만 화면 대신 미리 볼 수 없다고 알린다 — 분석(OpenCV)은 그대로 읽는다.
  * 영상 트랙 없이 소리만 열리면(videoWidth 0) 같은 경우로 본다.
+ *
+ * preload: 고른 파일(이 기기의 blob)은 "metadata"로 첫 장면과 재생 가능 여부를 바로 본다.
+ * 서버 영상(서명 URL)은 "none" — 재생을 눌렀을 때만 받아 Storage 전송량을 쓰지 않는다.
  */
-function VideoPreview({ src }: { src: string }) {
+function VideoPreview({ src, preload = "metadata" }: { src: string; preload?: "metadata" | "none" }) {
   const [playable, setPlayable] = useState(true);
   if (!playable) {
     return (
@@ -136,7 +139,7 @@ function VideoPreview({ src }: { src: string }) {
       controls
       muted
       playsInline
-      preload="metadata"
+      preload={preload}
       onError={() => setPlayable(false)}
       onLoadedMetadata={(e) => {
         if (e.currentTarget.videoWidth === 0) setPlayable(false);
@@ -154,7 +157,7 @@ function UploadedVideo({ src }: { src: string | null }) {
   if (src) {
     return (
       <div className="overflow-hidden rounded-card border border-line">
-        <VideoPreview src={src} />
+        <VideoPreview src={src} preload="none" />
       </div>
     );
   }

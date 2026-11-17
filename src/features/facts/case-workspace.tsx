@@ -471,6 +471,7 @@ function BottomBar({ children }: { children: ReactNode }) {
 /**
  * 왼쪽 영상 칸 — 분석이 만든 H.264 미리보기 영상이다.
  * 보기 주소는 BE GET /cases/{id}/evidence(1시간 서명 URL — 화면을 열 때마다 새로 읽는다)이고, 없으면(견본 · 파일 없음) 빈 자리다.
+ * 영상은 재생을 눌렀을 때만 받는다(preload="none") — 화면을 열 때마다 주소가 새로 나와 브라우저 캐시가 듣지 않고, 미리 받으면 Storage 전송량이 쌓인다.
  * 근거 장면 목록은 두지 않는다 — 카드의 근거 장면은 VLM에 보내는 고정 12프레임(모든 영상에서 같은 시각)이고
  * 모든 칸이 같은 12장을 가리켜 칸별 근거가 아니다(BE workers/vision/prompts.py FRAMES_V02). 장면 이동은 영상 재생 막대로 한다.
  */
@@ -479,7 +480,7 @@ function Media({ evidence }: { evidence: EvidenceView | null }) {
   return (
     <aside aria-label="영상" className="lg:sticky lg:top-8">
       {preview ? (
-        <video src={preview} controls muted playsInline preload="metadata" className="aspect-video w-full rounded-card bg-black" />
+        <video src={preview} controls muted playsInline preload="none" className="aspect-video w-full rounded-card bg-black" />
       ) : (
         <div className="flex aspect-video items-center justify-center rounded-card bg-surface-muted text-caption text-ink-muted">영상 미리보기가 아직 없어요</div>
       )}
