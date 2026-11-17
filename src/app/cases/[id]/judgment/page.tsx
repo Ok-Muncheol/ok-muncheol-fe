@@ -14,6 +14,7 @@ import { getEvidence, getFactCard } from "@/features/facts/fact-source";
 import { getLatestJudgmentRun } from "@/features/judgment/judgment-source";
 import { isBeforeCard } from "@/lib/cases/intake";
 import { isFromVideo } from "@/lib/facts/card";
+import { isDone } from "@/lib/cases/stages";
 
 export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgment">) {
   const { id } = await props.params;
@@ -60,6 +61,7 @@ export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgmen
         loadError={error}
         reportHref={reportVersion !== null ? `${base}/reports/${reportVersion}` : null}
         evidence={evidence}
+        approved={summary ? isDone(summary) : false}
       />
     </>
   );
