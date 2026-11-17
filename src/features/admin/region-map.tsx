@@ -6,7 +6,7 @@
  * 카드에는 보이는 제목·설명을 두지 않는다. 제목 「오늘 지역별 접수」는 화면 낭독기가 읽는 숨은 제목(sr-only h2)으로만 남긴다.
  * 지도는 눈으로 보는 그림이라 화면 낭독기·키보드에서는 감추고(aria-hidden · tabIndex -1) 같은 값을 목록이 읽힌다.
  * 경계는 korea-map.ts(통계청 SGIS 2018 · 공공누리 제1유형 — 출처를 지도 아래에 적는다)이고 라벨 자리는 아래 LABELS에서 손으로 맞췄다.
- * 새 접수가 들어오면 그 지역 자리에 접수 시각부터 10초 동안 물결이 퍼진다(live-arrivals.tsx — 관제 화면이 몇 초마다 최근 접수를 읽는다).
+ * 새 접수가 들어오면 그 지역 자리에 화면에 나타난 때부터 10초 동안 물결이 퍼지고 면이 빛난다(live-arrivals.tsx — 관제 화면이 몇 초마다 최근 접수를 읽는다).
  */
 import Link from "next/link";
 import { type RegionToday, binLabel, byCount } from "@/lib/admin/view";

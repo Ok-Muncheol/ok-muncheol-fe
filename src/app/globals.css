@@ -222,17 +222,30 @@
 }
 
 /*
- * 관제 지도의 새 접수 물결(src/features/admin/live-arrivals.tsx) — 물방울이 떨어진 잔잔한 물처럼 동심원이 천천히 퍼지며 옅어지고(ok-ripple),
- * 끝날 때는 다 같이 옅어진다(ok-ripple-out). 움직임 줄이기 설정에서는 쓰지 않는다(motion-safe).
+ * 관제 지도의 새 접수 물결(src/features/admin/live-arrivals.tsx) — 물방울이 떨어진 잔잔한 물처럼 동심원이 천천히 퍼지며 옅어지고(ok-ripple —
+ * 퍼지는 동안 절반까지는 진하게 남아 눈에 띈다), 그 지역 면은 옥색으로 밝아졌다 어두워진다(ok-glow). 끝날 때는 다 같이 옅어진다(ok-ripple-out).
+ * 움직임 줄이기 설정에서는 쓰지 않는다(motion-safe).
  */
 @keyframes ok-ripple {
-  from {
-    opacity: 0.85;
-    transform: scale(0.12);
+  0% {
+    opacity: 1;
+    transform: scale(0.1);
   }
-  to {
+  55% {
+    opacity: 0.8;
+  }
+  100% {
     opacity: 0;
     transform: scale(1);
+  }
+}
+@keyframes ok-glow {
+  0%,
+  100% {
+    opacity: 0.12;
+  }
+  50% {
+    opacity: 0.45;
   }
 }
 @keyframes ok-ripple-out {
