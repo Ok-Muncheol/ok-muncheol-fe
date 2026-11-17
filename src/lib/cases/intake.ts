@@ -79,3 +79,29 @@ export function todayInKorea(now: Date = new Date()): string {
 export function isBeforeCard(stage: string): boolean {
   return stage === "intake" || stage === "analysis";
 }
+
+/** 분석 중에 다시 읽은 사건(BE GET /cases/{id})에서 보는 부분. */
+export type AnalysisWatchState = {
+  stage: string;
+  task_status: string | null;
+  analysis?: { status: string } | null;
+  versions?: { fact_card_version: number } | null;
+};
+
+/**
+ * 영상 분석 중에 다시 읽은 사건으로 다음 행동을 가른다.
+ * - done: 분석이 만든 사실 카드가 생겼다(카드 버전이 분석을 시작할 때의 baseVersion보다 크다) — 판단 화면으로 간다.
+ * - failed: 분석이 실패했다 — 이유를 보이고 다시 시도하게 한다.
+ * - wait: 아직이다. 다음 차례에 다시 읽는다.
+ * 단계만으로 가르지 않는다. 카드가 이미 있는 사건(「영상 다시 올리기」 · 영상 없이 진행한 사건에 영상 올리기)은 분석 접수가 조회보다
+ * 늦으면 단계가 아직 사실 카드 · 판단 · 검토 보고서라서, 단계만 보면 옛 카드로 판단 화면에 넘어가 버린다(검토 보고서 단계 사건은
+ * BE가 새 분석을 보고서보다 먼저 보기 전까지 분석 중에도 report였다).
+ * 그런 사건은 분석이 실패하면 BE가 이전 단계로 되돌린다(이전 판단 그대로 — BE app/api/cases.py summarize). 그래서 분석 단계를
+ * 한 번 본 뒤(seenAnalysis) 카드 버전이 그대로인 채 카드가 있는 단계로 돌아왔으면 실패다. 아직 못 봤으면 접수 전일 수 있어 기다린다.
+ */
+export function watchAnalysis(state: AnalysisWatchState, baseVersion: number, seenAnalysis: boolean): "done" | "failed" | "wait" {
+  if (isBeforeCard(state.stage)) return state.task_status === "failed" || state.analysis?.status === "failed" ? "failed" : "wait";
+  const version = state.versions?.fact_card_version;
+  if (version === undefined || version > baseVersion) return "done";
+  return seenAnalysis ? "failed" : "wait";
+}

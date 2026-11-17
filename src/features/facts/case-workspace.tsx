@@ -10,15 +10,21 @@
  * 판단 중 구분 질문이 오면 위 카드의 그 칸이 맨 위로 올라오고 질문의 보기만 열린다 — 고른 뒤 확정 버튼을 누르면
  * 답변을 보내고, 값으로 답했으면 카드에 반영·재확정·재판단까지 이어서 한다.
  * 확인 완료한 카드는 잠긴다. 「수정하기」로 열어 고치면 아래 결과는 이전 카드 기준으로 흐려진다.
+ * 확정한 카드를 「초기화」하면 판단 단계부터 다시 한다 — 칸을 AI 원값으로 되돌려 다시 고르게 하고, 머리(CaseHeader)의 진행 단계 한 줄이
+ * 판단을 지금 단계로, 검토 보고서를 아직 오지 않은 단계로 그린다(restartFrom). 그래서 머리를 사건 화면이 아니라 여기서 그린다.
+ * 「수정 취소」하면 원래 단계로 돌아가고, 다시 확정해 판단이 끝나면 BE 단계(새 판정 · 새 보고서)를 따른다.
  * 판단 접수(POST …/judgments)는 판단을 끝까지 돌린 뒤 응답한다. 실행 중인 판단은 몇 초마다 다시 읽는다.
  * 견본 모드는 BE에 보내지 않고 진행을 흉내 낸 뒤 견본 결과를 보인다.
  */
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { CaseHeader, type CaseHeadInfo } from "@/features/cases/case-header";
+import type { StepperCase } from "@/features/cases/case-stepper";
 import { FAULT_RATIO_HEAD_ID, FaultResult } from "@/features/judgment/fault-result";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
 import type { AnswerResult, ApiError, EvidenceView, FactCard, FactField, JudgmentResult, JudgmentRunView, JudgmentTaskView, PartyMapping } from "@/lib/api/types";
+import { restartFrom } from "@/lib/cases/stages";
 import {
   acceptAiValues,
   buildCardPatch,
@@ -41,6 +47,9 @@ import { FACT_CARD_FOOTER_ID, FactCardPanel } from "./fact-card-panel";
 
 type Props = {
   caseId: string;
+  /** 머리(CaseHeader)에 그릴 사건 정보와 진행 단계. progress가 없으면(사건 요약을 못 읽음) 진행 단계 한 줄을 그리지 않는다 */
+  head: CaseHeadInfo;
+  progress: StepperCase | null;
   live: boolean;
   hasVideo: boolean;
   card: FactCard;
@@ -71,7 +80,7 @@ function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, reportHref, evidence = null, approved = false }: Props) {
+export function CaseWorkspace({ caseId, head, progress, live, hasVideo, card, run, loadError, reportHref, evidence = null, approved = false }: Props) {
   const router = useRouter();
   // 이미 값으로 답한 구분 질문은 그 값을 카드에 미리 채운다 — 확인 완료 때 카드에 반영·재확정한다(카드에 없던 칸도, withAnswers).
   const [draft, setDraft] = useState(() => {
@@ -104,6 +113,9 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
 
   /** 「초기화」 횟수 — 바뀌면 카드 칸을 처음 상태로 다시 그린다 */
   const [resetKey, setResetKey] = useState(0);
+  /** 확정한 카드를 「초기화」해 판단 단계부터 다시 하는 중 — 진행 단계 한 줄이 판단을 지금 단계로, 검토 보고서를 아직 오지 않은 단계로 그린다.
+   *  수정 상태가 닫히면(수정 취소 · 판단 끝) 풀린다 */
+  const [restarted, setRestarted] = useState(false);
   const [sampleResult, setSampleResult] = useState<JudgmentResult | null>(null);
   const [resultInView, setResultInView] = useState(false);
   /** 비율 제목 줄이 화면 위로 지나갔다(결과를 읽으며 아래로 내려왔다) */
@@ -203,19 +215,30 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
     scrollTo("fact-card");
   }
 
-  /** 「초기화」 — 고른 값을 한 번에 되돌린다(resetFields). 확정한 카드는 수정 상태로 열어 다시 고르게 한다. */
+  /** 수정 상태를 닫는다 — 「초기화」로 되돌려 둔 진행 단계 표시도 원래대로 둔다. */
+  function closeEdit() {
+    setEditing(false);
+    setRestarted(false);
+  }
+
+  /**
+   * 「초기화」 — 고른 값을 한 번에 되돌린다(resetFields). 확정한 카드는 수정 상태로 열어 다시 고르게 하고, 판단 단계부터 다시 한다(restarted).
+   * 확정 전 카드는 이미 판단 단계의 처음이라 고른 값만 되돌린다.
+   */
   function resetCard() {
     setDraft(resetFields(card));
     setTouched(new Set());
     setFailure(null);
     setResetKey((n) => n + 1);
-    if (confirmed) setEditing(true);
+    if (!confirmed) return;
+    setEditing(true);
+    setRestarted(true);
   }
 
   function cancelEdit() {
     setDraft(card.fields);
     setTouched(new Set());
-    setEditing(false);
+    closeEdit();
     setFailure(null);
   }
 
@@ -225,7 +248,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
       setTimeout(() => setBusy("judging"), 700),
       setTimeout(() => {
         setSampleResult(sampleJudgment(card));
-        setEditing(false);
+        closeEdit();
         setBusy(null);
       }, 3200),
     );
@@ -247,7 +270,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
     judgmentKey.current = null;
     reload();
     if (workspaceKey(judged, view) !== workspaceKey(card, run)) return;
-    setEditing(false);
+    closeEdit();
     setTouched(new Set());
     setUnchanged(true);
   }
@@ -380,6 +403,8 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
 
   return (
     <>
+      {/* 머리는 접수 · 검토 보고서 화면과 같은 모양이다. 「초기화」로 판단 단계부터 다시 하는 동안은 검토 보고서가 아직 오지 않은 단계다. */}
+      <CaseHeader info={head} progress={progress && restartFrom(progress, restarted ? "judgment" : null)} viewing="judgment" />
       {loadError && <p className="mb-4 text-body text-danger">판단 기록을 불러오지 못했어요. {loadError.message}</p>}
       {/* 승인된 사건도 고칠 수 있다 — 고치면 새 판단 · 새 보고서가 생기고 다시 승인해야 한다 */}
       {approved && (editing || dirty) && busy === null && (

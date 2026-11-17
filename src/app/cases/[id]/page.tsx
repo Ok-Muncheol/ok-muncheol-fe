@@ -1,13 +1,13 @@
 /**
  * A: 사건의 접수 화면 — 진행 단계 한 줄의 「접수」와 보드의 접수 열 사건이 여기로 온다. 단계와 상관없이 늘 같은 화면이다.
- * 머리(CaseHeader — 판단 · 검토 보고서 화면과 같은 모양) 아래에 영상 → 상태 한 줄 → 사건 정보 상자(CaseIntake)를 둔다.
+ * 머리(CaseHeader — 판단 · 검토 보고서 화면과 같은 모양) 아래에 영상 → 상태 한 줄 → 사건 정보 상자를 둔다. 머리까지 CaseIntake가 그린다 —
+ * 「영상 다시 올리기」로 접수 단계부터 다시 하면 머리의 진행 단계 한 줄도 접수부터 다시 그려야 해서다.
  * 아직 영상 단계면 올리기 · 분석 중 · 실패(영상 없이 진행도 여기서)이고, 분석이 끝난 사건은 올린 영상과 다음 단계 버튼이다.
  * 영상 없이 진행한 사건은 다음 단계 버튼과 함께 영상을 올릴 칸을 둔다 — 카드가 영상으로 만든 것인지 카드를 읽어 가른다.
  * 사건 요약은 견본 또는 BE GET /cases/{id}(case-source)로 읽어 새로고침해도 같은 상태로 그린다.
  */
 import Link from "next/link";
 import { CaseNo } from "@/components/case-no";
-import { CaseHeader } from "@/features/cases/case-header";
 import { CaseIntake } from "@/features/cases/case-intake";
 import { getCaseSummary, isSampleSource } from "@/features/cases/case-source";
 import { getEvidence, getFactCard } from "@/features/facts/fact-source";
@@ -40,24 +40,21 @@ export default async function CasePage(props: PageProps<"/cases/[id]">) {
   const hasVideo = Boolean(evidence?.preview_url) || (card ? isFromVideo(card) : true);
 
   return (
-    <>
-      <CaseHeader info={{ caseId: summary.case_id, accidentDate: summary.accident_date, assignedAt: summary.created_at }} progress={summary} viewing="intake" />
-      <CaseIntake
-        sample={isSampleSource()}
-        existing={{
-          caseId: summary.case_id,
-          stage: summary.stage,
-          accidentDate: summary.accident_date,
-          assignedAt: summary.created_at,
-          taskStatus: summary.task_status,
-          approved: isDone(summary),
-          error: summary.analysis?.error ?? null,
-          updatedAt: summary.updated_at,
-          versions: summary.versions,
-          videoUrl: evidence?.preview_url ?? null,
-          hasVideo,
-        }}
-      />
-    </>
+    <CaseIntake
+      sample={isSampleSource()}
+      existing={{
+        caseId: summary.case_id,
+        stage: summary.stage,
+        accidentDate: summary.accident_date,
+        assignedAt: summary.created_at,
+        taskStatus: summary.task_status,
+        approved: isDone(summary),
+        error: summary.analysis?.error ?? null,
+        updatedAt: summary.updated_at,
+        versions: summary.versions,
+        videoUrl: evidence?.preview_url ?? null,
+        hasVideo,
+      }}
+    />
   );
 }

@@ -10,6 +10,7 @@ import {
   countByColumn,
   currentStatus,
   listByIntake,
+  restartFrom,
   stageHref,
   stepHref,
   summarizeBoard,
@@ -46,6 +47,27 @@ test("진행 단계 한 줄은 보드와 같은 세 단계이고, 단계를 누�
   assert.equal(stepHref(at("report", 2), "report"), "/cases/SYN-1/reports/2");
   assert.equal(stepHref(at("intake"), "report"), "/cases/SYN-1/reports");
   assert.equal(stepHref(make({ case_id: "a/b" }), "report"), "/cases/a%2Fb/reports");
+});
+
+test("restartFrom은 사건을 그 단계의 첫 단계로 되돌려 뒤 단계를 아직 오지 않은 단계로 만들고, 앞으로 당기지는 않는다", () => {
+  const at = (stage) => make({ stage, versions: { report_version: 2 } });
+  // 「영상 다시 올리기」 — 사실 카드·판단·검토 보고서까지 간 사건이 접수부터 다시 한다
+  assert.deepEqual(["facts", "judgment", "report"].map((stage) => restartFrom(at(stage), "intake").stage), ["intake", "intake", "intake"]);
+  assert.deepEqual(["facts", "judgment", "report"].map((stage) => columnIndex(restartFrom(at(stage), "intake").stage)), [0, 0, 0]);
+  // 「초기화」 — 검토 보고서까지 간 사건이 판단부터 다시 한다(판단 열의 첫 단계는 사실 카드)
+  assert.equal(restartFrom(at("report"), "judgment").stage, "facts");
+  assert.equal(columnIndex(restartFrom(at("report"), "judgment").stage), 1);
+  // 이미 그 단계이거나 그보다 앞이면 그대로다 — 같은 객체를 돌려준다
+  assert.deepEqual(["intake", "analysis"].map((stage) => restartFrom(at(stage), "intake").stage), ["intake", "analysis"]);
+  assert.deepEqual(["intake", "analysis", "facts", "judgment"].map((stage) => restartFrom(at(stage), "judgment").stage), ["intake", "analysis", "facts", "judgment"]);
+  assert.deepEqual(["intake", "facts", "report"].map((stage) => restartFrom(at(stage), "report").stage), ["intake", "facts", "report"]);
+  const kept = at("judgment");
+  assert.equal(restartFrom(kept, "judgment"), kept);
+  // 다시 시작하지 않았으면(null) 그대로다
+  const untouched = at("report");
+  assert.equal(restartFrom(untouched, null), untouched);
+  // 단계만 바꾸고 나머지(사건 ID · 버전)는 그대로 둔다
+  assert.deepEqual(restartFrom(at("report"), "intake"), { ...at("report"), stage: "intake" });
 });
 
 test("currentStatus는 승인 → 진행 중 작업 → 판정 → 완료 순으로 고른다", () => {
