@@ -214,7 +214,8 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
     );
   }
 
-  /** 판단 상태를 BE에서 다시 읽는다. 다시 읽는 동안만 로딩(reloading)이고, 끝나면 결과나 새 질문이 보인다. */
+  /** 판단 상태를 BE에서 다시 읽는다. 다시 읽는 동안만 로딩(reloading)이고, 끝나면 결과·새 질문이 보인다.
+   *  판단이 아직 실행 중이면 running이 로딩과 4초마다 다시 읽기를 이어 간다. */
   function reload() {
     setBusy(null);
     startReload(() => router.refresh());
@@ -262,7 +263,9 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
       judgmentKey.current ??= newIdempotencyKey();
       await api.startJudgment(caseId, current.version, judgmentKey.current);
       judgmentKey.current = null;
-      router.refresh();
+      // 같은 카드로 이미 만든 판단이 있으면 BE가 그 판단을 그대로 돌려준다(판단 ID·상태가 같아 화면이
+      // 새로 그려지지 않음). 그래도 로딩이 남지 않게 끄고 다시 읽는다. 실행 중이면 running이 로딩을 잇는다.
+      reload();
     } catch (caught) {
       const error = asApiError(caught);
       if (error.code === "judgment_in_progress") return reload();
@@ -284,7 +287,9 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
       judgmentKey.current ??= newIdempotencyKey();
       await createBrowserApiClient().startJudgment(caseId, card.version, judgmentKey.current);
       judgmentKey.current = null;
-      router.refresh();
+      // 같은 카드로 이미 만든 판단이 있으면 BE가 그 판단을 그대로 돌려준다(판단 ID·상태가 같아 화면이
+      // 새로 그려지지 않음). 그래도 로딩이 남지 않게 끄고 다시 읽는다. 실행 중이면 running이 로딩을 잇는다.
+      reload();
     } catch (caught) {
       const error = asApiError(caught);
       if (error.code === "judgment_in_progress") return reload();
