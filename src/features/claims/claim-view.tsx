@@ -15,8 +15,10 @@ const when = (iso: string) => {
 };
 const names = (v: unknown): string[] => (Array.isArray(v) ? v.map((x) => (typeof x === "string" ? x : String((x as { 조항?: string })?.조항 ?? x))) : []);
 
+/** 청구번호 — 청구서 맨 위와 화면 제목(PDF 이름)이 같이 쓴다. BE 행 번호가 없으면 「사건 ID-C판」이다. */
+export const claimNumber = (claim: ClaimPackage) => claim.rows[0]?.claim_no ?? `${claim.case_id}-C${claim.package_version}`;
+
 export function ClaimView({ claim }: { claim: ClaimPackage }) {
-  const row = claim.rows[0];
   const basis = names(claim.basis["근거 조항"]);
   const evidence = claim.evidence as { document_id?: string; title?: string; doc_type?: string }[];
   return (
@@ -25,7 +27,7 @@ export function ClaimView({ claim }: { claim: ClaimPackage }) {
         <div>
           <p className="text-caption text-ink-muted">구상 청구서</p>
           <h2 className="mt-0.5 text-title font-bold tracking-tight">
-            <CaseNo id={row?.claim_no ?? `${claim.case_id}-C${claim.package_version}`} />
+            <CaseNo id={claimNumber(claim)} />
           </h2>
           <p className="mt-1 text-caption text-ink-muted">
             검토 보고서 v{claim.report_version} 기준 · 청구서 {claim.package_version}판 · {when(claim.created_at)}

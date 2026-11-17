@@ -7,6 +7,7 @@
  * 접어도 패널 내용은 마운트한 채 숨긴다 — 질의응답의 질문·답 같은 화면 상태가 사라지지 않는다.
  * 접힘 여부는 cookieName 쿠키에 남긴다 — 서버가 첫 화면을 같은 모양으로 그리고(defaultOpen) 다른 보고서로 가도 유지된다.
  * 좁은 화면에서는 늘 펼친 채 본문 아래에 둔다. 펼친 패널은 머리글 아래에 붙고 길면 패널 안에서 넘긴다.
+ * 인쇄하면 패널은 빠지고 본문만 종이 폭 전체로 나온다(print:hidden · print:block).
  */
 import { type ReactNode, useState } from "react";
 
@@ -41,9 +42,9 @@ export function SidePanelLayout({
   }
 
   return (
-    <div className={`grid items-start gap-6 ${open ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_auto]"}`}>
+    <div className={`grid items-start gap-6 print:block! ${open ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_auto]"}`}>
       <div className="min-w-0">{main}</div>
-      <aside aria-label={label} className="relative min-w-0 lg:sticky lg:top-6">
+      <aside aria-label={label} className="relative min-w-0 lg:sticky lg:top-6 print:hidden">
         <div id={panelId} className={open ? undefined : "lg:hidden"}>
           <button
             id={`${id}-collapse`}
