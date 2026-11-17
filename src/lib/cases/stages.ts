@@ -67,6 +67,18 @@ export function stepHref(c: Pick<CaseSummary, "case_id" | "stage" | "versions">,
   }
 }
 
+/**
+ * 「이 단계부터 다시」 — 접수 화면의 「영상 다시 올리기」, 판단 화면의 「초기화」를 누르면 진행 단계 한 줄이 사건을 그 단계(column)의
+ * 첫 단계로 되돌려 그린다. 그 단계가 지금 단계가 되고 뒤 단계는 아직 오지 않은 단계라 누를 수 없다.
+ * 사건이 이미 그 단계이거나 그보다 앞이면 그대로다(앞으로 당기지 않는다). column이 null이면 다시 시작하지 않은 것이라 그대로다.
+ * 화면 표시만 바꾼다 — BE 단계는 새 영상 분석을 접수하거나 카드를 다시 확정해 판단할 때 따라온다(BE app/api/cases.py summarize).
+ */
+export function restartFrom<T extends { stage: CaseStage }>(c: T, column: BoardColumnKey | null): T {
+  if (column === null) return c;
+  const target = BOARD_COLUMNS.findIndex((col) => col.key === column);
+  return columnIndex(c.stage) > target ? { ...c, stage: BOARD_COLUMNS[target].stages[0] } : c;
+}
+
 /** 보드 카드를 누르면 가는 곳 — 그 사건의 현재 단계 화면. 사실 카드 단계도 판단 화면이다(사실 카드를 합쳤다). */
 export function stageHref(c: Pick<CaseSummary, "case_id" | "stage" | "versions">): string {
   const base = `/cases/${encodeURIComponent(c.case_id)}`;

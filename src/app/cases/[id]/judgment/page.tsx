@@ -26,19 +26,14 @@ export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgmen
 
   if (!card && summary && isBeforeCard(summary.stage)) redirect(base);
 
-  // 머리는 접수 · 검토 보고서 화면과 같은 모양이다(CaseHeader).
-  const header = (
-    <CaseHeader
-      info={{ caseId: id, accidentDate: card?.accident_date ?? summary?.accident_date, assignedAt: summary?.created_at }}
-      progress={summary}
-      viewing="judgment"
-    />
-  );
+  // 머리는 접수 · 검토 보고서 화면과 같은 모양이다(CaseHeader). 카드가 있으면 머리까지 CaseWorkspace가 그린다 —
+  // 「초기화」로 판단 단계부터 다시 하면 머리의 진행 단계 한 줄도 판단부터 다시 그려야 해서다.
+  const head = { caseId: id, accidentDate: card?.accident_date ?? summary?.accident_date, assignedAt: summary?.created_at };
 
   if (!card) {
     return (
       <>
-        {header}
+        <CaseHeader info={head} progress={summary} viewing="judgment" />
         <p className="text-body text-ink-muted">{summary ? "사실 카드를 불러오지 못했어요. 잠시 후 다시 열어 주세요." : "담당 사건 목록에서 다시 골라 주세요."}</p>
       </>
     );
@@ -49,21 +44,21 @@ export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgmen
   const reportVersion = run?.result && run.fact_card_version === card.version ? run.report_version : null;
 
   return (
-    <>
-      {header}
-      <CaseWorkspace
-        // 카드·판단이 바뀌면(저장·확정·판단 뒤 다시 읽음) 고르던 값을 새 카드로 다시 시작한다.
-        key={workspaceKey(card, run)}
-        caseId={id}
-        live={live}
-        hasVideo={hasVideo}
-        card={card}
-        run={run}
-        loadError={error}
-        reportHref={reportVersion !== null ? `${base}/reports/${reportVersion}` : null}
-        evidence={evidence}
-        approved={summary ? isDone(summary) : false}
-      />
-    </>
+    <CaseWorkspace
+      // 카드·판단이 바뀌면(저장·확정·판단 뒤 다시 읽음) 고르던 값을 새 카드로 다시 시작한다.
+      key={workspaceKey(card, run)}
+      caseId={id}
+      head={head}
+      // 진행 단계 한 줄이 쓰는 칸만 넘긴다(클라이언트 컴포넌트로 가는 값).
+      progress={summary && { case_id: summary.case_id, stage: summary.stage, versions: summary.versions }}
+      live={live}
+      hasVideo={hasVideo}
+      card={card}
+      run={run}
+      loadError={error}
+      reportHref={reportVersion !== null ? `${base}/reports/${reportVersion}` : null}
+      evidence={evidence}
+      approved={summary ? isDone(summary) : false}
+    />
   );
 }

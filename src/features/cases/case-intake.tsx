@@ -7,8 +7,11 @@
  * 사건 이름은 사고 날짜다(caseTitle). 당사자 진술은 판단 화면의 사실 카드에서 반영한다.
  * 블랙박스 영상이 없으면 「영상 없이 진행」이 빈 사실 카드를 만들고(BE POST /cases/{id}/fact-card) 판단 화면으로 넘어간다 — 비워 둔 칸은
  * 판단이 구분 질문으로 묻는다. 그렇게 진행한 사건도 보고서 전까지는 이 화면에서 영상을 올릴 수 있고, 분석 카드가 새 버전이 된다.
- * 배정된 사건(/cases/[id])은 단계와 상관없이 늘 이 화면이 접수 화면이다 — 머리(CaseHeader)는 사건 화면이 그리고, 여기는
- * 위에서부터 영상(올리기 칸 · 고른 영상 · 올린 영상) → 상태 한 줄(분석 시작 · 올리는 중 · 분석 중 · 실패 · 분석 완료와 다음 단계) → 사건 정보 상자다.
+ * 배정된 사건(/cases/[id])은 단계와 상관없이 늘 이 화면이 접수 화면이다 — 위에서부터 머리(CaseHeader — 진행 단계 한 줄) →
+ * 영상(올리기 칸 · 고른 영상 · 올린 영상) → 상태 한 줄(분석 시작 · 올리는 중 · 분석 중 · 실패 · 분석 완료와 다음 단계) → 사건 정보 상자다.
+ * 카드가 있는 사건에 새 영상을 올리면(「영상 다시 올리기」를 확인했거나 올리기 · 분석을 시작함) 접수 단계부터 다시 한다 — 진행 단계 한 줄이
+ * 접수를 지금 단계로, 판단 · 검토 보고서를 아직 오지 않은 단계로 그린다(restartFrom). 그래서 머리를 사건 화면이 아니라 여기서 그린다.
+ * 「취소」하면 원래 단계로 돌아가고, 분석이 끝나면 새 사실 카드로 판단 화면에 넘어간다(판단 단계).
  * 견본 모드는 BE에 보내지 않고 진행만 흉내 낸 뒤 견본 사건의 판단 화면으로 간다.
  */
 import { useRouter } from "next/navigation";
@@ -17,9 +20,10 @@ import { CaseNo } from "@/components/case-no";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
 import type { ApiError, CaseStage, TaskStatus, VersionRef } from "@/lib/api/types";
-import { caseTitle, isBeforeCard, todayInKorea, videoContentType, videoProblem } from "@/lib/cases/intake";
-import { stageHref } from "@/lib/cases/stages";
+import { caseTitle, isBeforeCard, todayInKorea, videoContentType, videoProblem, watchAnalysis } from "@/lib/cases/intake";
+import { restartFrom, stageHref } from "@/lib/cases/stages";
 import { Button, ButtonLink, Input, Notice, Spinner } from "@/ui/controls";
+import { CaseHeader } from "./case-header";
 import { DemoFilePick } from "./demo-file-pick";
 import { UploadError, uploadFile } from "./upload";
 
@@ -50,6 +54,8 @@ type CaseState = {
   stage: CaseStage;
   task_status: TaskStatus | null;
   analysis?: { status: TaskStatus; error: ApiError | null } | null;
+  /** 사실 카드 버전 — 분석이 만든 새 카드가 생겼는지 본다(watchAnalysis) */
+  versions?: VersionRef;
 };
 
 type Phase = { kind: "form" } | { kind: "uploading"; progress: number } | { kind: "analyzing" };
@@ -198,7 +204,10 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   /** 직접 올리는 대신 고른 시연 영상(Storage demo/videos의 파일 이름). 분석을 시작할 때 이 사건 폴더로 복사한다 */
   const [demoName, setDemoName] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>(running ? { kind: "analyzing" } : { kind: "form" });
-  const [error, setError] = useState<string | null>(existing?.taskStatus === "failed" ? (existing.error ? friendly(existing.error) : FAILED_MESSAGE) : null);
+  // 분석 실패는 접수 · 분석 단계의 작업 상태로 안다 — 판단 단계의 failed는 판단 실패라 여기서 알리지 않는다(BE summarize).
+  const [error, setError] = useState<string | null>(
+    existing && isBeforeCard(existing.stage) && existing.taskStatus === "failed" ? (existing.error ? friendly(existing.error) : FAILED_MESSAGE) : null,
+  );
   const [dragging, setDragging] = useState(false);
   /** 고른 파일이 받지 않는 형식·크기일 때 — 분석 실패(error)와 달리 올리기 칸 아래 한 줄로만 알린다. */
   const [fileProblem, setFileProblem] = useState<string | null>(null);
@@ -223,8 +232,13 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   // 영상 없이 진행한 사건 — 다음 단계 버튼과 함께, 보고서 전까지는 영상을 올릴 칸을 그대로 둔다.
   const noVideo = settled && existing?.hasVideo === false;
   const canAddVideo = noVideo && existing?.stage !== "report";
+  // 카드가 있는 사건에 새 영상을 올린다(「영상 다시 올리기」를 확인했거나 올리기 · 분석을 시작했다) — 접수 단계부터 다시 한다.
+  // 진행 단계 한 줄과 사건 정보가 접수 단계 사건처럼 보인다. 「취소」하면 원래 단계로 돌아간다.
+  const restarted = settled && (replacing === "on" || phase.kind !== "form");
+  // 분석을 시작할 때의 사실 카드 버전 — 분석이 만든 카드는 이보다 큰 버전이다(watchAnalysis).
+  const baseVersion = existing?.versions.fact_card_version ?? 0;
   const analysis =
-    settled && !noVideo
+    settled && !noVideo && !restarted
       ? "완료"
       : phase.kind === "uploading"
         ? "영상 올리는 중"
@@ -252,19 +266,23 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
     return () => window.removeEventListener("beforeunload", warn);
   }, [phase.kind]);
 
-  // 분석 중이면 사건을 다시 읽는다. 카드가 생기면 판단 화면으로, 실패하면 이유를 보이고 다시 시도하게 한다.
+  // 분석 중이면 사건을 다시 읽는다. 분석 카드가 생기면 판단 화면으로, 실패하면 이유를 보이고 다시 시도하게 한다(watchAnalysis).
   useEffect(() => {
     if (phase.kind !== "analyzing" || sample || !caseId.current) return;
     const id = caseId.current;
     const api = createBrowserApiClient();
     let stopped = false;
+    // 카드가 있던 사건은 분석 단계를 한 번 본 뒤에야 실패를 가른다. 접수 · 분석 단계에서 연 화면은 처음부터 본 것으로 친다.
+    let seenAnalysis = !settled;
     const tick = async () => {
       try {
         const state = (await api.getCase(id)) as unknown as CaseState;
         if (stopped) return;
-        if (!isBeforeCard(state.stage)) {
+        const outcome = watchAnalysis(state, baseVersion, seenAnalysis);
+        seenAnalysis ||= isBeforeCard(state.stage);
+        if (outcome === "done") {
           router.replace(`/cases/${encodeURIComponent(id)}/judgment`);
-        } else if (state.task_status === "failed" || state.analysis?.status === "failed") {
+        } else if (outcome === "failed") {
           analysisKey.current = null;
           setError(state.analysis?.error ? friendly(state.analysis.error) : FAILED_MESSAGE);
           setPhase({ kind: "form" });
@@ -278,7 +296,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
       stopped = true;
       clearInterval(interval);
     };
-  }, [phase.kind, sample, router]);
+  }, [phase.kind, sample, router, settled, baseVersion]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
@@ -408,238 +426,254 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
       </ButtonLink>
     ) : null;
 
+  // 머리(진행 단계 한 줄) — 접수 단계부터 다시 하는 동안은 접수가 지금 단계이고 판단 · 검토 보고서는 아직 오지 않은 단계다.
+  const header = existing && (
+    <CaseHeader
+      info={{ caseId: existing.caseId, accidentDate: existing.accidentDate, assignedAt: existing.assignedAt }}
+      progress={restartFrom({ case_id: existing.caseId, stage: existing.stage, versions: existing.versions }, restarted ? "intake" : null)}
+      viewing="intake"
+    />
+  );
+
   if (existing && settled && !canAddVideo && replacing !== "on") {
     return (
-      <div className="flex w-full max-w-3xl flex-col gap-6">
-        {!noVideo && <UploadedVideo src={existing.videoUrl ?? null} />}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="flex items-center gap-2 text-heading font-semibold">
-            {noVideo ? (
-              "영상 없이 진행한 사건"
+      <>
+        {header}
+        <div className="flex w-full max-w-3xl flex-col gap-6">
+          {!noVideo && <UploadedVideo src={existing.videoUrl ?? null} />}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="flex items-center gap-2 text-heading font-semibold">
+              {noVideo ? (
+                "영상 없이 진행한 사건"
+              ) : (
+                <>
+                  <svg aria-hidden viewBox="0 0 16 16" className="size-4 text-primary-strong" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m3.5 8.5 3 3 6-7" />
+                  </svg>
+                  영상 분석 완료
+                </>
+              )}
+            </p>
+            {nextLink}
+          </div>
+          {/* 잘못 올린 영상을 바꾼다 — 확인하면 접수 단계부터 다시 한다. 새 영상으로 분석하면 사실 카드가 새 버전이 되고 판단을 다시 한다(이전 것은 이력으로 남는다). */}
+          {!noVideo &&
+            (replacing === "asking" ? (
+              <Notice tone="warning" title="영상을 다시 올릴까요?">
+                <p className="break-keep">
+                  접수 단계부터 다시 진행해요. 새 영상으로 분석한 사실 카드가 새 버전이 되고, 판단도 그 카드로 다시 해요. 지금까지 확인한 사실 카드와 판단은 이력으로 남아요.
+                  {existing.approved && " 승인한 검토 보고서도 이력으로 남고, 새 보고서를 다시 승인해야 해요."}
+                </p>
+                <span className="mt-2 flex gap-2">
+                  <Button size="sm" onClick={() => setReplacing("on")}>
+                    새 영상 올리기
+                  </Button>
+                  <Button variant="quiet" size="sm" onClick={() => setReplacing("off")}>
+                    취소
+                  </Button>
+                </span>
+              </Notice>
             ) : (
-              <>
-                <svg aria-hidden viewBox="0 0 16 16" className="size-4 text-primary-strong" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m3.5 8.5 3 3 6-7" />
-                </svg>
-                영상 분석 완료
-              </>
-            )}
-          </p>
-          {nextLink}
+              <div className="-mt-3">
+                <Button variant="quiet" size="sm" onClick={() => setReplacing("asking")}>
+                  영상 다시 올리기
+                </Button>
+              </div>
+            ))}
+          <CaseInfo existing={existing} analysis={analysis} />
         </div>
-        {/* 잘못 올린 영상을 바꾼다 — 새 영상으로 분석하면 사실 카드가 새 버전이 되고 판단을 다시 한다(이전 것은 이력으로 남는다). */}
-        {!noVideo &&
-          (replacing === "asking" ? (
-            <Notice tone="warning" title="영상을 다시 올릴까요?">
-              <p className="break-keep">
-                새 영상으로 분석한 사실 카드가 새 버전이 되고, 판단도 그 카드로 다시 해요. 지금까지 확인한 사실 카드와 판단은 이력으로 남아요.
-                {existing.approved && " 승인한 검토 보고서도 이력으로 남고, 새 보고서를 다시 승인해야 해요."}
-              </p>
-              <span className="mt-2 flex gap-2">
-                <Button size="sm" onClick={() => setReplacing("on")}>
-                  새 영상 올리기
-                </Button>
-                <Button variant="quiet" size="sm" onClick={() => setReplacing("off")}>
-                  취소
-                </Button>
-              </span>
-            </Notice>
-          ) : (
-            <div className="-mt-3">
-              <Button variant="quiet" size="sm" onClick={() => setReplacing("asking")}>
-                영상 다시 올리기
-              </Button>
-            </div>
-          ))}
-        <CaseInfo existing={existing} analysis={analysis} />
-      </div>
+      </>
     );
   }
 
   return (
-    // 새 사건(/cases/new)은 가운데, 배정된 사건은 머리(CaseHeader)에 맞춰 왼쪽에 붙인다.
-    <div className={`flex w-full flex-col gap-6 ${existing ? "max-w-3xl" : "mx-auto max-w-2xl"}`}>
-      {!existing && <h1 className="text-title font-bold tracking-tight break-keep">{title}</h1>}
+    <>
+      {header}
+      {/* 새 사건(/cases/new)은 가운데, 배정된 사건은 머리(CaseHeader)에 맞춰 왼쪽에 붙인다. */}
+      <div className={`flex w-full flex-col gap-6 ${existing ? "max-w-3xl" : "mx-auto max-w-2xl"}`}>
+        {!existing && <h1 className="text-title font-bold tracking-tight break-keep">{title}</h1>}
 
-      {replacing === "on" && phase.kind === "form" && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-heading font-semibold">영상 다시 올리기</p>
-          <Button
-            variant="quiet"
-            size="sm"
-            onClick={() => {
-              setFile(null);
-              setPreview(null);
-              setDemoName(null);
-              setError(null);
-              setReplacing("off");
-            }}
-          >
-            취소
-          </Button>
-        </div>
-      )}
-
-      {noVideo && (
-        // 영상 없이 진행한 사건 — 판단 화면으로 가는 버튼이 먼저고, 영상이 생기면 아래 칸에 올린다.
-        <div className="flex flex-col gap-1">
+        {replacing === "on" && phase.kind === "form" && (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-heading font-semibold">영상 없이 진행한 사건</p>
-            {nextLink}
-          </div>
-          <p className="text-caption text-ink-muted break-keep">블랙박스 영상이 생기면 아래에 올려 주세요. 분석한 사실 카드가 새 버전이 되고, 판단은 그 카드로 다시 해요.</p>
-        </div>
-      )}
-
-      {phase.kind === "form" && !hasCase && (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="accident-date" className="text-caption font-semibold text-ink">
-            사고 날짜
-          </label>
-          <Input id="accident-date" type="date" required max={todayInKorea()} value={date} onChange={(e) => setDate(e.target.value)} className="h-10 max-w-56" />
-        </div>
-      )}
-
-      <input
-        ref={fileInput}
-        id="video-file"
-        type="file"
-        accept="video/*,.mkv,.avi"
-        className="peer sr-only"
-        onChange={(e) => {
-          choose(e.target.files?.[0] ?? undefined);
-          e.target.value = ""; // 같은 파일을 다시 골라도 onChange가 오게
-        }}
-      />
-
-      {preview && file ? (
-        // 미리보기는 파일 선택(label) 밖에 둔다 — 안에 두면 재생 버튼을 눌러도 파일 고르기 창이 뜬다.
-        <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className="flex flex-col overflow-hidden rounded-card border border-line bg-surface">
-          <VideoPreview key={preview} src={preview} />
-          {phase.kind === "form" && (
-            <div className="flex items-center justify-between gap-3 px-4 py-3 text-caption">
-              <span className="min-w-0 truncate text-ink">
-                {file.name} <span className="text-ink-muted">· {sizeText(file.size)}</span>
-              </span>
-              {!error && (
-                <Button variant="quiet" size="sm" onClick={() => fileInput.current?.click()}>
-                  다른 영상 고르기
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      ) : demoName && phase.kind === "form" ? (
-        <div className="flex items-center justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 text-caption">
-          <span className="min-w-0 truncate text-ink">
-            <span className="mr-2 font-semibold text-ink-muted">시연 영상</span>
-            <span className="font-mono">{demoName}</span>
-          </span>
-          {!error && (
-            <Button variant="quiet" size="sm" onClick={() => setDemoName(null)}>
-              다른 영상 고르기
+            <p className="text-heading font-semibold">영상 다시 올리기</p>
+            <Button
+              variant="quiet"
+              size="sm"
+              onClick={() => {
+                setFile(null);
+                setPreview(null);
+                setDemoName(null);
+                setError(null);
+                setReplacing("off");
+              }}
+            >
+              취소
             </Button>
-          )}
-        </div>
-      ) : phase.kind !== "form" ? (
-        // 다시 들어온 분석 중 사건 — 이 브라우저에 고른 파일이 없으니 서버에 올린 영상을 보인다.
-        <UploadedVideo src={existing?.videoUrl ?? null} />
-      ) : (
-        <label
-          htmlFor="video-file"
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-          className={`flex cursor-pointer flex-col items-center gap-1 rounded-card border-2 border-dashed px-6 py-10 text-center transition-colors peer-focus-visible:border-primary-strong ${
-            dragging ? "border-primary-strong bg-primary-soft" : "border-line-strong bg-surface hover:bg-surface-muted"
-          }`}
-        >
-          <span aria-hidden className="mb-2 flex size-10 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
-            <svg viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10 13V4m-3.5 3.5L10 4l3.5 3.5M4 13.5v1A1.5 1.5 0 0 0 5.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-1" />
-            </svg>
-          </span>
-          <span className="text-heading font-semibold text-ink break-keep">{error ? "영상을 다시 올려 주세요" : "블랙박스 영상을 끌어다 놓으세요"}</span>
-          <span className="text-caption text-ink-muted">또는 눌러서 고르기 · 50MB까지</span>
-        </label>
-      )}
-
-      {/* 시연용으로 Storage에 미리 올려 둔 영상 — 폴더가 비었으면 보이지 않는다 */}
-      {phase.kind === "form" && !file && !demoName && (
-        <div className="-mt-3">
-          <DemoFilePick kind="video" live={!sample} onPick={chooseDemo} />
-        </div>
-      )}
-
-      {fileProblem && (
-        <p role="alert" className="-mt-3 text-caption text-on-danger-soft">
-          {fileProblem}
-        </p>
-      )}
-
-      {/* 배정된 사건에 블랙박스 영상이 없으면 빈 사실 카드로 판단 화면에서 진행한다(진술로 칸을 채우고, 비운 칸은 구분 질문이 묻는다). */}
-      {existing && !settled && phase.kind === "form" && ((!file && !demoName) || error) && (
-        <div className="-mt-3 flex flex-wrap items-center gap-x-1 gap-y-1 text-caption text-ink-muted">
-          블랙박스 영상이 없나요?
-          <Button variant="quiet" size="sm" onClick={proceedWithoutVideo} disabled={proceeding}>
-            {proceeding ? "카드를 만드는 중…" : "영상 없이 진행 →"}
-          </Button>
-          {proceedProblem && (
-            <span role="alert" className="basis-full text-on-danger-soft">
-              {proceedProblem}
-            </span>
-          )}
-        </div>
-      )}
-
-      {phase.kind === "uploading" ? (
-        <div className="flex flex-col gap-2" role="status">
-          <p className="flex items-center gap-3 text-heading font-semibold">
-            <Spinner />
-            영상을 올리고 있어요
-            <span className="text-body font-normal text-ink-muted tabular-nums">{Math.round(phase.progress * 100)}%</span>
-          </p>
-          <div className="h-1 overflow-hidden rounded-full bg-surface-muted">
-            <div className="h-full bg-primary-strong transition-[width]" style={{ width: `${phase.progress * 100}%` }} />
           </div>
-          <p className="text-caption text-ink-muted">다 올라갈 때까지 이 창을 닫지 마세요.</p>
-        </div>
-      ) : phase.kind === "analyzing" ? (
-        <div className="flex flex-col gap-1" role="status">
-          <p className="flex items-center gap-3 text-heading font-semibold">
-            <Spinner />
-            영상 분석 중이에요
-          </p>
-          <p className="text-caption text-ink-muted">몇 분 걸릴 수 있어요. 창을 닫아도 분석은 계속되고, 끝나면 사실 카드 화면으로 넘어가요.</p>
-        </div>
-      ) : error ? (
-        <Failure message={error} canRetry={file !== null || demoName !== null} onRetry={start} onPickAnother={() => fileInput.current?.click()} />
-      ) : (
-        // 왼쪽은 이 다음에 일어나는 일 한 줄, 오른쪽은 시작 버튼.
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <ol aria-label="다음 순서" className="flex items-center gap-2 text-caption text-ink-muted">
-            {["영상 업로드", "AI 분석 · 몇 분", "사실 카드 확인"].map((step, i) => (
-              <li key={step} className="flex items-center gap-2">
-                {i > 0 && <span aria-hidden className="h-px w-4 bg-line-strong" />}
-                <span className="flex items-center gap-1.5 whitespace-nowrap">
-                  <span aria-hidden className="flex size-4 items-center justify-center rounded-full bg-surface-muted text-[10px] font-semibold text-ink-muted tabular-nums">
-                    {i + 1}
-                  </span>
-                  {step}
-                </span>
-              </li>
-            ))}
-          </ol>
-          <Button onClick={start} disabled={(!file && !demoName) || (!date && !hasCase)} className="h-10 px-6">
-            분석 시작
-          </Button>
-        </div>
-      )}
+        )}
 
-      {existing && <CaseInfo existing={existing} analysis={analysis} />}
-    </div>
+        {noVideo && phase.kind === "form" && (
+          // 영상 없이 진행한 사건 — 판단 화면으로 가는 버튼이 먼저고, 영상이 생기면 아래 칸에 올린다.
+          // 올리기 · 분석을 시작하면 접수 단계부터 다시 하므로(restarted) 이 줄을 거둔다.
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-heading font-semibold">영상 없이 진행한 사건</p>
+              {nextLink}
+            </div>
+            <p className="text-caption text-ink-muted break-keep">블랙박스 영상이 생기면 아래에 올려 주세요. 분석한 사실 카드가 새 버전이 되고, 판단은 그 카드로 다시 해요.</p>
+          </div>
+        )}
+
+        {phase.kind === "form" && !hasCase && (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="accident-date" className="text-caption font-semibold text-ink">
+              사고 날짜
+            </label>
+            <Input id="accident-date" type="date" required max={todayInKorea()} value={date} onChange={(e) => setDate(e.target.value)} className="h-10 max-w-56" />
+          </div>
+        )}
+
+        <input
+          ref={fileInput}
+          id="video-file"
+          type="file"
+          accept="video/*,.mkv,.avi"
+          className="peer sr-only"
+          onChange={(e) => {
+            choose(e.target.files?.[0] ?? undefined);
+            e.target.value = ""; // 같은 파일을 다시 골라도 onChange가 오게
+          }}
+        />
+
+        {preview && file ? (
+          // 미리보기는 파일 선택(label) 밖에 둔다 — 안에 두면 재생 버튼을 눌러도 파일 고르기 창이 뜬다.
+          <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className="flex flex-col overflow-hidden rounded-card border border-line bg-surface">
+            <VideoPreview key={preview} src={preview} />
+            {phase.kind === "form" && (
+              <div className="flex items-center justify-between gap-3 px-4 py-3 text-caption">
+                <span className="min-w-0 truncate text-ink">
+                  {file.name} <span className="text-ink-muted">· {sizeText(file.size)}</span>
+                </span>
+                {!error && (
+                  <Button variant="quiet" size="sm" onClick={() => fileInput.current?.click()}>
+                    다른 영상 고르기
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        ) : demoName && phase.kind === "form" ? (
+          <div className="flex items-center justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 text-caption">
+            <span className="min-w-0 truncate text-ink">
+              <span className="mr-2 font-semibold text-ink-muted">시연 영상</span>
+              <span className="font-mono">{demoName}</span>
+            </span>
+            {!error && (
+              <Button variant="quiet" size="sm" onClick={() => setDemoName(null)}>
+                다른 영상 고르기
+              </Button>
+            )}
+          </div>
+        ) : phase.kind !== "form" ? (
+          // 다시 들어온 분석 중 사건 — 이 브라우저에 고른 파일이 없으니 서버에 올린 영상을 보인다.
+          <UploadedVideo src={existing?.videoUrl ?? null} />
+        ) : (
+          <label
+            htmlFor="video-file"
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+            className={`flex cursor-pointer flex-col items-center gap-1 rounded-card border-2 border-dashed px-6 py-10 text-center transition-colors peer-focus-visible:border-primary-strong ${
+              dragging ? "border-primary-strong bg-primary-soft" : "border-line-strong bg-surface hover:bg-surface-muted"
+            }`}
+          >
+            <span aria-hidden className="mb-2 flex size-10 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
+              <svg viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 13V4m-3.5 3.5L10 4l3.5 3.5M4 13.5v1A1.5 1.5 0 0 0 5.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-1" />
+              </svg>
+            </span>
+            <span className="text-heading font-semibold text-ink break-keep">{error ? "영상을 다시 올려 주세요" : "블랙박스 영상을 끌어다 놓으세요"}</span>
+            <span className="text-caption text-ink-muted">또는 눌러서 고르기 · 50MB까지</span>
+          </label>
+        )}
+
+        {/* 시연용으로 Storage에 미리 올려 둔 영상 — 폴더가 비었으면 보이지 않는다 */}
+        {phase.kind === "form" && !file && !demoName && (
+          <div className="-mt-3">
+            <DemoFilePick kind="video" live={!sample} onPick={chooseDemo} />
+          </div>
+        )}
+
+        {fileProblem && (
+          <p role="alert" className="-mt-3 text-caption text-on-danger-soft">
+            {fileProblem}
+          </p>
+        )}
+
+        {/* 배정된 사건에 블랙박스 영상이 없으면 빈 사실 카드로 판단 화면에서 진행한다(진술로 칸을 채우고, 비운 칸은 구분 질문이 묻는다). */}
+        {existing && !settled && phase.kind === "form" && ((!file && !demoName) || error) && (
+          <div className="-mt-3 flex flex-wrap items-center gap-x-1 gap-y-1 text-caption text-ink-muted">
+            블랙박스 영상이 없나요?
+            <Button variant="quiet" size="sm" onClick={proceedWithoutVideo} disabled={proceeding}>
+              {proceeding ? "카드를 만드는 중…" : "영상 없이 진행 →"}
+            </Button>
+            {proceedProblem && (
+              <span role="alert" className="basis-full text-on-danger-soft">
+                {proceedProblem}
+              </span>
+            )}
+          </div>
+        )}
+
+        {phase.kind === "uploading" ? (
+          <div className="flex flex-col gap-2" role="status">
+            <p className="flex items-center gap-3 text-heading font-semibold">
+              <Spinner />
+              영상을 올리고 있어요
+              <span className="text-body font-normal text-ink-muted tabular-nums">{Math.round(phase.progress * 100)}%</span>
+            </p>
+            <div className="h-1 overflow-hidden rounded-full bg-surface-muted">
+              <div className="h-full bg-primary-strong transition-[width]" style={{ width: `${phase.progress * 100}%` }} />
+            </div>
+            <p className="text-caption text-ink-muted">다 올라갈 때까지 이 창을 닫지 마세요.</p>
+          </div>
+        ) : phase.kind === "analyzing" ? (
+          <div className="flex flex-col gap-1" role="status">
+            <p className="flex items-center gap-3 text-heading font-semibold">
+              <Spinner />
+              영상 분석 중이에요
+            </p>
+            <p className="text-caption text-ink-muted">몇 분 걸릴 수 있어요. 창을 닫아도 분석은 계속되고, 끝나면 사실 카드 화면으로 넘어가요.</p>
+          </div>
+        ) : error ? (
+          <Failure message={error} canRetry={file !== null || demoName !== null} onRetry={start} onPickAnother={() => fileInput.current?.click()} />
+        ) : (
+          // 왼쪽은 이 다음에 일어나는 일 한 줄, 오른쪽은 시작 버튼.
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <ol aria-label="다음 순서" className="flex items-center gap-2 text-caption text-ink-muted">
+              {["영상 업로드", "AI 분석 · 몇 분", "사실 카드 확인"].map((step, i) => (
+                <li key={step} className="flex items-center gap-2">
+                  {i > 0 && <span aria-hidden className="h-px w-4 bg-line-strong" />}
+                  <span className="flex items-center gap-1.5 whitespace-nowrap">
+                    <span aria-hidden className="flex size-4 items-center justify-center rounded-full bg-surface-muted text-[10px] font-semibold text-ink-muted tabular-nums">
+                      {i + 1}
+                    </span>
+                    {step}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <Button onClick={start} disabled={(!file && !demoName) || (!date && !hasCase)} className="h-10 px-6">
+              분석 시작
+            </Button>
+          </div>
+        )}
+
+        {existing && <CaseInfo existing={existing} analysis={analysis} />}
+      </div>
+    </>
   );
 }
