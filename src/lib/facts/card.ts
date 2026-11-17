@@ -551,8 +551,19 @@ export function fieldsToFix(reasons: readonly string[], mapping: PartyMapping): 
 
 /** 경우별 도표의 조건 하나 — 카드 칸(key)과 화면 이름, 그 칸의 값 글자들(어느 값이어도 같은 도표다). */
 export type ScenarioCondition = { key: string; label: string; values: string[] };
-/** 경우 한 줄 — 위 카드의 칸이 이 조건이면 이 도표·변형이고 기본 과실(도표 A : 도표 B, 수정요소 전)은 이 값이다. */
-export type ScenarioRow = { chartId: string; title: string | null; variant: string | null; baseA: number; baseB: number; conditions: ScenarioCondition[] };
+/**
+ * 경우 한 줄 — 위 카드의 칸이 이 조건이면 이 도표·변형이고 기본 과실(도표 A : 도표 B, 수정요소 전)은 이 값이다.
+ * cardFields는 「이 값으로 고치기」가 카드에 넣을 칸 → BE 원값이다. 값이 여럿인 칸은 보기 순서의 첫 값(어느 값이어도 같은 도표다).
+ */
+export type ScenarioRow = {
+  chartId: string;
+  title: string | null;
+  variant: string | null;
+  baseA: number;
+  baseB: number;
+  conditions: ScenarioCondition[];
+  cardFields: Record<string, string>;
+};
 
 /** 칸 → 값들. 한 줄로 묶은 경우다 — 값이 여럿이면 어느 값이어도 같은 도표·변형이다. */
 type ScenarioBox = Record<string, string[]>;
@@ -598,7 +609,7 @@ export function scenarioRows(scenarios: readonly UnknownScenario[] | undefined, 
     const options = Object.keys(OPTIONS[key] ?? {});
     return options.includes(raw) ? options.indexOf(raw) : options.length;
   };
-  const groups = new Map<string, { head: Omit<ScenarioRow, "conditions">; boxes: ScenarioBox[] }>();
+  const groups = new Map<string, { head: Omit<ScenarioRow, "conditions" | "cardFields">; boxes: ScenarioBox[] }>();
   for (const s of scenarios ?? []) {
     if (!s.card_fields) continue;
     const id = JSON.stringify([s.chart_id, s.variant, s.base_A, s.base_B]);
@@ -607,15 +618,22 @@ export function scenarioRows(scenarios: readonly UnknownScenario[] | undefined, 
     groups.set(id, group);
   }
   return [...groups.values()].flatMap(({ head, boxes }) =>
-    mergeBoxes(boxes).map((box) => ({
-      ...head,
-      conditions: Object.entries(box)
+    mergeBoxes(boxes).map((box) => {
+      const entries = Object.entries(box)
         .sort(([a], [b]) => at(a) - at(b))
-        .map(([key, values]) => ({
-          key,
-          label: cardLabel(key, ego),
-          values: [...values].sort((a, b) => optionAt(key, a) - optionAt(key, b)).map((raw) => cardValueLabel(key, parseOption(key, raw), ego)),
-        })),
-    })),
+        .map(([key, values]) => [key, [...values].sort((a, b) => optionAt(key, a) - optionAt(key, b))] as const);
+      return {
+        ...head,
+        conditions: entries.map(([key, raws]) => ({ key, label: cardLabel(key, ego), values: raws.map((raw) => cardValueLabel(key, parseOption(key, raw), ego)) })),
+        cardFields: Object.fromEntries(entries.map(([key, raws]) => [key, raws[0]])),
+      };
+    }),
   );
+}
+
+/** 경우 한 줄의 값(ScenarioRow.cardFields)을 카드에 한 번에 넣는다 — 담당자가 고른 값으로 남긴다(pick). 카드에 없는 칸은 새로 만든다. */
+export function withScenario(fields: Record<string, FactField>, cardFields: Record<string, string>): Record<string, FactField> {
+  const next = { ...fields };
+  for (const [key, raw] of Object.entries(cardFields)) next[key] = pick(fields[key] ?? emptyField(), parseOption(key, raw));
+  return next;
 }

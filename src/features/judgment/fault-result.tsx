@@ -30,11 +30,13 @@ type Props = {
   reportHref: string | null;
   /** 위 사실 카드를 다시 열어 고친다 — 고칠 수 없는 때(질문 대기 · 이미 고치는 중)는 넘기지 않는다 */
   onEditCard?: () => void;
+  /** 경우별 도표 한 줄의 「이 값으로 고치기」 — 그 경우의 칸 값을 위 카드에 한 번에 넣는다(case-workspace applyScenario). */
+  onApplyScenario?: (cardFields: Record<string, string>) => void;
   /** 견본 모드의 흉내 낸 결과 */
   sample?: boolean;
 };
 
-export function FaultResult({ result, mapping, ego, stale, reportHref, onEditCard, sample }: Props) {
+export function FaultResult({ result, mapping, ego, stale, reportHref, onEditCard, onApplyScenario, sample }: Props) {
   return (
     <section id={FAULT_RESULT_ID} aria-labelledby="fault-result-title" className={`scroll-mt-20 ${stale ? "opacity-60" : ""}`}>
       {stale && <p className="mb-3 text-caption font-semibold text-on-warning-soft">카드를 고쳐서 이 결과는 이전 카드 기준이에요. 다시 확정하면 새로 판단해요.</p>}
@@ -42,7 +44,7 @@ export function FaultResult({ result, mapping, ego, stale, reportHref, onEditCar
         // 이전 카드 기준 결과로는 다음 단계로 넘어가지 않는다.
         <Ratio result={result} mapping={mapping} ego={ego} reportHref={stale ? null : reportHref} onEditCard={stale ? undefined : onEditCard} sample={sample} />
       ) : (
-        <NotReady result={result} mapping={mapping} ego={ego} onEditCard={stale ? undefined : onEditCard} />
+        <NotReady result={result} mapping={mapping} ego={ego} onEditCard={stale ? undefined : onEditCard} onApply={stale ? undefined : onApplyScenario} />
       )}
     </section>
   );
@@ -277,7 +279,7 @@ const SCENARIO_GRID = "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-4 
  * 경우별 도표 목록 — 위 카드의 칸이 「이 값이면」 판단이 고를 도표와 그 기본 과실(수정요소 전).
  * 비율은 BE 값 그대로이고 도표 A : 도표 B 순서다(parties가 그 차 이름). 조건의 칸 이름을 누르면 위 카드의 그 칸으로 간다.
  */
-function ScenarioList({ rows, parties, onEditCard }: { rows: ScenarioRow[]; parties: string; onEditCard?: () => void }) {
+function ScenarioList({ rows, parties, onEditCard, onApply }: { rows: ScenarioRow[]; parties: string; onEditCard?: () => void; onApply?: (cardFields: Record<string, string>) => void }) {
   return (
     <div className="overflow-hidden rounded-card border border-line bg-surface">
       {/* 머리줄은 넓은 화면에서만 — 줄마다 같은 뜻을 화면 낭독용 글자로 적어 둔다 */}
@@ -315,6 +317,13 @@ function ScenarioList({ rows, parties, onEditCard }: { rows: ScenarioRow[]; part
                 {row.baseA} : {row.baseB}
               </span>
             </p>
+            {onApply && (
+              <div className="col-span-2 row-start-3 md:col-span-1 md:col-start-2 md:row-start-2">
+                <Button variant="quiet" size="sm" onClick={() => onApply(row.cardFields)}>
+                  이 값으로 카드 고치기 ↑
+                </Button>
+              </div>
+            )}
           </li>
         ))}
       </ul>
@@ -326,7 +335,7 @@ function ScenarioList({ rows, parties, onEditCard }: { rows: ScenarioRow[]; part
  * 모르는 칸의 경우별 도표 — 앞 몇 줄은 펼쳐 두고 나머지는 접는다. 확정한 비율이 아님을 목록 위에 적는다.
  * common은 경우들의 기본 과실이 모두 같아 BE가 그 비율을 준 결과다(위에 크게 보인다).
  */
-function Scenarios({ rows, common, mapping, ego, onEditCard }: { rows: ScenarioRow[]; common: boolean; mapping: PartyMapping; ego?: EgoName; onEditCard?: () => void }) {
+function Scenarios({ rows, common, mapping, ego, onEditCard, onApply }: { rows: ScenarioRow[]; common: boolean; mapping: PartyMapping; ego?: EgoName; onEditCard?: () => void; onApply?: (cardFields: Record<string, string>) => void }) {
   const parties = `${chartPartyName(mapping, "A", ego)} : ${chartPartyName(mapping, "B", ego)}`;
   const charts = new Set(rows.map((row) => row.chartId)).size;
   const rest = rows.slice(SCENARIOS_SHOWN);
@@ -343,7 +352,7 @@ function Scenarios({ rows, common, mapping, ego, onEditCard }: { rows: ScenarioR
           {common
             ? "모른다고 답한 칸이 아래 값일 때 고를 도표가 있고, 그 기본 과실은 모두 같아요."
             : "모른다고 답한 칸의 값에 따라 도표와 기본 과실이 달라져서 비율을 정하지 못했어요."}{" "}
-          맞는 경우를 확인해 위 카드에 값을 넣고 다시 판단해 주세요.
+          맞는 경우를 확인해 위 카드에 값을 넣고 다시 판단해 주세요.{onApply && " 「이 값으로 카드 고치기」를 누르면 그 경우의 값이 위 카드에 한 번에 들어가요."}
         </p>
         <p className="mt-1 text-caption text-ink-muted">
           확정한 비율이 아니에요. 검색된 후보 도표 가운데 지금 카드와 맞을 수 있는 도표만 견준 것이라 여기 없는 경우도 있을 수 있어요. 기본 과실은 수정요소를 넣기 전 값이에요.
@@ -351,12 +360,12 @@ function Scenarios({ rows, common, mapping, ego, onEditCard }: { rows: ScenarioR
         {/* 좁은 화면에는 머리줄이 없어 비율의 순서를 여기 적는다 */}
         <p className="mt-1 text-caption text-ink-muted md:hidden">기본 과실은 {parties} 순서예요.</p>
       </div>
-      <ScenarioList rows={rows.slice(0, SCENARIOS_SHOWN)} parties={parties} onEditCard={onEditCard} />
+      <ScenarioList rows={rows.slice(0, SCENARIOS_SHOWN)} parties={parties} onEditCard={onEditCard} onApply={onApply} />
       {rest.length > 0 && (
         <details>
           <summary className="cursor-pointer text-caption font-semibold text-ink-muted">그 밖의 경우 {rest.length}개 보기</summary>
           <div className="mt-3">
-            <ScenarioList rows={rest} parties={parties} onEditCard={onEditCard} />
+            <ScenarioList rows={rest} parties={parties} onEditCard={onEditCard} onApply={onApply} />
           </div>
         </details>
       )}
@@ -364,7 +373,7 @@ function Scenarios({ rows, common, mapping, ego, onEditCard }: { rows: ScenarioR
   );
 }
 
-function NotReady({ result, mapping, ego, onEditCard }: { result: JudgmentResult; mapping: PartyMapping; ego?: EgoName; onEditCard?: () => void }) {
+function NotReady({ result, mapping, ego, onEditCard, onApply }: { result: JudgmentResult; mapping: PartyMapping; ego?: EgoName; onEditCard?: () => void; onApply?: (cardFields: Record<string, string>) => void }) {
   const deferred = result.status === "deferred";
   const common = !deferred && result.fault_A !== null && result.fault_B !== null;
   const scenarios = scenarioRows(result.scenarios, ego);
@@ -408,7 +417,7 @@ function NotReady({ result, mapping, ego, onEditCard }: { result: JudgmentResult
           </p>
         </Notice>
       )}
-      {scenarios.length > 0 && <Scenarios rows={scenarios} common={common} mapping={mapping} ego={ego} onEditCard={onEditCard} />}
+      {scenarios.length > 0 && <Scenarios rows={scenarios} common={common} mapping={mapping} ego={ego} onEditCard={onEditCard} onApply={onApply} />}
       {result.questions.length > 0 && (
         <div>
           <p className="text-caption font-semibold text-ink-muted">위 카드에서 확인할 칸</p>
