@@ -13,6 +13,7 @@ import { getCaseSummary, isSampleSource } from "@/features/cases/case-source";
 import { getEvidence, getFactCard } from "@/features/facts/fact-source";
 import { isBeforeCard } from "@/lib/cases/intake";
 import { isFromVideo } from "@/lib/facts/card";
+import { isDone } from "@/lib/cases/stages";
 
 export default async function CasePage(props: PageProps<"/cases/[id]">) {
   const { id } = await props.params;
@@ -49,6 +50,7 @@ export default async function CasePage(props: PageProps<"/cases/[id]">) {
           accidentDate: summary.accident_date,
           assignedAt: summary.created_at,
           taskStatus: summary.task_status,
+          approved: isDone(summary),
           error: summary.analysis?.error ?? null,
           updatedAt: summary.updated_at,
           versions: summary.versions,

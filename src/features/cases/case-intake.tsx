@@ -19,7 +19,7 @@ import { asApiError, newIdempotencyKey } from "@/lib/api/client";
 import type { ApiError, CaseStage, TaskStatus, VersionRef } from "@/lib/api/types";
 import { caseTitle, isBeforeCard, todayInKorea, videoContentType, videoProblem } from "@/lib/cases/intake";
 import { stageHref } from "@/lib/cases/stages";
-import { Button, ButtonLink, Input, Spinner } from "@/ui/controls";
+import { Button, ButtonLink, Input, Notice, Spinner } from "@/ui/controls";
 import { DemoFilePick } from "./demo-file-pick";
 import { UploadError, uploadFile } from "./upload";
 
@@ -39,6 +39,8 @@ export type ExistingCase = {
   versions: VersionRef;
   /** 올린 영상의 재생 주소 — BE가 주기 전까지는 없다. */
   videoUrl?: string | null;
+  /** 검토 보고서가 승인된 사건 — 영상을 다시 올리면 새 보고서를 다시 승인해야 한다고 알린다 */
+  approved?: boolean;
   /** 카드가 있는 사건의 카드가 영상 분석으로 만든 것인가(lib/facts/card isFromVideo · 미리보기 영상). false면 영상 없이 진행한 사건이다 */
   hasVideo?: boolean;
 };
@@ -200,6 +202,8 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   /** 「영상 없이 진행」 요청 중 · 실패 이유(분석 실패와 다른 자리에 한 줄로 보인다) */
   const [proceeding, setProceeding] = useState(false);
   const [proceedProblem, setProceedProblem] = useState<string | null>(null);
+  /** 「영상 다시 올리기」 — 잘못 올린 영상을 바꾼다. 묻는 중(asking)에 확인하면 올리기 화면(on)으로 바뀐다 */
+  const [replacing, setReplacing] = useState<"off" | "asking" | "on">("off");
 
   // 다시 시도할 때 이미 끝난 단계는 건너뛴다 — 사건은 한 번만 만들고, 올린 영상은 다시 올리지 않는다.
   // ref는 이어지는 요청이 읽고, 화면은 hasCase 상태로 그린다.
@@ -320,7 +324,8 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   }
 
   async function start() {
-    if ((!file && !demoName) || !date) return;
+    // 사고 날짜는 사건을 만들 때만 쓴다 — 이미 있는 사건은 날짜가 비어 있어도 영상을 올린다
+    if ((!file && !demoName) || (!date && !caseId.current)) return;
     setError(null);
     setFileProblem(null);
     if (sample) return simulate();
@@ -400,7 +405,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
       </ButtonLink>
     ) : null;
 
-  if (existing && settled && !canAddVideo) {
+  if (existing && settled && !canAddVideo && replacing !== "on") {
     return (
       <div className="flex w-full max-w-3xl flex-col gap-6">
         {!noVideo && <UploadedVideo src={existing.videoUrl ?? null} />}
@@ -419,6 +424,30 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
           </p>
           {nextLink}
         </div>
+        {/* 잘못 올린 영상을 바꾼다 — 새 영상으로 분석하면 사실 카드가 새 버전이 되고 판단을 다시 한다(이전 것은 이력으로 남는다). */}
+        {!noVideo &&
+          (replacing === "asking" ? (
+            <Notice tone="warning" title="영상을 다시 올릴까요?">
+              <p className="break-keep">
+                새 영상으로 분석한 사실 카드가 새 버전이 되고, 판단도 그 카드로 다시 해요. 지금까지 확인한 사실 카드와 판단은 이력으로 남아요.
+                {existing.approved && " 승인한 검토 보고서도 이력으로 남고, 새 보고서를 다시 승인해야 해요."}
+              </p>
+              <span className="mt-2 flex gap-2">
+                <Button size="sm" onClick={() => setReplacing("on")}>
+                  새 영상 올리기
+                </Button>
+                <Button variant="quiet" size="sm" onClick={() => setReplacing("off")}>
+                  취소
+                </Button>
+              </span>
+            </Notice>
+          ) : (
+            <div className="-mt-3">
+              <Button variant="quiet" size="sm" onClick={() => setReplacing("asking")}>
+                영상 다시 올리기
+              </Button>
+            </div>
+          ))}
         <CaseInfo existing={existing} analysis={analysis} />
       </div>
     );
@@ -428,6 +457,25 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
     // 새 사건(/cases/new)은 가운데, 배정된 사건은 머리(CaseHeader)에 맞춰 왼쪽에 붙인다.
     <div className={`flex w-full flex-col gap-6 ${existing ? "max-w-3xl" : "mx-auto max-w-2xl"}`}>
       {!existing && <h1 className="text-title font-bold tracking-tight break-keep">{title}</h1>}
+
+      {replacing === "on" && phase.kind === "form" && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-heading font-semibold">영상 다시 올리기</p>
+          <Button
+            variant="quiet"
+            size="sm"
+            onClick={() => {
+              setFile(null);
+              setPreview(null);
+              setDemoName(null);
+              setError(null);
+              setReplacing("off");
+            }}
+          >
+            취소
+          </Button>
+        </div>
+      )}
 
       {noVideo && (
         // 영상 없이 진행한 사건 — 판단 화면으로 가는 버튼이 먼저고, 영상이 생기면 아래 칸에 올린다.
@@ -582,7 +630,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
               </li>
             ))}
           </ol>
-          <Button onClick={start} disabled={(!file && !demoName) || !date} className="h-10 px-6">
+          <Button onClick={start} disabled={(!file && !demoName) || (!date && !hasCase)} className="h-10 px-6">
             분석 시작
           </Button>
         </div>

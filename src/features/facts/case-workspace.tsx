@@ -35,7 +35,7 @@ import {
   withDefaultChart,
 } from "@/lib/facts/card";
 import { answeredValues } from "@/lib/judgment/view";
-import { Button, ButtonLink, Spinner } from "@/ui/controls";
+import { Button, ButtonLink, Notice, Spinner } from "@/ui/controls";
 import { FACT_CARD_FOOTER_ID, FactCardPanel } from "./fact-card-panel";
 
 type Props = {
@@ -49,6 +49,8 @@ type Props = {
   reportHref: string | null;
   /** 미리보기 영상 보기 주소(BE GET /cases/{id}/evidence). 없으면 빈 자리 */
   evidence?: EvidenceView | null;
+  /** 이 사건의 검토 보고서가 승인됐다 — 고치면 새 보고서를 다시 승인해야 한다고 알린다(수정은 막지 않는다) */
+  approved?: boolean;
 };
 
 /** 카드 수정 API(PATCH)가 받는 수정 이유 — 수정 이력용이라 담당자에게 고르게 하지 않고 고정 문구로 보낸다. */
@@ -68,7 +70,7 @@ function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, reportHref, evidence = null }: Props) {
+export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, reportHref, evidence = null, approved = false }: Props) {
   const router = useRouter();
   // 이미 값으로 답한 구분 질문은 그 값을 카드에 미리 채운다 — 확인 완료 때 카드에 반영·재확정한다(카드에 없던 칸도, withAnswers).
   const [draft, setDraft] = useState(() => {
@@ -176,7 +178,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
     setFailure(null);
   }
 
-  /** 결과 옆 「사실 카드 고치기」 — 카드를 수정 상태로 열고 그리로 올라간다. */
+  /** 결과 옆 「사실 카드 수정하기 ↑」 — 카드를 수정 상태로 열고 그리로 올라간다. */
   function editCard() {
     setEditing(true);
     scrollTo("fact-card");
@@ -336,6 +338,14 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   return (
     <>
       {loadError && <p className="mb-4 text-body text-danger">판단 기록을 불러오지 못했어요. {loadError.message}</p>}
+      {/* 승인된 사건도 고칠 수 있다 — 고치면 새 판단 · 새 보고서가 생기고 다시 승인해야 한다 */}
+      {approved && (editing || dirty) && busy === null && (
+        <div className="mb-4">
+          <Notice tone="warning" title="승인된 검토 보고서가 있어요">
+            고치고 다시 판단하면 새 보고서가 만들어지고, 그 보고서를 다시 승인해야 해요. 승인했던 보고서는 이력으로 남아요.
+          </Notice>
+        </div>
+      )}
 
       <div className={hasVideo ? "grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]" : "mx-auto max-w-3xl"}>
         {hasVideo && <Media evidence={evidence} />}

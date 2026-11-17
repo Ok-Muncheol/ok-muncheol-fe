@@ -5,7 +5,7 @@
  * (영상 없이 진행한 카드는 「블랙박스 차」 대신 「가입자 차」 — ego). 사유 속 칸 이름(movement_A 등)도 매핑으로 카드 칸 이름을 붙인다(readableReason).
  * 고를 도표가 없을 때 BE가 도표 A/B를 맞바꿔 대조한 줄은 따로 모아 보인다(도표 A/B는 판단이 정한다).
  * 위 카드가 판단 뒤에 바뀌었으면(stale) 흐리게 두고 이전 카드 기준이라고 알린다.
- * 다음 단계는 비율 제목 줄 오른쪽에 둔다 — 「검토 보고서 보기 →」(보고서 화면으로 넘어간다)와 「사실 카드 고치기」(위 카드를 다시 연다).
+ * 다음 단계는 비율 제목 줄 오른쪽에 둔다 — 「검토 보고서 보기 →」(보고서 화면으로 넘어간다)와 「사실 카드 수정하기 ↑」(위 카드의 「수정하기」와 같다 — 카드를 수정 상태로 열고 그리로 올라간다).
  */
 import { Button, ButtonLink, Notice } from "@/ui/controls";
 import { EvidencePanel } from "@/features/evidence/evidence-panel";
@@ -79,7 +79,7 @@ function Ratio({
           <div className="flex items-center gap-2">
             {onEditCard && (
               <Button variant="quiet" size="sm" onClick={onEditCard}>
-                사실 카드 고치기
+                사실 카드 수정하기 ↑
               </Button>
             )}
             {reportHref && (
