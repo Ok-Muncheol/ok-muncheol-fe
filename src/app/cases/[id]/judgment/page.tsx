@@ -12,6 +12,7 @@ import { getCaseSummary, isSampleSource } from "@/features/cases/case-source";
 import { CaseWorkspace } from "@/features/facts/case-workspace";
 import { getEvidence, getFactCard } from "@/features/facts/fact-source";
 import { getLatestJudgmentRun } from "@/features/judgment/judgment-source";
+import { workspaceKey } from "@/lib/judgment/view";
 import { isBeforeCard } from "@/lib/cases/intake";
 import { isFromVideo } from "@/lib/facts/card";
 import { isDone } from "@/lib/cases/stages";
@@ -52,7 +53,7 @@ export default async function JudgmentPage(props: PageProps<"/cases/[id]/judgmen
       {header}
       <CaseWorkspace
         // 카드·판단이 바뀌면(저장·확정·판단 뒤 다시 읽음) 고르던 값을 새 카드로 다시 시작한다.
-        key={`${card.version}-${card.status}-${run?.task_id ?? "none"}-${run?.status ?? ""}`}
+        key={workspaceKey(card, run)}
         caseId={id}
         live={live}
         hasVideo={hasVideo}
