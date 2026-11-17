@@ -109,7 +109,11 @@ export type JudgmentResult = {
   evidence: EvidenceHit[]; checks: ValidationCheck[]; questions: ConfirmationQuestion[]; reasons: string[];
   /** 보고서 3·4·5번용. 판단 그래프가 채우고, 도표를 고르지 못한 보류면 null·빈 목록. 예전 결과에는 없을 수 있다 */
   base_fault_A?: number | null; modifiers?: ModifierDecision[]; alternatives?: ChartAlternative[];
+  /** 담당자가 '모름'으로 답한 칸 값마다 고를 수 있는 도표·기본 과실(추가 확인 필요, BE #276). 없으면 키 없음 */
+  scenarios?: UnknownScenario[];
 };
+/** '모름' 칸에 값을 하나씩 넣어 본 경우 — 도표 선택 칸 이름·값, 그때 고르는 도표와 기본 과실(수정요소 전) */
+export type UnknownScenario = { fields: Record<string, string>; chart_id: string; variant: string | null; base_A: number; base_B: number };
 /** 판단 그래프 단계 — BE app/workflow/graph.py STAGES와 같은 이름·순서(judgment_runs.stage 값). */
 export type JudgmentStage =
   | "require_confirmed_card" | "check_chart_scope" | "retrieve_chart_candidates" | "ask_or_resume"
