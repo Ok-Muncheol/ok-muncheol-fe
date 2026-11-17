@@ -10,6 +10,7 @@
  */
 import { useRef, useState, type ReactNode } from "react";
 import type { InjuredPersonDoc, InjuryResult, LiabilityFlag, LiabilityResult, LiabilityStatus, PartnerMedicalRecord, PropertyDamageInputDoc } from "@/lib/api/types";
+import { DemoFilePick } from "@/features/cases/demo-file-pick";
 import { Button, Input, Select, Spinner } from "@/ui/controls";
 
 const won = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${v.toLocaleString("ko-KR")}원`);
@@ -34,8 +35,10 @@ export function LiabilityBlock({
   liability,
   partnerMedical = [],
   busy,
+  live = false,
   onSave,
   onEstimate,
+  onDemoEstimate,
   onMedical,
 }: {
   liability: LiabilityResult | null | undefined;
@@ -44,6 +47,10 @@ export function LiabilityBlock({
   busy: boolean;
   onSave: (docs: (InjuredPersonDoc | PropertyDamageInputDoc)[]) => void;
   onEstimate: (file: File) => void;
+  /** 견본 모드가 아니다(시연 파일 목록을 읽는다) */
+  live?: boolean;
+  /** 시연 파일(상대 차 견적서 counterparty_…)에서 고른 이름 */
+  onDemoEstimate?: (name: string) => void;
   onMedical: (file: File, docType: MedicalKind) => void;
 }) {
   const property = liability?.property ?? null;
@@ -76,6 +83,7 @@ export function LiabilityBlock({
               <span className="flex flex-wrap items-center gap-2">
                 {won(property?.repair_cost)}
                 <FilePick label={property?.repair_cost != null ? "다른 견적서 올리기" : "상대 차 견적서 PDF 올리기"} accept="application/pdf,.pdf" busy={busy} onFile={onEstimate} />
+                {onDemoEstimate && <DemoFilePick kind="estimate" live={live} prefix="counterparty_" disabled={busy} onPick={onDemoEstimate} />}
               </span>
             </Row>
             <Row term="대물 초안">

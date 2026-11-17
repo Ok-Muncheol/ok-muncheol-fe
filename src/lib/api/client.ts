@@ -15,7 +15,7 @@
 import type {
   AdminOverview, AgreedFaultInput, AnswerResult, ApiError, AssignmentInput, CaseFacts, CaseSummary, ClaimResult, ConfirmResult, CounterpartyInfo,
   EvidenceView, FactCard, FactPatch, IntakeDetail, IntakeFilter, IntakeInput, IntakeView, JudgmentRunView, JudgmentTaskView, QaAnswer,
-  PartnerMedicalRecord, QuestionAnswer, ReviewReport, UploadKind, UploadTicket,
+  DemoFile, PartnerMedicalRecord, QuestionAnswer, ReviewReport, UploadKind, UploadTicket,
 } from "./types";
 
 export interface ApiClient {
@@ -28,6 +28,10 @@ export interface ApiClient {
    * 받은 upload_url에 파일을 PUT하고(키 없이 Content-Type만) storage_path를 uploadEstimate·startAnalysis에 넘긴다. 파일 하나 50MB까지
    */
   requestUpload(caseId: string, kind: UploadKind, contentType: string): Promise<UploadTicket>;
+  /** GET /demo-files?kind= — 시연용으로 Storage demo/ 폴더에 미리 올려 둔 파일 목록. 비어 있으면 빈 목록 */
+  listDemoFiles(kind: UploadKind): Promise<DemoFile[]>;
+  /** POST /cases/{id}/uploads/demo — 시연 파일을 그 사건 폴더로 복사한다. storage_path는 직접 올린 파일과 같은 값이다 */
+  copyDemoFile(caseId: string, kind: UploadKind, name: string): Promise<{ storage_path: string }>;
   /** POST /cases/{id}/analysis — 202. idempotencyKey는 newIdempotencyKey()로 만들고 같은 접수를 다시 보낼 때 그대로 쓴다 */
   startAnalysis(caseId: string, storagePath: string, idempotencyKey: string): Promise<Record<string, unknown>>;
   getCase(caseId: string): Promise<Record<string, unknown>>;
@@ -171,6 +175,8 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
   return {
     listCases: () => request("GET", "/cases"),
     createCase: (payload) => request("POST", "/cases", { body: payload }),
+    listDemoFiles: (kind) => request("GET", `/demo-files?kind=${encodeURIComponent(kind)}`),
+    copyDemoFile: (caseId, kind, name) => request("POST", `${caseUrl(caseId)}/uploads/demo`, { body: { kind, name } }),
     requestUpload: (caseId, kind, contentType) =>
       request("POST", `${caseUrl(caseId)}/uploads`, { body: { kind, content_type: contentType } }),
     startAnalysis: (caseId, storagePath, idempotencyKey) =>

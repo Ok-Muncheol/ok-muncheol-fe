@@ -18,6 +18,7 @@ import { asApiError } from "@/lib/api/client";
 import type { CaseFacts, InjuredPersonDoc, PartnerMedicalRecord, PartyMapping, PropertyDamageInputDoc, ReportSection, ReviewReport } from "@/lib/api/types";
 import { cardLabel, cardValueLabel, chartPartyName, readableReason, type EgoName } from "@/lib/facts/card";
 import { Button, ButtonLink, Input, Spinner } from "@/ui/controls";
+import { DemoFilePick } from "@/features/cases/demo-file-pick";
 import { UploadError, uploadFile } from "@/features/cases/upload";
 import { LiabilityBlock, type MedicalKind } from "./liability-block";
 
@@ -98,6 +99,27 @@ export function ReportView({
       setProgress(0);
       await uploadFile(ticket.upload_url, file, "application/pdf", setProgress);
       goTo(await api.uploadEstimate(caseId, ticket.storage_path, partyId));
+    });
+
+  // 시연 파일(Storage demo/estimates)에서 고른 내 차 견적서 — 올리지 않고 서버가 이 사건 폴더로 복사한 뒤 같은 경로로 읽는다.
+  const pickDemoEstimate = (name: string) =>
+    run("estimate", async () => {
+      const partyId = mapping.insured_party_id;
+      if (!partyId) throw new Error("가입자 차량이 정해지지 않았어요. 판단 화면의 사실 카드에서 가입자를 정해 주세요.");
+      const api = createBrowserApiClient();
+      setProgress(1);
+      const { storage_path } = await api.copyDemoFile(caseId, "estimate", name);
+      goTo(await api.uploadEstimate(caseId, storage_path, partyId));
+    });
+
+  const pickDemoCounterEstimate = (name: string) =>
+    run("liability", async () => {
+      const counterparty =
+        mapping.insured_party_id === mapping.chart_party_A_id ? mapping.chart_party_B_id : mapping.insured_party_id === mapping.chart_party_B_id ? mapping.chart_party_A_id : null;
+      if (!counterparty) throw new Error("상대 차가 정해지지 않았어요. 판단 화면의 사실 카드에서 가입자와 도표 A/B를 정해 주세요.");
+      const api = createBrowserApiClient();
+      const { storage_path } = await api.copyDemoFile(caseId, "estimate", name);
+      goTo(await api.uploadEstimate(caseId, storage_path, counterparty));
     });
 
   // 대물 · 대인 — 입력은 모두 addDocuments. 상대 차 견적서는 도표에서 가입자 반대쪽 당사자로 보낸다(BE가 그 party_id로 상대 차 수리비를 찾는다).
@@ -268,7 +290,7 @@ export function ReportView({
           <p className="text-body text-ink-muted">{s8?.empty_reason ?? "과실비율이 정해진 뒤 산정해요."}</p>
         ) : (
           <>
-            <Estimate source={s8?.body["손해액 출처"]} busy={busy === "estimate"} progress={progress} onFile={uploadEstimate} />
+            <Estimate source={s8?.body["손해액 출처"]} busy={busy === "estimate"} progress={progress} live={live} onFile={uploadEstimate} onDemo={pickDemoEstimate} />
             <Exclusions busy={busy === "facts"} onSave={saveFacts} />
             <Rows>
               <Row term="고객 차량 손해액">{text(s8?.body["고객 차량 손해액"])}</Row>
@@ -308,7 +330,7 @@ export function ReportView({
 
       {/* 대물 · 대인 — 8번 「대물·대인 1차 판정」 */}
       {ready && (
-        <LiabilityBlock liability={report.liability} partnerMedical={partnerMedical} busy={busy === "liability"} onSave={saveLiability} onEstimate={uploadCounterEstimate} onMedical={attachMedical} />
+        <LiabilityBlock liability={report.liability} partnerMedical={partnerMedical} busy={busy === "liability"} live={live} onSave={saveLiability} onEstimate={uploadCounterEstimate} onDemoEstimate={pickDemoCounterEstimate} onMedical={attachMedical} />
       )}
 
       {/* 구상 — 9번 */}
@@ -442,7 +464,22 @@ function Facts({ section, ego }: { section?: ReportSection; ego?: EgoName }) {
 }
 
 /** 견적서 — 손해액 출처(견적서 PDF 자동 추출)와 올리기. 올리면 BE가 다시 산정해 새 버전이 생긴다. */
-function Estimate({ source, busy, progress, onFile }: { source: unknown; busy: boolean; progress: number; onFile: (file: File) => void }) {
+function Estimate({
+  source,
+  busy,
+  progress,
+  live,
+  onFile,
+  onDemo,
+}: {
+  source: unknown;
+  busy: boolean;
+  progress: number;
+  live: boolean;
+  onFile: (file: File) => void;
+  /** 시연 파일(내 차 견적서 own_…)에서 고른 이름 */
+  onDemo: (name: string) => void;
+}) {
   const input = useRef<HTMLInputElement>(null);
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-control bg-surface-muted px-4 py-3">
@@ -461,17 +498,20 @@ function Estimate({ source, busy, progress, onFile }: { source: unknown; busy: b
           e.target.value = "";
         }}
       />
-      <Button variant="secondary" size="sm" disabled={busy} onClick={() => input.current?.click()}>
-        {busy ? (
-          <>
-            <Spinner className="h-3.5! w-3.5!" /> 올리는 중 {Math.round(progress * 100)}%
-          </>
-        ) : typeof source === "string" ? (
-          "다른 견적서 올리기"
-        ) : (
-          "견적서 PDF 올리기"
-        )}
-      </Button>
+      <span className="flex flex-wrap items-center gap-2">
+        <DemoFilePick kind="estimate" live={live} prefix="own_" disabled={busy} onPick={onDemo} />
+        <Button variant="secondary" size="sm" disabled={busy} onClick={() => input.current?.click()}>
+          {busy ? (
+            <>
+              <Spinner className="h-3.5! w-3.5!" /> 올리는 중 {Math.round(progress * 100)}%
+            </>
+          ) : typeof source === "string" ? (
+            "다른 견적서 올리기"
+          ) : (
+            "견적서 PDF 올리기"
+          )}
+        </Button>
+      </span>
     </div>
   );
 }

@@ -20,6 +20,7 @@ import type { ApiError, CaseStage, TaskStatus, VersionRef } from "@/lib/api/type
 import { caseTitle, isBeforeCard, todayInKorea, videoContentType, videoProblem } from "@/lib/cases/intake";
 import { stageHref } from "@/lib/cases/stages";
 import { Button, ButtonLink, Input, Spinner } from "@/ui/controls";
+import { DemoFilePick } from "./demo-file-pick";
 import { UploadError, uploadFile } from "./upload";
 
 /**
@@ -189,6 +190,8 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   const [date, setDate] = useState(existing?.accidentDate?.slice(0, 10) ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  /** 직접 올리는 대신 고른 시연 영상(Storage demo/videos의 파일 이름). 분석을 시작할 때 이 사건 폴더로 복사한다 */
+  const [demoName, setDemoName] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>(running ? { kind: "analyzing" } : { kind: "form" });
   const [error, setError] = useState<string | null>(existing?.taskStatus === "failed" ? (existing.error ? friendly(existing.error) : FAILED_MESSAGE) : null);
   const [dragging, setDragging] = useState(false);
@@ -279,8 +282,19 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
     if (problem) return;
     setError(null);
     setFile(next);
+    setDemoName(null);
     setPreview(URL.createObjectURL(next));
     storagePath.current = null; // 다른 영상을 골랐으면 새로 올린다
+    analysisKey.current = null;
+  }
+
+  function chooseDemo(name: string) {
+    setError(null);
+    setFileProblem(null);
+    setFile(null);
+    setPreview(null);
+    setDemoName(name);
+    storagePath.current = null;
     analysisKey.current = null;
   }
 
@@ -306,7 +320,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   }
 
   async function start() {
-    if (!file || !date) return;
+    if ((!file && !demoName) || !date) return;
     setError(null);
     setFileProblem(null);
     if (sample) return simulate();
@@ -320,13 +334,18 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
         setHasCase(true);
         window.history.replaceState(null, "", `/cases/${encodeURIComponent(created.case_id)}`);
       }
-      if (!storagePath.current) {
+      if (!storagePath.current && demoName) {
+        // 시연 영상 — 올리지 않고 서버가 이 사건 폴더로 복사한다
+        setPhase({ kind: "uploading", progress: 0 });
+        storagePath.current = (await api.copyDemoFile(caseId.current, "video", demoName)).storage_path;
+      } else if (!storagePath.current && file) {
         setPhase({ kind: "uploading", progress: 0 });
         const contentType = videoContentType(file)!;
         const ticket = await api.requestUpload(caseId.current, "video", contentType);
         await uploadFile(ticket.upload_url, file, contentType, (ratio) => setPhase({ kind: "uploading", progress: ratio }));
         storagePath.current = ticket.storage_path;
       }
+      if (!storagePath.current) return;
       // 같은 접수를 다시 보낼 때(응답을 못 받았을 때)는 같은 키를 쓴다. 실패한 작업 뒤에는 새 키다.
       analysisKey.current ??= newIdempotencyKey();
       setPhase({ kind: "analyzing" });
@@ -459,6 +478,18 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
             </div>
           )}
         </div>
+      ) : demoName && phase.kind === "form" ? (
+        <div className="flex items-center justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 text-caption">
+          <span className="min-w-0 truncate text-ink">
+            <span className="mr-2 font-semibold text-ink-muted">시연 영상</span>
+            <span className="font-mono">{demoName}</span>
+          </span>
+          {!error && (
+            <Button variant="quiet" size="sm" onClick={() => setDemoName(null)}>
+              다른 영상 고르기
+            </Button>
+          )}
+        </div>
       ) : phase.kind !== "form" ? (
         // 다시 들어온 분석 중 사건 — 이 브라우저에 고른 파일이 없으니 서버에 올린 영상을 보인다.
         <UploadedVideo src={existing?.videoUrl ?? null} />
@@ -485,6 +516,13 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
         </label>
       )}
 
+      {/* 시연용으로 Storage에 미리 올려 둔 영상 — 폴더가 비었으면 보이지 않는다 */}
+      {phase.kind === "form" && !file && !demoName && (
+        <div className="-mt-3">
+          <DemoFilePick kind="video" live={!sample} onPick={chooseDemo} />
+        </div>
+      )}
+
       {fileProblem && (
         <p role="alert" className="-mt-3 text-caption text-on-danger-soft">
           {fileProblem}
@@ -492,7 +530,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
       )}
 
       {/* 배정된 사건에 블랙박스 영상이 없으면 빈 사실 카드로 판단 화면에서 진행한다(진술로 칸을 채우고, 비운 칸은 구분 질문이 묻는다). */}
-      {existing && !settled && phase.kind === "form" && (!file || error) && (
+      {existing && !settled && phase.kind === "form" && ((!file && !demoName) || error) && (
         <div className="-mt-3 flex flex-wrap items-center gap-x-1 gap-y-1 text-caption text-ink-muted">
           블랙박스 영상이 없나요?
           <Button variant="quiet" size="sm" onClick={proceedWithoutVideo} disabled={proceeding}>
@@ -527,7 +565,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
           <p className="text-caption text-ink-muted">몇 분 걸릴 수 있어요. 창을 닫아도 분석은 계속되고, 끝나면 사실 카드 화면으로 넘어가요.</p>
         </div>
       ) : error ? (
-        <Failure message={error} canRetry={file !== null} onRetry={start} onPickAnother={() => fileInput.current?.click()} />
+        <Failure message={error} canRetry={file !== null || demoName !== null} onRetry={start} onPickAnother={() => fileInput.current?.click()} />
       ) : (
         // 왼쪽은 이 다음에 일어나는 일 한 줄, 오른쪽은 시작 버튼.
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -544,7 +582,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
               </li>
             ))}
           </ol>
-          <Button onClick={start} disabled={!file || !date} className="h-10 px-6">
+          <Button onClick={start} disabled={(!file && !demoName) || !date} className="h-10 px-6">
             분석 시작
           </Button>
         </div>
