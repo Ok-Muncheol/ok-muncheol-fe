@@ -10,9 +10,10 @@
  * 판단 중 구분 질문이 오면 위 카드의 그 칸이 맨 위로 올라오고 질문의 보기만 열린다 — 고른 뒤 확정 버튼을 누르면
  * 답변을 보내고, 값으로 답했으면 카드에 반영·재확정·재판단까지 이어서 한다.
  * 확인 완료한 카드는 잠긴다. 「수정하기」로 열어 고치면 아래 결과는 이전 카드 기준으로 흐려진다.
- * 확정한 카드를 「초기화」하면 판단 단계부터 다시 한다 — 칸을 AI 원값으로 되돌려 다시 고르게 하고, 머리(CaseHeader)의 진행 단계 한 줄이
- * 판단을 지금 단계로, 검토 보고서를 아직 오지 않은 단계로 그린다(restartFrom). 그래서 머리를 사건 화면이 아니라 여기서 그린다.
- * 「수정 취소」하면 원래 단계로 돌아가고, 다시 확정해 판단이 끝나면 BE 단계(새 판정 · 새 보고서)를 따른다.
+ * 확정한 카드를 「초기화」하면 확인을 받은 뒤 사건을 판단 단계의 처음으로 되돌려 저장한다(BE POST /cases/{id}/restart) — 담당 사건 목록에서도
+ * 판단 단계(사실 확인 대기)다. BE가 AI 원본 카드를 확인 전 상태의 새 버전으로 다시 만들고, 그때까지의 카드 · 판단 · 보고서는 이력으로 남는다.
+ * 되돌린 뒤에는 취소할 수 없다. 확정 전 카드의 「초기화」는 고른 값만 되돌린다(이미 판단 단계의 처음이다).
+ * 견본 모드는 저장하지 않고 화면에서만 되돌린다 — 머리(CaseHeader)의 진행 단계 한 줄이 판단을 지금 단계로 그린다(restartFrom).
  * 판단 접수(POST …/judgments)는 판단을 끝까지 돌린 뒤 응답한다. 실행 중인 판단은 몇 초마다 다시 읽는다.
  * 견본 모드는 BE에 보내지 않고 진행을 흉내 낸 뒤 견본 결과를 보인다.
  */
@@ -116,6 +117,13 @@ export function CaseWorkspace({ caseId, head, progress, live, hasVideo, card, ru
   /** 확정한 카드를 「초기화」해 판단 단계부터 다시 하는 중 — 진행 단계 한 줄이 판단을 지금 단계로, 검토 보고서를 아직 오지 않은 단계로 그린다.
    *  수정 상태가 닫히면(수정 취소 · 판단 끝) 풀린다 */
   const [restarted, setRestarted] = useState(false);
+  /** 확정한 카드의 「초기화」를 묻는 중 · BE에 되돌리기를 보내는 중 · 실패 이유 */
+  const [resetAsking, setResetAsking] = useState(false);
+  const [resetSending, setResetSending] = useState(false);
+  const [resetProblem, setResetProblem] = useState<string | null>(null);
+  // 되돌린 뒤 다시 읽는 동안(판단 중 표시와 겹치지 않게 reloading과 따로 둔다)
+  const [rereading, startReread] = useTransition();
+  const resetting = resetSending || rereading;
   const [sampleResult, setSampleResult] = useState<JudgmentResult | null>(null);
   const [resultInView, setResultInView] = useState(false);
   /** 비율 제목 줄이 화면 위로 지나갔다(결과를 읽으며 아래로 내려왔다) */
@@ -222,10 +230,16 @@ export function CaseWorkspace({ caseId, head, progress, live, hasVideo, card, ru
   }
 
   /**
-   * 「초기화」 — 고른 값을 한 번에 되돌린다(resetFields). 확정한 카드는 수정 상태로 열어 다시 고르게 하고, 판단 단계부터 다시 한다(restarted).
-   * 확정 전 카드는 이미 판단 단계의 처음이라 고른 값만 되돌린다.
+   * 「초기화」 — 확정 전 카드는 고른 값만 되돌린다(이미 판단 단계의 처음이다).
+   * 확정한 카드는 사건을 판단 단계의 처음으로 되돌려 저장하므로 먼저 묻는다(resetAsking → restartJudgment).
+   * 견본 모드는 저장할 곳이 없어 화면에서만 되돌린다 — 수정 상태로 열고 진행 단계를 판단부터 다시 그린다(restarted).
    */
   function resetCard() {
+    if (live && card.status === "confirmed") {
+      setResetProblem(null);
+      setResetAsking(true);
+      return;
+    }
     setDraft(resetFields(card));
     setTouched(new Set());
     setFailure(null);
@@ -233,6 +247,24 @@ export function CaseWorkspace({ caseId, head, progress, live, hasVideo, card, ru
     if (!confirmed) return;
     setEditing(true);
     setRestarted(true);
+  }
+
+  /** 「판단 단계로 되돌리기」 — BE에 저장한 뒤 다시 읽는다. 새 카드 버전이라 화면이 처음 상태로 새로 시작한다. */
+  async function restartJudgment() {
+    setResetProblem(null);
+    setResetSending(true);
+    try {
+      await createBrowserApiClient().restartCase(caseId, "judgment");
+    } catch (caught) {
+      setResetProblem(friendly(asApiError(caught)));
+      setResetSending(false);
+      return;
+    }
+    startReread(() => {
+      setResetSending(false);
+      setResetAsking(false);
+      router.refresh();
+    });
   }
 
   function cancelEdit() {
@@ -406,6 +438,30 @@ export function CaseWorkspace({ caseId, head, progress, live, hasVideo, card, ru
       {/* 머리는 접수 · 검토 보고서 화면과 같은 모양이다. 「초기화」로 판단 단계부터 다시 하는 동안은 검토 보고서가 아직 오지 않은 단계다. */}
       <CaseHeader info={head} progress={progress && restartFrom(progress, restarted ? "judgment" : null)} viewing="judgment" />
       {loadError && <p className="mb-4 text-body text-danger">판단 기록을 불러오지 못했어요. {loadError.message}</p>}
+      {/* 확정한 카드의 「초기화」 — 사건을 판단 단계의 처음으로 되돌려 저장하기 전에 묻는다 */}
+      {resetAsking && (
+        <div className="mb-4">
+          <Notice tone="warning" title="판단 단계의 처음으로 되돌릴까요?">
+            <p className="break-keep">
+              사실 카드가 AI가 채운 처음 상태로 돌아가 확정이 풀리고, 사건이 판단 단계로 저장돼요. 되돌린 뒤에는 취소할 수 없어요. 지금까지 고친 값과 판단 결과는 이력으로만 남아요.
+              {approved && " 승인한 검토 보고서도 이력으로 남고, 새 보고서를 다시 승인해야 해요."}
+            </p>
+            {resetProblem && (
+              <p role="alert" className="mt-1 font-semibold break-keep">
+                되돌리지 못했어요. {resetProblem}
+              </p>
+            )}
+            <span className="mt-2 flex gap-2">
+              <Button size="sm" onClick={restartJudgment} disabled={resetting}>
+                {resetting ? "되돌리는 중…" : "판단 단계로 되돌리기"}
+              </Button>
+              <Button variant="quiet" size="sm" disabled={resetting} onClick={() => setResetAsking(false)}>
+                취소
+              </Button>
+            </span>
+          </Notice>
+        </div>
+      )}
       {/* 승인된 사건도 고칠 수 있다 — 고치면 새 판단 · 새 보고서가 생기고 다시 승인해야 한다 */}
       {approved && (editing || dirty) && busy === null && (
         <div className="mb-4">

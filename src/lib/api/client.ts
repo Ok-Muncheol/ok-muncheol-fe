@@ -1,5 +1,5 @@
 /**
- * B 통합: BE HTTP 클라이언트. 메서드는 BE app/api/routes.py 경로와 1:1(24개 — 사건 19 + 관리자 5)이다. BE tests/api/test_app.py가 경로 수를 대조한다.
+ * B 통합: BE HTTP 클라이언트. 메서드는 BE app/api/routes.py 경로와 1:1(25개 — 사건 20 + 관리자 5)이다. BE tests/api/test_app.py가 경로 수를 대조한다.
  *
  * - 주소: NEXT_PUBLIC_BACKEND_URL(끝에 / 없이). 비우면 로컬 BE(LOCAL_BACKEND_URL)를 쓴다(.env.example).
  * - 인증: getAccessToken이 준 Supabase 세션 토큰을 Authorization: Bearer로 보낸다. 담당자(actor_id)는 BE가 토큰에서만 정한다.
@@ -35,6 +35,12 @@ export interface ApiClient {
   /** POST /cases/{id}/analysis — 202. idempotencyKey는 newIdempotencyKey()로 만들고 같은 접수를 다시 보낼 때 그대로 쓴다 */
   startAnalysis(caseId: string, storagePath: string, idempotencyKey: string): Promise<Record<string, unknown>>;
   getCase(caseId: string): Promise<Record<string, unknown>>;
+  /**
+   * POST /cases/{id}/restart — 사건을 그 단계의 처음으로 되돌려 저장한다(되돌린 뒤의 사건 요약). 그때까지의 카드·판단·보고서는 지우지 않고
+   * 이력으로 남는다. intake는 접수 단계(카드 없음), judgment는 AI 원본 카드를 확인 전 상태의 새 버전으로 다시 만든 사실 카드 단계다.
+   * 분석·판단이 진행 중이면 409 analysis_in_progress·judgment_in_progress, BE DB에 되돌리기 칼럼이 아직 없으면 intake는 503 restart_db_not_ready
+   */
+  restartCase(caseId: string, stage: "intake" | "judgment"): Promise<CaseSummary>;
   getFactCard(caseId: string): Promise<FactCard>;
   /**
    * POST /cases/{id}/fact-card — 201. 블랙박스 영상 없이 진행: 칸이 모두 빈 카드 v1(가입자 차가 카드 B)을 만든다.
@@ -182,6 +188,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     startAnalysis: (caseId, storagePath, idempotencyKey) =>
       request("POST", `${caseUrl(caseId)}/analysis`, { body: { storage_path: storagePath }, idempotencyKey }),
     getCase: (caseId) => request("GET", caseUrl(caseId)),
+    restartCase: (caseId, stage) => request("POST", `${caseUrl(caseId)}/restart`, { body: { stage } }),
     getFactCard: (caseId) => request("GET", `${caseUrl(caseId)}/fact-card`),
     startWithoutVideo: (caseId) => request("POST", `${caseUrl(caseId)}/fact-card`),
     getEvidence: (caseId) => request("GET", `${caseUrl(caseId)}/evidence`),
