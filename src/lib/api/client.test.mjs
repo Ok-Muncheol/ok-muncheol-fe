@@ -31,6 +31,8 @@ const ASSIGNMENT = { coverage: "property", assignee_id: QUESTION, reason: "담�
 const ROUTES = [
   ["listCases", [], "GET", "/cases", undefined],
   ["createCase", [{ accident_date: "2026-11-01" }], "POST", "/cases", { accident_date: "2026-11-01" }],
+  ["listDemoFiles", ["video"], "GET", "/demo-files?kind=video", undefined],
+  ["copyDemoFile", [CASE, "video", "highway_lane_change.mp4"], "POST", `/cases/${CASE}/uploads/demo`, { kind: "video", name: "highway_lane_change.mp4" }],
   ["requestUpload", [CASE, "estimate", "application/pdf"], "POST", `/cases/${CASE}/uploads`, { kind: "estimate", content_type: "application/pdf" }],
   ["startAnalysis", [CASE, "videos/a.mp4", "analysis-key-1"], "POST", `/cases/${CASE}/analysis`, { storage_path: "videos/a.mp4" }],
   ["getCase", [CASE], "GET", `/cases/${CASE}`, undefined],
@@ -76,9 +78,9 @@ function fakeClient({ respond = () => json(200, {}), ...options } = {}) {
 
 const failure = (promise) => promise.then(() => assert.fail("오류가 나야 한다"), (error) => error);
 
-test("메서드 26개가 BE 경로 26개와 1:1이다", () => {
+test("메서드 28개가 BE 경로 28개와 1:1이다", () => {
   const { client } = fakeClient();
-  assert.equal(ROUTES.length, 26);
+  assert.equal(ROUTES.length, 28);
   assert.deepEqual(Object.keys(client).sort(), ROUTES.map(([name]) => name).sort());
 });
 
