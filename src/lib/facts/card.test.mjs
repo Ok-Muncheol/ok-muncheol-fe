@@ -415,3 +415,16 @@ test("withScenario는 경우의 칸 값을 담당자가 고른 값으로 한 번
   assert.equal(next.weather, fields.weather);
   assert.equal(fields.signal_A.value, "unknown");
 });
+
+test("scenarioRows는 보류 결과의 고칠 값(BE result.fixes)도 같은 줄로 만든다 — 맞바꾼 카드는 카드 칸 값(card_fields)으로 적는다", () => {
+  const fixes = [
+    { fields: { relative_position: "same_direction_rear" }, card_fields: { relative_position: "same_direction_front" }, chart_id: "차43-2", title: "후행 직진 대 선행 진로변경", variant: null, base_A: 30, base_B: 70 },
+  ];
+  assert.deepEqual(scenarioRows(fixes), [
+    {
+      chartId: "차43-2", title: "후행 직진 대 선행 진로변경", variant: null, baseA: 30, baseB: 70,
+      conditions: [{ key: "relative_position", label: "상대 차가 온 쪽", values: ["같은 방향 앞(옆 차로 포함)"] }],
+      cardFields: { relative_position: "same_direction_front" },
+    },
+  ]);
+});
