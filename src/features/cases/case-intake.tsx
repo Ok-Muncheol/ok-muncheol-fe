@@ -9,13 +9,14 @@
  * 판단이 구분 질문으로 묻는다. 그렇게 진행한 사건도 보고서 전까지는 이 화면에서 영상을 올릴 수 있고, 분석 카드가 새 버전이 된다.
  * 배정된 사건(/cases/[id])은 단계와 상관없이 늘 이 화면이 접수 화면이다 — 위에서부터 머리(CaseHeader — 진행 단계 한 줄) →
  * 영상(올리기 칸 · 고른 영상 · 올린 영상) → 상태 한 줄(분석 시작 · 올리는 중 · 분석 중 · 실패 · 분석 완료와 다음 단계) → 사건 정보 상자다.
- * 카드가 있는 사건에 새 영상을 올리면(「영상 다시 올리기」를 확인했거나 올리기 · 분석을 시작함) 접수 단계부터 다시 한다 — 진행 단계 한 줄이
- * 접수를 지금 단계로, 판단 · 검토 보고서를 아직 오지 않은 단계로 그린다(restartFrom). 그래서 머리를 사건 화면이 아니라 여기서 그린다.
- * 「취소」하면 원래 단계로 돌아가고, 분석이 끝나면 새 사실 카드로 판단 화면에 넘어간다(판단 단계).
+ * 「영상 다시 올리기」를 확인하면 사건을 접수 단계로 되돌려 저장한다(BE POST /cases/{id}/restart) — 담당 사건 목록에서도 접수 단계이고
+ * 이 화면은 영상을 기다리는 처음 화면이 된다. 그때까지의 사실 카드 · 판단 · 보고서는 지우지 않고 이력으로 남는다. 되돌린 뒤에는 취소할 수 없다.
+ * 영상 없이 진행한 사건에 영상을 올리면 올리기 · 분석 중에는 접수 단계다 — 진행 단계 한 줄이 접수를 지금 단계로 그린다(restartFrom).
+ * 그래서 머리를 사건 화면이 아니라 여기서 그린다. 견본 모드는 저장하지 않고 화면에서만 접수 단계로 보인다.
  * 견본 모드는 BE에 보내지 않고 진행만 흉내 낸 뒤 견본 사건의 판단 화면으로 간다.
  */
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type DragEvent, type ReactNode } from "react";
 import { CaseNo } from "@/components/case-no";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
@@ -214,8 +215,14 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   /** 「영상 없이 진행」 요청 중 · 실패 이유(분석 실패와 다른 자리에 한 줄로 보인다) */
   const [proceeding, setProceeding] = useState(false);
   const [proceedProblem, setProceedProblem] = useState<string | null>(null);
-  /** 「영상 다시 올리기」 — 잘못 올린 영상을 바꾼다. 묻는 중(asking)에 확인하면 올리기 화면(on)으로 바뀐다 */
-  const [replacing, setReplacing] = useState<"off" | "asking" | "on">("off");
+  /**
+   * 「영상 다시 올리기」 — 묻는 중(asking)에 확인하면 사건을 접수 단계로 되돌려 저장하고(saving) 화면을 다시 읽는다.
+   * 견본 모드는 저장할 곳이 없어 이 화면만 올리기 화면(on)으로 바꾼다.
+   */
+  const [replacing, setReplacing] = useState<"off" | "asking" | "saving" | "on">("off");
+  const [restartProblem, setRestartProblem] = useState<string | null>(null);
+  // 되돌린 뒤 화면을 다시 읽는 동안 — 끝나면 접수 단계 사건으로 다시 그려진다
+  const [rereading, startReread] = useTransition();
 
   // 다시 시도할 때 이미 끝난 단계는 건너뛴다 — 사건은 한 번만 만들고, 올린 영상은 다시 올리지 않는다.
   // ref는 이어지는 요청이 읽고, 화면은 hasCase 상태로 그린다.
@@ -232,8 +239,8 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   // 영상 없이 진행한 사건 — 다음 단계 버튼과 함께, 보고서 전까지는 영상을 올릴 칸을 그대로 둔다.
   const noVideo = settled && existing?.hasVideo === false;
   const canAddVideo = noVideo && existing?.stage !== "report";
-  // 카드가 있는 사건에 새 영상을 올린다(「영상 다시 올리기」를 확인했거나 올리기 · 분석을 시작했다) — 접수 단계부터 다시 한다.
-  // 진행 단계 한 줄과 사건 정보가 접수 단계 사건처럼 보인다. 「취소」하면 원래 단계로 돌아간다.
+  // 카드가 있는 사건에 새 영상을 올리는 중(영상 없이 진행한 사건의 올리기 · 분석, 견본 모드의 「영상 다시 올리기」) — 화면에서 접수 단계로 보인다.
+  // 실제 사건의 「영상 다시 올리기」는 BE에 접수 단계로 저장하므로 다시 읽은 사건이 이미 접수 단계다(settled 아님).
   const restarted = settled && (replacing === "on" || phase.kind !== "form");
   // 분석을 시작할 때의 사실 카드 버전 — 분석이 만든 카드는 이보다 큰 버전이다(watchAnalysis).
   const baseVersion = existing?.versions.fact_card_version ?? 0;
@@ -418,6 +425,27 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
     router.push(`/cases/${encodeURIComponent(id)}/judgment`);
   }
 
+  /** 「접수 단계로 되돌리기」 — BE에 저장한 뒤 다시 읽는다. 다시 읽으면 접수 단계 사건이라 올리기 화면이 된다. */
+  async function restartIntake() {
+    const id = caseId.current;
+    if (!id) return;
+    if (sample) return setReplacing("on");
+    setRestartProblem(null);
+    setReplacing("saving");
+    try {
+      await createBrowserApiClient().restartCase(id, "intake");
+    } catch (caught) {
+      setRestartProblem(friendly(asApiError(caught)));
+      setReplacing("asking");
+      return;
+    }
+    startReread(() => {
+      setReplacing("off");
+      router.refresh();
+    });
+  }
+  const restarting = replacing === "saving" || rereading;
+
   const next = existing ? NEXT_LABEL[existing.stage] : undefined;
   const nextLink =
     existing && next ? (
@@ -436,6 +464,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
   );
 
   if (existing && settled && !canAddVideo && replacing !== "on") {
+    // 되돌린 뒤 다시 읽으면 접수 단계 사건이라(settled 아님) 이 화면 대신 아래 올리기 화면이 그려진다.
     return (
       <>
         {header}
@@ -456,19 +485,32 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
             </p>
             {nextLink}
           </div>
-          {/* 잘못 올린 영상을 바꾼다 — 확인하면 접수 단계부터 다시 한다. 새 영상으로 분석하면 사실 카드가 새 버전이 되고 판단을 다시 한다(이전 것은 이력으로 남는다). */}
+          {/* 잘못 올린 영상을 바꾼다 — 확인하면 사건을 접수 단계로 되돌려 저장한다. 새 영상으로 분석하면 사실 카드가 새 버전이 되고 판단을 다시 한다(이전 것은 이력으로 남는다). */}
           {!noVideo &&
-            (replacing === "asking" ? (
-              <Notice tone="warning" title="영상을 다시 올릴까요?">
+            (replacing === "asking" || restarting ? (
+              <Notice tone="warning" title="접수 단계로 되돌리고 영상을 다시 올릴까요?">
                 <p className="break-keep">
-                  접수 단계부터 다시 진행해요. 새 영상으로 분석한 사실 카드가 새 버전이 되고, 판단도 그 카드로 다시 해요. 지금까지 확인한 사실 카드와 판단은 이력으로 남아요.
+                  사건이 접수 단계로 돌아가 저장되고, 되돌린 뒤에는 취소할 수 없어요. 지금까지 확인한 사실 카드와 판단은 이력으로만 남고, 새 영상으로 분석한 사실 카드로 판단을 다시 해요.
                   {existing.approved && " 승인한 검토 보고서도 이력으로 남고, 새 보고서를 다시 승인해야 해요."}
                 </p>
+                {restartProblem && (
+                  <p role="alert" className="mt-1 font-semibold break-keep">
+                    되돌리지 못했어요. {restartProblem}
+                  </p>
+                )}
                 <span className="mt-2 flex gap-2">
-                  <Button size="sm" onClick={() => setReplacing("on")}>
-                    새 영상 올리기
+                  <Button size="sm" onClick={restartIntake} disabled={restarting}>
+                    {restarting ? "되돌리는 중…" : "접수 단계로 되돌리기"}
                   </Button>
-                  <Button variant="quiet" size="sm" onClick={() => setReplacing("off")}>
+                  <Button
+                    variant="quiet"
+                    size="sm"
+                    disabled={restarting}
+                    onClick={() => {
+                      setRestartProblem(null);
+                      setReplacing("off");
+                    }}
+                  >
                     취소
                   </Button>
                 </span>
