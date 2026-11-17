@@ -7,7 +7,7 @@
  * - 손해액 · 보험금(8번): 담당자가 넣는 곳 — 견적서 PDF, 면책 확인. 넣으면 BE가 다시 산정해 새 보고서 버전이 생기고 그 버전으로 옮긴다.
  * - 대물 · 대인 1차 판정(8번 「대물·대인 1차 판정」, liability-block.tsx): 상대 차 견적서 · 대물 입력 · 다친 사람 · 진단서 첨부.
  * - 구상(9번): 구상 예정액 = 자차 보험금 × 상대 과실. 상대와 과실을 다르게 합의했으면 협의 과실(이유 필수)로 새 버전.
- * - 맨 아래 「확인 완료」 한 번(상대방 정보는 선택) — 청구서가 만들어지면 구상 청구서 화면으로, 못 만들면 사유 목록을 보인다.
+ * - 맨 아래 「확인 완료」 한 번(상대방 정보는 선택, 시연용 「예시값 채우기」가 있다) — 청구서가 만들어지면 구상 청구서 화면으로, 못 만들면 사유 목록을 보인다.
  * 금액 · 비율은 BE 값 그대로다(FE가 계산하지 않는다). 견본 모드는 BE에 보내지 않고 결과만 흉내 낸다.
  */
 import Link from "next/link";
@@ -599,17 +599,33 @@ function AgreedFault({ current, busy, onSave }: { current: string; busy: boolean
   );
 }
 
-/** 확인 완료 — 상대방 정보(차량번호 · 보험사 · 사고접수번호)는 선택이다. 셋 다 비우면 보내지 않는다. */
+/** 시연 영상용 상대방 정보 — 지어낸 값이다(실제 차량 · 보험사가 아니다). 「예시값 채우기」가 세 칸에 넣는다. */
+const DEMO_COUNTERPARTY = { vehicle_no: "123가 4567", insurer: "누리손해보험", claim_no: "2026-0381724" };
+
+/**
+ * 확인 완료 — 상대방 정보(차량번호 · 보험사 · 사고접수번호)는 선택이다. 셋 다 비우면 보내지 않는다.
+ * 「예시값 채우기」는 시연 영상용으로 세 칸을 지어낸 값으로 채우기만 한다(보내지 않는다 — 「확인 완료」는 따로 누른다).
+ */
 function ConfirmForm({ busy, onConfirm }: { busy: boolean; onConfirm: (counterparty: { vehicle_no: string; insurer: string; claim_no: string } | null) => void }) {
   const [vehicle, setVehicle] = useState("");
   const [insurer, setInsurer] = useState("");
   const [claimNo, setClaimNo] = useState("");
   const filled = vehicle.trim() !== "" && insurer.trim() !== "";
+  function fillExample() {
+    setVehicle(DEMO_COUNTERPARTY.vehicle_no);
+    setInsurer(DEMO_COUNTERPARTY.insurer);
+    setClaimNo(DEMO_COUNTERPARTY.claim_no);
+  }
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <p className="font-semibold">보고서를 확인하고 구상 청구서를 만들어요</p>
-        <p className="mt-0.5 text-caption text-ink-muted">상대방 정보는 선택이에요. 넣으면 청구서에 함께 적혀요.</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="font-semibold">보고서를 확인하고 구상 청구서를 만들어요</p>
+          <p className="mt-0.5 text-caption text-ink-muted">상대방 정보는 선택이에요. 넣으면 청구서에 함께 적혀요.</p>
+        </div>
+        <Button variant="quiet" size="sm" disabled={busy} title="시연용 — 지어낸 상대방 정보로 세 칸을 채워요" onClick={fillExample}>
+          예시값 채우기
+        </Button>
       </div>
       <div className="grid gap-2 sm:grid-cols-3">
         <Input value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="상대 차량번호" aria-label="상대 차량번호" className="h-9" />
