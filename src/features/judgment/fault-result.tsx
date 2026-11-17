@@ -270,6 +270,15 @@ function NotReady({ result, mapping, ego, onEditCard }: { result: JudgmentResult
       <h2 id="fault-result-title" className="text-heading font-semibold">
         {deferred ? "판단을 보류했어요" : "추가 확인이 필요해요"}
       </h2>
+      {/* '모름'으로 답한 칸이 어느 값이어도 기본 과실이 같으면 그 비율이 온다(BE #276) — 크게 보인다 */}
+      {!deferred && result.fault_A !== null && result.fault_B !== null && (
+        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="text-caption font-semibold text-ink-muted">기본 과실(모르는 칸과 상관없이 같음)</span>
+          <span className="text-heading font-semibold tabular-nums">
+            {chartPartyName(mapping, "A", ego)} {result.fault_A} : {chartPartyName(mapping, "B", ego)} {result.fault_B}
+          </span>
+        </p>
+      )}
       {reasons.length > 0 && (
         <ul className="flex flex-col gap-1">
           {reasons.map((reason, i) => (
