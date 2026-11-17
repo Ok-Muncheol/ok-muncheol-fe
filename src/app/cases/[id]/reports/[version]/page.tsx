@@ -7,7 +7,10 @@
  * 최신 판단은 판단 조회(judgment-source)로 읽는다. 사건 요약(보드)을 못 읽어도 그린다 — API 모드는 사건 목록 API 전이다.
  * 맨 위 진행 단계 한 줄은 사건 요약이 있을 때만 그린다. 보고서가 아직 없을 때의 자리는 ../page.tsx(/reports)다.
  * 본문은 BE GET /cases/{id}/reports/{version}(견본 모드는 src/fixtures/reports.json)을 ReportView가 그린다(견적서 · 면책 · 협의 과실 · 확인 완료).
+ * 「인쇄 · PDF로 저장」하면 사건 이름 · 번호 줄과 보고서 본문만 나온다(진행 단계 · 질의응답 · 입력 칸은 print:hidden).
+ * 저장되는 PDF 이름은 화면 제목(generateMetadata)을 따른다.
  */
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { CaseNo } from "@/components/case-no";
@@ -18,10 +21,17 @@ import { getLatestJudgmentRun } from "@/features/judgment/judgment-source";
 import { QA_PANEL_COOKIE, QaIcon, QaSide } from "@/features/qa/qa-side";
 import { getPartnerMedical, getReport } from "@/features/reports/report-source";
 import { ReportView } from "@/features/reports/report-view";
+import { caseNo } from "@/lib/cases/intake";
 import { egoName } from "@/lib/facts/card";
 import { latestJudgment, qaSlot } from "@/lib/qa/view";
 import { ButtonLink, Notice, PageHeader } from "@/ui/controls";
 import { SidePanelLayout } from "@/ui/side-panel";
+
+/** 탭 제목이자 「PDF로 저장」의 파일 이름 — 예: 「검토 보고서 v3 · 1a2b3c4d · OK문철」 */
+export async function generateMetadata(props: PageProps<"/cases/[id]/reports/[version]">): Promise<Metadata> {
+  const { id, version } = await props.params;
+  return { title: `검토 보고서 v${version} · ${caseNo(id)} · OK문철` };
+}
 
 export default async function ReportPage(props: PageProps<"/cases/[id]/reports/[version]">) {
   const { id, version } = await props.params;

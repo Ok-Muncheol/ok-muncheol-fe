@@ -7,6 +7,7 @@
  * - 대인: 다친 사람마다 급수(1~14) · 치료관계비 누적 총액 · 운전자 여부 → 대인Ⅰ · 대인Ⅱ. 진단서 · 진료비 영수증은 첨부만(읽지 않는다)
  * 입력은 모두 addDocuments로 보내고(저장할 때마다 새 document_id · 지금 시각 received_at), BE가 다시 산정한 새 보고서 버전으로 옮긴다.
  * 모르는 값은 0이 아니라 null로 보낸다. 입력이 없는 사건은 liability가 없고, 그때는 입력 버튼만 보인다.
+ * 인쇄본에는 결과만 담는다 — 파일 올리기(FilePick) · 시연 파일 고르기 · 대물 입력 · 다친 사람 추가 · 고치기 · 증빙 첨부 · 제휴 병원 수신함은 빠진다(print:hidden).
  */
 import { useRef, useState, type ReactNode } from "react";
 import type { InjuredPersonDoc, InjuryResult, LiabilityFlag, LiabilityResult, LiabilityStatus, PartnerMedicalRecord, PropertyDamageInputDoc } from "@/lib/api/types";
@@ -62,7 +63,7 @@ export function LiabilityBlock({
 
   return (
     <section aria-label="대물 · 대인 1차 판정" className="rounded-card border border-line bg-surface">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-6 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-6 py-3 print:break-after-avoid">
         <h2 className="text-body font-semibold">대물 · 대인 1차 판정</h2>
         {liability && (
           <span className="text-caption text-ink-muted">
@@ -91,7 +92,7 @@ export function LiabilityBlock({
               {property?.limit_applied && <span className="ml-2 rounded-badge bg-surface-muted px-1.5 text-caption font-semibold text-ink-muted">대물 한도 적용</span>}
               {property?.formula && <span className="mt-0.5 block text-caption text-ink-muted">{property.formula}</span>}
             </Row>
-            <Row term="대물 입력">
+            <Row term="대물 입력" className="print:hidden">
               <PropertyForm busy={busy} onSave={(doc) => onSave([doc])} />
             </Row>
           </Rows>
@@ -120,7 +121,7 @@ export function LiabilityBlock({
               />
             </div>
           ) : (
-            <Button variant="secondary" size="sm" className="mt-3" disabled={busy} onClick={() => setAdding(true)}>
+            <Button variant="secondary" size="sm" className="mt-3 print:hidden" disabled={busy} onClick={() => setAdding(true)}>
               + 다친 사람 추가
             </Button>
           )}
@@ -162,7 +163,7 @@ const toInjuredDoc = (r: PartnerMedicalRecord): InjuredPersonDoc => ({
  */
 function PartnerInbox({ records, busy, onApply }: { records: PartnerMedicalRecord[]; busy: boolean; onApply: () => void }) {
   return (
-    <div className="mt-2 rounded-control border border-line bg-surface-muted px-4 py-3">
+    <div className="mt-2 rounded-control border border-line bg-surface-muted px-4 py-3 print:hidden">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-body font-semibold">
           제휴 병원 수신 <span className="tabular-nums">{records.length}</span>건
@@ -202,9 +203,9 @@ function Rows({ children }: { children: ReactNode }) {
   return <dl className="mt-1 divide-y divide-line">{children}</dl>;
 }
 
-function Row({ term, children }: { term: string; children: ReactNode }) {
+function Row({ term, className = "", children }: { term: string; className?: string; children: ReactNode }) {
   return (
-    <div className="grid gap-1 py-2.5 text-body sm:grid-cols-[9rem_1fr] sm:gap-4">
+    <div className={`grid gap-1 py-2.5 text-body sm:grid-cols-[9rem_1fr] sm:gap-4 print:break-inside-avoid ${className}`}>
       <dt className="text-caption text-ink-muted sm:pt-0.5">{term}</dt>
       <dd className="min-w-0">{children}</dd>
     </div>
@@ -244,14 +245,14 @@ function Notes({ flags, assumptions, reasons }: { flags: LiabilityFlag[]; assump
 function Person({ person: p, busy, onSave }: { person: InjuryResult; busy: boolean; onSave: (doc: InjuredPersonDoc) => void }) {
   const [editing, setEditing] = useState(false);
   return (
-    <li className="rounded-control border border-line px-4 py-3">
+    <li className="rounded-control border border-line px-4 py-3 print:break-inside-avoid">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2 font-semibold">
           {p.label || p.person_id}
           <span className={`rounded-full px-2 py-0.5 text-caption ${STATUS[p.status].tone}`}>{STATUS[p.status].label}</span>
         </p>
         {!editing && (
-          <button type="button" className="text-caption font-semibold text-primary-strong hover:underline" disabled={busy} onClick={() => setEditing(true)}>
+          <button type="button" className="text-caption font-semibold text-primary-strong hover:underline print:hidden" disabled={busy} onClick={() => setEditing(true)}>
             고치기
           </button>
         )}
@@ -411,7 +412,7 @@ function PropertyForm({ busy, onSave }: { busy: boolean; onSave: (doc: PropertyD
 function Medical({ busy, onMedical }: { busy: boolean; onMedical: (file: File, docType: MedicalKind) => void }) {
   const [docType, setDocType] = useState<MedicalKind>("medical_certificate");
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-2 rounded-control bg-surface-muted px-4 py-3 text-body">
+    <div className="mt-4 flex flex-wrap items-center gap-2 rounded-control bg-surface-muted px-4 py-3 text-body print:hidden">
       <span className="text-caption text-ink-muted">증빙 첨부</span>
       <Select value={docType} onChange={(e) => setDocType(e.target.value as MedicalKind)} aria-label="증빙 종류" className="h-8 w-40!">
         <option value="medical_certificate">진단서</option>
@@ -438,7 +439,7 @@ function FilePick({ label, accept, busy, onFile }: { label: string; accept: stri
           e.target.value = "";
         }}
       />
-      <Button variant="secondary" size="sm" disabled={busy} onClick={() => input.current?.click()}>
+      <Button variant="secondary" size="sm" className="print:hidden" disabled={busy} onClick={() => input.current?.click()}>
         {busy ? (
           <>
             <Spinner className="h-3.5! w-3.5!" /> 처리 중

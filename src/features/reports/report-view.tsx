@@ -9,10 +9,13 @@
  * - 구상(9번): 구상 예정액 = 자차 보험금 × 상대 과실. 상대와 과실을 다르게 합의했으면 협의 과실(이유 필수)로 새 버전.
  * - 맨 아래 「확인 완료」 한 번(상대방 정보는 선택, 시연용 「예시값 채우기」가 있다) — 청구서가 만들어지면 구상 청구서 화면으로, 못 만들면 사유 목록을 보인다.
  * 금액 · 비율은 BE 값 그대로다(FE가 계산하지 않는다). 견본 모드는 BE에 보내지 않고 결과만 흉내 낸다.
+ * 「인쇄 · PDF로 저장」(요약 오른쪽 위)은 브라우저 인쇄 창을 연다 — 인쇄본에는 보고서 내용만 담는다.
+ * 견적서 올리기 · 면책 고르기 · 입력 칸 · 확인 완료 같은 조작은 빼고(print:hidden), 접어 둔 칸은 펼친다. 줄 하나가 쪽에서 갈리지 않게 한다.
  */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { PrintButton } from "@/components/print-button";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError } from "@/lib/api/client";
 import type { CaseFacts, InjuredPersonDoc, PartnerMedicalRecord, PartyMapping, PropertyDamageInputDoc, ReportSection, ReviewReport } from "@/lib/api/types";
@@ -54,6 +57,26 @@ export function ReportView({
   const [message, setMessage] = useState<{ tone: "error" | "info"; text: string } | null>(null);
   const [blocked, setBlocked] = useState<string[] | null>(null);
   const [progress, setProgress] = useState(0);
+
+  // 인쇄할 때는 접어 둔 칸(판단에 쓴 사실 카드 · 산정 근거)도 펼쳐 담고, 인쇄 창을 닫으면 다시 접는다. 단축키(⌘P)로 인쇄해도 같다.
+  const sheet = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let opened: HTMLDetailsElement[] = [];
+    const expand = () => {
+      opened = Array.from(sheet.current?.querySelectorAll<HTMLDetailsElement>("details:not([open])") ?? []);
+      for (const d of opened) d.open = true;
+    };
+    const restore = () => {
+      for (const d of opened) d.open = false;
+      opened = [];
+    };
+    window.addEventListener("beforeprint", expand);
+    window.addEventListener("afterprint", restore);
+    return () => {
+      window.removeEventListener("beforeprint", expand);
+      window.removeEventListener("afterprint", restore);
+    };
+  }, []);
 
   const version = report.versions.report_version ?? 1;
   const base = `/cases/${encodeURIComponent(caseId)}`;
@@ -186,21 +209,24 @@ export function ReportView({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div ref={sheet} className="flex flex-col gap-6">
       {/* 요약 — 확인 상태와 핵심 숫자 셋 */}
-      <section aria-label="보고서 요약" className="rounded-card border border-line bg-surface px-6 py-5">
+      <section aria-label="보고서 요약" className="rounded-card border border-line bg-surface px-6 py-5 print:break-inside-avoid">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-heading font-semibold">
             검토 보고서 <span className="font-normal text-ink-muted tabular-nums">v{version}</span>
           </h2>
-          {approved ? (
-            <span className="text-caption font-semibold text-ink-muted">✓ 담당자 확인 완료{report.approved_at && ` · ${dateTime.format(new Date(report.approved_at))}`}</span>
-          ) : (
-            <span className="flex items-center gap-1.5 text-caption font-semibold text-on-warning-soft">
-              <span aria-hidden className="size-1.5 rounded-full bg-warning" />
-              담당자 확인 전
-            </span>
-          )}
+          <span className="flex flex-wrap items-center gap-3">
+            {approved ? (
+              <span className="text-caption font-semibold text-ink-muted">✓ 담당자 확인 완료{report.approved_at && ` · ${dateTime.format(new Date(report.approved_at))}`}</span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-caption font-semibold text-on-warning-soft">
+                <span aria-hidden className="size-1.5 rounded-full bg-warning" />
+                담당자 확인 전
+              </span>
+            )}
+            <PrintButton size="sm" />
+          </span>
         </div>
         <dl className="mt-5 grid gap-6 sm:grid-cols-3">
           <Figure term="최종 과실" note={j.fault_A !== null ? `${chartPartyName(mapping, "A", ego)} : ${chartPartyName(mapping, "B", ego)}` : "판정 전"}>
@@ -217,7 +243,7 @@ export function ReportView({
       </section>
 
       {message && (
-        <p role={message.tone === "error" ? "alert" : "status"} className={`text-body ${message.tone === "error" ? "text-on-danger-soft" : "text-ink-muted"}`}>
+        <p role={message.tone === "error" ? "alert" : "status"} className={`text-body print:hidden ${message.tone === "error" ? "text-on-danger-soft" : "text-ink-muted"}`}>
           {message.text}
         </p>
       )}
@@ -360,8 +386,8 @@ export function ReportView({
         )}
       </Block>
 
-      {/* 확인 완료 — 한 번 */}
-      <section aria-label="확인 완료" className="rounded-card border border-line bg-surface px-6 py-5">
+      {/* 확인 완료 — 한 번. 인쇄본에는 넣지 않는다(확인 상태는 맨 위 요약에 있다). */}
+      <section aria-label="확인 완료" className="rounded-card border border-line bg-surface px-6 py-5 print:hidden">
         {approved ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="font-semibold">✓ 담당자가 확인을 마친 보고서예요</p>
@@ -386,7 +412,7 @@ export function ReportView({
         )}
       </section>
 
-      <p className="text-caption text-ink-faint">
+      <p className="text-caption text-ink-faint print:hidden">
         이전 단계: <Link href={`${base}/judgment`} className="text-primary-strong hover:underline">과실 판단 화면</Link>
       </p>
     </div>
@@ -406,7 +432,7 @@ function Figure({ term, note, strong, children }: { term: string; note: string; 
 function Block({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
     <section aria-label={title} className="rounded-card border border-line bg-surface">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-6 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-6 py-3 print:break-after-avoid">
         <h2 className="text-body font-semibold">{title}</h2>
         {aside}
       </header>
@@ -421,7 +447,7 @@ function Rows({ children }: { children: ReactNode }) {
 
 function Row({ term, children }: { term: string; children: ReactNode }) {
   return (
-    <div className="grid gap-1 py-2.5 text-body sm:grid-cols-[9rem_1fr] sm:gap-4">
+    <div className="grid gap-1 py-2.5 text-body sm:grid-cols-[9rem_1fr] sm:gap-4 print:break-inside-avoid">
       <dt className="text-caption text-ink-muted sm:pt-0.5">{term}</dt>
       <dd className="min-w-0">{children}</dd>
     </div>
@@ -488,7 +514,15 @@ function Estimate({
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-control bg-surface-muted px-4 py-3">
       <div className="min-w-0 text-body">
         <p className="text-caption text-ink-muted">견적서</p>
-        <p className={typeof source === "string" ? "text-ink" : "text-ink-muted"}>{typeof source === "string" ? source : "아직 없어요 — 올리면 손해액 · 보험금을 산정해요"}</p>
+        <p className={typeof source === "string" ? "text-ink" : "text-ink-muted"}>
+          {typeof source === "string" ? (
+            source
+          ) : (
+            <>
+              아직 없어요<span className="print:hidden"> — 올리면 손해액 · 보험금을 산정해요</span>
+            </>
+          )}
+        </p>
       </div>
       <input
         ref={input}
@@ -501,8 +535,8 @@ function Estimate({
           e.target.value = "";
         }}
       />
-      <span className="flex flex-wrap items-center gap-2">
-        <DemoFilePick kind="estimate" live={live} prefix="own_" disabled={busy} onPick={onDemo} />
+      {/* 올리기 버튼 왼쪽, 시연 파일 고르기 오른쪽 — 대물 · 대인의 상대 차 견적서 칸과 같은 순서 */}
+      <span className="flex flex-wrap items-center gap-2 print:hidden">
         <Button variant="secondary" size="sm" disabled={busy} onClick={() => input.current?.click()}>
           {busy ? (
             <>
@@ -514,6 +548,7 @@ function Estimate({
             "견적서 PDF 올리기"
           )}
         </Button>
+        <DemoFilePick kind="estimate" live={live} prefix="own_" disabled={busy} onPick={onDemo} />
       </span>
     </div>
   );
@@ -535,7 +570,7 @@ function Exclusions({ busy, onSave }: { busy: boolean; onSave: (facts: CaseFacts
     onSave(facts);
   }
   return (
-    <div className="mb-4">
+    <div className="mb-4 print:hidden">
       <p className="text-caption text-ink-muted" title="운전자(계약자 · 기명피보험자 · 30일 초과 임차인 · 동거 친족) 기준">
         면책 사유 <span className="text-ink-faint">· 고르지 않으면 「면책 확인 필요」로 남아요</span>
       </p>
@@ -577,7 +612,7 @@ function AgreedFault({ current, busy, onSave }: { current: string; busy: boolean
     return (
       <span className="flex flex-wrap items-center gap-2">
         <span>{current}</span>
-        <button type="button" className="text-caption font-semibold text-primary-strong hover:underline" onClick={() => setOpen(true)}>
+        <button type="button" className="text-caption font-semibold text-primary-strong hover:underline print:hidden" onClick={() => setOpen(true)}>
           바꾸기
         </button>
       </span>

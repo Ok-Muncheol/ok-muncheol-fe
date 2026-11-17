@@ -2,6 +2,7 @@
  * A·B: 사건 화면 머리 — 접수 · 판단 · 검토 보고서 세 화면이 같은 자리에 같은 모양으로 둔다.
  * 위 줄 왼쪽은 「← 담당 사건」, 오른쪽은 진행 단계 한 줄(CaseStepper). 아래는 사건 이름(사고 날짜, caseTitle)과
  * 사건번호 · 사고일 · 배정일 한 줄이다. progress가 없으면(사건 요약을 못 읽음) 진행 단계 한 줄을 그리지 않는다.
+ * 인쇄하면 위 줄(이동 링크 · 진행 단계)은 빠지고 사건 이름과 정보 줄만 문서 머리로 남는다.
  * 훅을 쓰지 않아 서버 화면과 클라이언트 화면(접수 화면) 어디서나 쓴다.
  */
 import Link from "next/link";
@@ -16,7 +17,7 @@ export type CaseHeadInfo = { caseId: string; accidentDate: string | null | undef
 export function CaseHeader({ info, progress, viewing, badge }: { info: CaseHeadInfo; progress?: StepperCase | null; viewing: BoardColumnKey; badge?: ReactNode }) {
   return (
     <header className="mb-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <Link href="/cases" className="text-caption text-ink-muted hover:text-ink">
           ← 담당 사건
         </Link>
