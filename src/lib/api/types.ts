@@ -111,6 +111,8 @@ export type JudgmentResult = {
   base_fault_A?: number | null; modifiers?: ModifierDecision[]; alternatives?: ChartAlternative[];
   /** 담당자가 '모름'으로 답한 칸 값마다 고를 수 있는 도표·기본 과실(추가 확인 필요, BE #276). 없으면 키 없음 */
   scenarios?: UnknownScenario[];
+  /** 확인한 값이 후보 도표와 모두 어긋나 보류했을 때, 어느 칸을 어떤 값으로 고치면 고를 수 있는지(BE graph.card_fixes). 고칠 칸이 가장 적은 도표만 오고, 없으면 키 없음 */
+  fixes?: UnknownScenario[];
 };
 /**
  * '모름' 칸이 이 값이면 고르는 도표와 기본 과실(수정요소 전) — BE app/schemas/judgment.py UnknownScenario.

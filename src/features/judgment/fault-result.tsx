@@ -7,6 +7,7 @@
  * 담당자가 「모르겠어요」로 둔 칸 때문에 도표를 하나로 못 고르면(추가 확인 필요) 그 칸이 어떤 값이면 어느 도표·기본 과실인지
  * (BE result.scenarios)를 목록으로 보인다 — 확정한 비율이 아니라 경우별 참고다. 조건의 칸 이름은 위 카드의 그 칸으로 가는 링크다.
  * 그 경우들의 기본 과실이 모두 같으면 BE가 그 비율을 fault_A/B에 싣고, 화면은 목록 위에 크게 보인다.
+ * 확정한 값이 후보 도표와 모두 어긋나 보류했으면 어느 칸을 어떤 값으로 고치면 고를 수 있는지(BE result.fixes)를 같은 목록으로 보인다.
  * 위 카드가 판단 뒤에 바뀌었으면(stale) 흐리게 두고 이전 카드 기준이라고 알린다.
  * 다음 단계는 비율 제목 줄 오른쪽에 둔다 — 「검토 보고서 보기 →」(보고서 화면으로 넘어간다)와 「사실 카드 수정하기 ↑」(위 카드의 「수정하기」와 같다 — 카드를 수정 상태로 열고 그리로 올라간다).
  */
@@ -373,10 +374,41 @@ function Scenarios({ rows, common, mapping, ego, onEditCard, onApply }: { rows: 
   );
 }
 
+/**
+ * 보류한 판단의 「이렇게 고치면 고를 수 있는 도표」 — 확정한 값이 후보 도표와 모두 어긋났을 때 BE가 가장 적게 고쳐 고를 수 있는 도표와
+ * 그 값을 준다(result.fixes). 사실에 맞춰 고치라는 뜻이지 도표에 맞추라는 뜻이 아니어서, 사실과 맞을 때만 고치라고 적는다.
+ */
+function Fixes({ rows, mapping, ego, onEditCard, onApply }: { rows: ScenarioRow[]; mapping: PartyMapping; ego?: EgoName; onEditCard?: () => void; onApply?: (cardFields: Record<string, string>) => void }) {
+  const parties = `${chartPartyName(mapping, "A", ego)} : ${chartPartyName(mapping, "B", ego)}`;
+  const charts = new Set(rows.map((row) => row.chartId)).size;
+  return (
+    <section aria-labelledby="fault-fixes-title" className="flex flex-col gap-3">
+      <div>
+        <h3 id="fault-fixes-title" className="font-semibold">
+          이렇게 고치면 고를 수 있어요
+          <span className="ml-2 text-caption font-normal text-ink-muted">
+            도표 {charts}개 · 경우 {rows.length}개
+          </span>
+        </h3>
+        <p className="mt-1">
+          확정한 칸 값과 맞는 도표가 없어서, 가장 적게 고쳐 고를 수 있는 도표를 찾았어요. 사실과 맞는 경우가 있을 때만 위 카드의 값을 고치고 다시 판단해 주세요.
+          {onApply && " 「이 값으로 카드 고치기」를 누르면 그 경우의 값이 위 카드에 한 번에 들어가요."}
+        </p>
+        <p className="mt-1 text-caption text-ink-muted">
+          확정한 비율이 아니에요. 검색된 후보 도표만 견준 것이라 여기 없는 경우도 있을 수 있어요. 기본 과실은 수정요소를 넣기 전 값이에요.
+        </p>
+        <p className="mt-1 text-caption text-ink-muted md:hidden">기본 과실은 {parties} 순서예요.</p>
+      </div>
+      <ScenarioList rows={rows} parties={parties} onEditCard={onEditCard} onApply={onApply} />
+    </section>
+  );
+}
+
 function NotReady({ result, mapping, ego, onEditCard, onApply }: { result: JudgmentResult; mapping: PartyMapping; ego?: EgoName; onEditCard?: () => void; onApply?: (cardFields: Record<string, string>) => void }) {
   const deferred = result.status === "deferred";
   const common = !deferred && result.fault_A !== null && result.fault_B !== null;
   const scenarios = scenarioRows(result.scenarios, ego);
+  const fixes = deferred ? scenarioRows(result.fixes, ego) : [];
   // 경우별 도표를 표로 그리면 사유 끝의 같은 내용 글 줄은 뺀다. 표로 못 그리는 결과(예전 저장분)는 글 줄을 그대로 둔다.
   const { reasons, swapHints } = splitSwapHints(scenarios.length > 0 ? splitScenarioLines(result.reasons).reasons : result.reasons);
   return (
@@ -417,6 +449,7 @@ function NotReady({ result, mapping, ego, onEditCard, onApply }: { result: Judgm
           </p>
         </Notice>
       )}
+      {fixes.length > 0 && <Fixes rows={fixes} mapping={mapping} ego={ego} onEditCard={onEditCard} onApply={onApply} />}
       {scenarios.length > 0 && <Scenarios rows={scenarios} common={common} mapping={mapping} ego={ego} onEditCard={onEditCard} onApply={onApply} />}
       {result.questions.length > 0 && (
         <div>
