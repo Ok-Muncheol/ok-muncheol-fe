@@ -226,3 +226,12 @@ export function partyRoles(mapping: PartyMapping, party: "A" | "B"): string[] | 
   if (id === null) return null;
   return [...(id === mapping.insured_party_id ? ["가입자"] : []), ...(id === mapping.video_ego_party_id ? ["촬영 차량"] : [])];
 }
+
+/**
+ * 사건 작업 화면(CaseWorkspace)의 React key — 카드·판단이 바뀌면 화면이 고르던 값·수정 상태를 버리고 새로 시작한다.
+ * 판단 접수 응답으로 만든 key가 지금 화면의 key와 같으면 다시 읽어도 화면이 새로 시작하지 않는다
+ * (BE는 같은 카드 버전을 다시 판단하지 않고 기존 실행을 돌려준다) — 그때는 화면이 수정 상태를 직접 닫아야 한다.
+ */
+export function workspaceKey(card: { version: number; status: string }, run: { task_id: string; status: string } | null): string {
+  return `${card.version}-${card.status}-${run?.task_id ?? "none"}-${run?.status ?? ""}`;
+}

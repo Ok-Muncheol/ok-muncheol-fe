@@ -18,7 +18,7 @@ import { useEffect, useRef, useState, useTransition, type ReactNode } from "reac
 import { FAULT_RATIO_HEAD_ID, FaultResult } from "@/features/judgment/fault-result";
 import { createBrowserApiClient } from "@/lib/api/browser";
 import { asApiError, newIdempotencyKey } from "@/lib/api/client";
-import type { AnswerResult, ApiError, EvidenceView, FactCard, FactField, JudgmentResult, JudgmentRunView, PartyMapping } from "@/lib/api/types";
+import type { AnswerResult, ApiError, EvidenceView, FactCard, FactField, JudgmentResult, JudgmentRunView, JudgmentTaskView, PartyMapping } from "@/lib/api/types";
 import {
   acceptAiValues,
   buildCardPatch,
@@ -34,7 +34,7 @@ import {
   withAnswers,
   withDefaultChart,
 } from "@/lib/facts/card";
-import { answeredValues } from "@/lib/judgment/view";
+import { answeredValues, workspaceKey } from "@/lib/judgment/view";
 import { Button, ButtonLink, Notice, Spinner } from "@/ui/controls";
 import { FACT_CARD_FOOTER_ID, FactCardPanel } from "./fact-card-panel";
 
@@ -87,6 +87,8 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
+  /** 고친 칸 없이 다시 눌러 BE가 이전 판단을 그대로 돌려줬다 — 결과 위에 알린다 */
+  const [unchanged, setUnchanged] = useState(false);
   /** 「초기화」 횟수 — 바뀌면 카드 칸을 처음 상태로 다시 그린다 */
   const [resetKey, setResetKey] = useState(0);
   const [sampleResult, setSampleResult] = useState<JudgmentResult | null>(null);
@@ -178,10 +180,12 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
     setDraft((fields) => ({ ...fields, [key]: field }));
     setTouched((keys) => new Set(keys).add(key));
     setFailure(null);
+    setUnchanged(false);
   }
 
   /** 결과 옆 「사실 카드 수정하기 ↑」 — 카드를 수정 상태로 열고 그리로 올라간다. */
   function editCard() {
+    setUnchanged(false);
     setEditing(true);
     scrollTo("fact-card");
   }
@@ -221,8 +225,23 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
     startReload(() => router.refresh());
   }
 
+  /**
+   * 판단 접수 뒤 다시 읽는다. 카드·판단이 바뀌었으면 화면 key가 바뀌어 새로 시작한다.
+   * 같은 카드 버전으로 다시 접수하면 BE가 이전 판단을 그대로 돌려줘 key가 그대로다 — 그때는 화면이 새로 시작하지 않으니
+   * 수정 상태를 직접 닫고(안 닫으면 결과가 「이전 카드 기준」으로 흐려진다) 이전 결과 그대로라고 알린다.
+   */
+  function afterJudgment(view: JudgmentTaskView, judged: Pick<FactCard, "version" | "status">) {
+    judgmentKey.current = null;
+    reload();
+    if (workspaceKey(judged, view) !== workspaceKey(card, run)) return;
+    setEditing(false);
+    setTouched(new Set());
+    setUnchanged(true);
+  }
+
   async function confirmAndJudge() {
     setFailure(null);
+    setUnchanged(false);
     if (!live) {
       // 견본도 BE 확정처럼 값이 있는 칸을 모두 확인으로 남긴다(미리 골라 둔 AI 값 포함 — 확정한 카드에 주황 점·펼친 칸이 남지 않게).
       setDraft(confirmedFields);
@@ -261,11 +280,9 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
       }
       setBusy("judging");
       judgmentKey.current ??= newIdempotencyKey();
-      await api.startJudgment(caseId, current.version, judgmentKey.current);
-      judgmentKey.current = null;
       // 같은 카드로 이미 만든 판단이 있으면 BE가 그 판단을 그대로 돌려준다(판단 ID·상태가 같아 화면이
       // 새로 그려지지 않음). 그래도 로딩이 남지 않게 끄고 다시 읽는다. 실행 중이면 running이 로딩을 잇는다.
-      reload();
+      afterJudgment(await api.startJudgment(caseId, current.version, judgmentKey.current), current);
     } catch (caught) {
       const error = asApiError(caught);
       if (error.code === "judgment_in_progress") return reload();
@@ -281,15 +298,14 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
 
   async function startOnly() {
     setFailure(null);
+    setUnchanged(false);
     if (!live) return simulate();
     try {
       setBusy("judging");
       judgmentKey.current ??= newIdempotencyKey();
-      await createBrowserApiClient().startJudgment(caseId, card.version, judgmentKey.current);
-      judgmentKey.current = null;
       // 같은 카드로 이미 만든 판단이 있으면 BE가 그 판단을 그대로 돌려준다(판단 ID·상태가 같아 화면이
       // 새로 그려지지 않음). 그래도 로딩이 남지 않게 끄고 다시 읽는다. 실행 중이면 running이 로딩을 잇는다.
-      reload();
+      afterJudgment(await createBrowserApiClient().startJudgment(caseId, card.version, judgmentKey.current), card);
     } catch (caught) {
       const error = asApiError(caught);
       if (error.code === "judgment_in_progress") return reload();
@@ -427,15 +443,22 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
             </section>
           ) : (
             result && (
-              <FaultResult
-                result={result}
-                mapping={sampleResult ? mapping : baseMapping}
-                ego={ego}
-                stale={stale}
-                reportHref={nextHref}
-                onEditCard={busy === null && confirmed && pendingQuestions.length === 0 && !editing ? editCard : undefined}
-                sample={sampleResult !== null}
-              />
+              <>
+                {unchanged && (
+                  <div className="mb-6">
+                    <Notice title="고친 칸이 없어 이전 판단 결과를 그대로 보여요">같은 사실 카드는 다시 판단해도 결과가 같아요. 카드의 값을 고친 뒤 다시 누르면 새로 판단해요.</Notice>
+                  </div>
+                )}
+                <FaultResult
+                  result={result}
+                  mapping={sampleResult ? mapping : baseMapping}
+                  ego={ego}
+                  stale={stale}
+                  reportHref={nextHref}
+                  onEditCard={busy === null && confirmed && pendingQuestions.length === 0 && !editing ? editCard : undefined}
+                  sample={sampleResult !== null}
+                />
+              </>
             )
           )}
         </div>

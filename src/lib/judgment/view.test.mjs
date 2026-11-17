@@ -19,6 +19,7 @@ import {
   stageLabel,
   stageSteps,
   validationLayers,
+  workspaceKey,
   waitingFor,
 } from "./view.ts";
 
@@ -208,4 +209,17 @@ test("판정 사유에서 경우별 도표 글 줄(BE scenario_outcome)은 안�
   const deferred = ["도표 선택 칸 미확인: movement_B", "모르는 칸 값마다 고를 수 있는 도표(기본 과실, 수정요소 전 · 비율 확정 아님):", ...lines];
   assert.deepEqual(splitScenarioLines(deferred), { reasons: deferred.slice(0, 1), scenarioLines: deferred.slice(1) });
   assert.deepEqual(splitScenarioLines(["검수한 도표 근거 없음"]), { reasons: ["검수한 도표 근거 없음"], scenarioLines: [] });
+});
+
+test("workspaceKey — 같은 카드 버전으로 다시 접수해 이전 판단이 돌아오면 key가 그대로다", () => {
+  const card = { version: 3, status: "confirmed" };
+  const run = { task_id: "run-1", status: "completed" };
+  // 고친 칸 없이 다시 누름: BE가 같은 실행을 돌려준다 → 화면이 새로 시작하지 않으므로 수정 상태를 직접 닫아야 한다
+  assert.equal(workspaceKey(card, { task_id: "run-1", status: "completed" }), workspaceKey(card, run));
+  // 새 판단 · 새 카드 버전 · 확정 · 실행 상태 변화는 key를 바꾼다
+  assert.notEqual(workspaceKey(card, { task_id: "run-2", status: "completed" }), workspaceKey(card, run));
+  assert.notEqual(workspaceKey({ version: 4, status: "confirmed" }, run), workspaceKey(card, run));
+  assert.notEqual(workspaceKey(card, run), workspaceKey({ version: 3, status: "draft" }, run));
+  assert.notEqual(workspaceKey(card, { task_id: "run-1", status: "running" }), workspaceKey(card, run));
+  assert.equal(workspaceKey(card, null), "3-confirmed-none-");
 });
