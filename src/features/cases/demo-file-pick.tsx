@@ -10,6 +10,13 @@ import { createBrowserApiClient } from "@/lib/api/browser";
 import type { DemoFile, UploadKind } from "@/lib/api/types";
 import { Select } from "@/ui/controls";
 
+/**
+ * 받은 목록(kind별). 검토 보고서는 견적서를 넣을 때마다 새 버전 주소로 옮겨 이 칸이 새로 만들어진다.
+ * 빈 목록으로 시작하면 다시 받는 동안 칸이 사라졌다 나타나 아래 내용이 밀렸다 돌아오므로, 받아 둔 목록으로 먼저 그리고 새로 받아 바꾼다.
+ * 브라우저에서만 채운다(effect) — 서버 렌더와 첫 하이드레이션은 늘 빈 목록이라 서로 맞는다.
+ */
+const listed = new Map<UploadKind, DemoFile[]>();
+
 export function DemoFilePick({
   kind,
   live,
@@ -25,14 +32,17 @@ export function DemoFilePick({
   disabled?: boolean;
   onPick: (name: string) => void;
 }) {
-  const [files, setFiles] = useState<DemoFile[]>([]);
+  const [files, setFiles] = useState<DemoFile[]>(() => (live ? (listed.get(kind) ?? []) : []));
 
   useEffect(() => {
     if (!live) return;
     let stopped = false;
     createBrowserApiClient()
       .listDemoFiles(kind)
-      .then((list) => !stopped && setFiles(list))
+      .then((list) => {
+        listed.set(kind, list);
+        if (!stopped) setFiles(list);
+      })
       .catch(() => undefined); // 시연 편의 기능이라 못 읽으면 조용히 감춘다 — 직접 올리기는 그대로 된다
     return () => {
       stopped = true;

@@ -67,10 +67,13 @@ export function ReportView({
   const approved = report.approval_status === "approved";
   const ready = j.status === "draft_ready";
 
-  /** 새 보고서 버전으로 옮긴다 — 견적서 · 면책 · 협의 과실을 넣으면 BE가 다시 산정해 새 버전을 돌려준다. */
+  /**
+   * 새 보고서 버전으로 옮긴다 — 견적서 · 면책 · 협의 과실을 넣으면 BE가 다시 산정해 새 버전을 돌려준다.
+   * 같은 보고서의 다음 버전이라 보던 자리에 머문다(scroll: false). 기본값이면 Next가 맨 위로 올린다.
+   */
   function goTo(next: ReviewReport | null) {
     const v = next?.versions.report_version;
-    if (v && v !== version) router.replace(`${base}/reports/${v}`);
+    if (v && v !== version) router.replace(`${base}/reports/${v}`, { scroll: false });
     router.refresh();
   }
 
