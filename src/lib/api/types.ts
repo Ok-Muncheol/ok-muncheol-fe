@@ -112,8 +112,16 @@ export type JudgmentResult = {
   /** 담당자가 '모름'으로 답한 칸 값마다 고를 수 있는 도표·기본 과실(추가 확인 필요, BE #276). 없으면 키 없음 */
   scenarios?: UnknownScenario[];
 };
-/** '모름' 칸에 값을 하나씩 넣어 본 경우 — 도표 선택 칸 이름·값, 그때 고르는 도표와 기본 과실(수정요소 전) */
-export type UnknownScenario = { fields: Record<string, string>; chart_id: string; variant: string | null; base_A: number; base_B: number };
+/**
+ * '모름' 칸이 이 값이면 고르는 도표와 기본 과실(수정요소 전) — BE app/schemas/judgment.py UnknownScenario.
+ * fields는 도표 선택 칸 이름·값(도표 A/B 기준)이고, card_fields는 같은 칸·값을 카드 칸 이름·값으로 바꾼 것이다(화면은 이것으로 표를 그린다).
+ * 경우 하나는 칸마다 값 하나다. card_fields·title은 그 도표가 요구하는 칸만 적는 계산(BE unknown_scenarios, 11/17 정오쯤)부터 온다 —
+ * 그 전에 저장된 결과는 모르는 칸 전부의 값 조합이라 없다.
+ */
+export type UnknownScenario = {
+  fields: Record<string, string>; card_fields?: Record<string, string>;
+  chart_id: string; title?: string; variant: string | null; base_A: number; base_B: number;
+};
 /** 판단 그래프 단계 — BE app/workflow/graph.py STAGES와 같은 이름·순서(judgment_runs.stage 값). */
 export type JudgmentStage =
   | "require_confirmed_card" | "check_chart_scope" | "retrieve_chart_candidates" | "ask_or_resume"

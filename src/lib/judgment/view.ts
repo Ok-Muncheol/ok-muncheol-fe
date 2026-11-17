@@ -175,6 +175,21 @@ export function splitSwapHints(reasons: readonly string[]): { reasons: string[];
   };
 }
 
+/**
+ * BE가 경우별 도표 글 줄 앞에 두는 안내 문장의 머리(BE graph.py SCENARIO_SAME · SCENARIO_DIFFERENT — 추가 확인 필요)와,
+ * 그 전 보류 사유의 머리말(11/17 #277 SCENARIO_HEADER). 모르는 칸 때문에 도표를 못 골랐을 때 그 칸이 어떤 값이면 어느 도표인지 적은 줄들이 뒤따른다.
+ */
+export const SCENARIO_HEADS = ["모른다고 답한 칸(", "모르는 칸 값마다 고를 수 있는 도표"] as const;
+
+/**
+ * 판정 사유에서 경우별 도표 글 줄(안내 문장부터 끝까지 — BE는 그 뒤에 다른 사유를 붙이지 않는다)을 뗀다.
+ * 화면은 같은 내용을 result.scenarios로 표를 그리고 글 줄은 그리지 않는다. 표를 그릴 수 없는 결과면 글 줄을 그대로 보인다.
+ */
+export function splitScenarioLines(reasons: readonly string[]): { reasons: string[]; scenarioLines: string[] } {
+  const at = reasons.findIndex((r) => SCENARIO_HEADS.some((head) => r.startsWith(head)));
+  return at < 0 ? { reasons: [...reasons], scenarioLines: [] } : { reasons: reasons.slice(0, at), scenarioLines: reasons.slice(at) };
+}
+
 /* ---------- 판정 근거 ---------- */
 
 /** 판단 화면에서 판정 근거로 이동하는 앵커 */

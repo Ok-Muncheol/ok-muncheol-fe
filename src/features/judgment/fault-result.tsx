@@ -4,14 +4,17 @@
  * 판단 보류(사유). 비율·가감치·도표는 BE 값 그대로다 — FE가 계산하지 않는다. 도표 A/B는 매핑으로 「상대 차」「블랙박스 차」 이름을 붙인다
  * (영상 없이 진행한 카드는 「블랙박스 차」 대신 「가입자 차」 — ego). 사유 속 칸 이름(movement_A 등)도 매핑으로 카드 칸 이름을 붙인다(readableReason).
  * 고를 도표가 없을 때 BE가 도표 A/B를 맞바꿔 대조한 줄은 따로 모아 보인다(도표 A/B는 판단이 정한다).
+ * 담당자가 「모르겠어요」로 둔 칸 때문에 도표를 하나로 못 고르면(추가 확인 필요) 그 칸이 어떤 값이면 어느 도표·기본 과실인지
+ * (BE result.scenarios)를 목록으로 보인다 — 확정한 비율이 아니라 경우별 참고다. 조건의 칸 이름은 위 카드의 그 칸으로 가는 링크다.
+ * 그 경우들의 기본 과실이 모두 같으면 BE가 그 비율을 fault_A/B에 싣고, 화면은 목록 위에 크게 보인다.
  * 위 카드가 판단 뒤에 바뀌었으면(stale) 흐리게 두고 이전 카드 기준이라고 알린다.
  * 다음 단계는 비율 제목 줄 오른쪽에 둔다 — 「검토 보고서 보기 →」(보고서 화면으로 넘어간다)와 「사실 카드 수정하기 ↑」(위 카드의 「수정하기」와 같다 — 카드를 수정 상태로 열고 그리로 올라간다).
  */
 import { Button, ButtonLink, Notice } from "@/ui/controls";
 import { EvidencePanel } from "@/features/evidence/evidence-panel";
 import type { JudgmentResult, PartyMapping } from "@/lib/api/types";
-import { cardLabel, chartPartyName, readableReason, reasonParts, type EgoName } from "@/lib/facts/card";
-import { evidenceDecisions, judgmentEvidence, splitSwapHints } from "@/lib/judgment/view";
+import { cardLabel, chartPartyName, readableReason, reasonParts, scenarioRows, type EgoName, type ScenarioRow } from "@/lib/facts/card";
+import { evidenceDecisions, judgmentEvidence, splitScenarioLines, splitSwapHints } from "@/lib/judgment/view";
 
 export const FAULT_RESULT_ID = "fault-result";
 /** 비율 제목 줄 — 이 줄이 화면 위로 지나가면 아래 떠 있는 바가 「검토 보고서 보기」를 대신 보인다. */
@@ -262,18 +265,121 @@ function ReasonLine({ reason, mapping, ego, onEditCard }: { reason: string; mapp
   );
 }
 
+/** 처음부터 펼쳐 두는 경우 수 — 넘는 줄은 접어 둔다(모르는 칸이 많으면 경우가 수십 개다). */
+const SCENARIOS_SHOWN = 8;
+/**
+ * 경우 한 줄의 칸 배치 — 넓은 화면은 도표 · 조건 · 기본 과실 세 칸, 좁은 화면은 도표와 기본 과실을 한 줄에 두고 조건을 그 아래에 둔다.
+ * 표 컨트롤(Table)은 쓰지 않는다 — 좁은 화면에서 조건 칸이 한 낱말씩 꺾이고 기본 과실이 가로 스크롤 밖으로 밀린다.
+ */
+const SCENARIO_GRID = "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-4 md:grid-cols-[minmax(0,3fr)_minmax(0,6fr)_12rem]";
+
+/**
+ * 경우별 도표 목록 — 위 카드의 칸이 「이 값이면」 판단이 고를 도표와 그 기본 과실(수정요소 전).
+ * 비율은 BE 값 그대로이고 도표 A : 도표 B 순서다(parties가 그 차 이름). 조건의 칸 이름을 누르면 위 카드의 그 칸으로 간다.
+ */
+function ScenarioList({ rows, parties, onEditCard }: { rows: ScenarioRow[]; parties: string; onEditCard?: () => void }) {
+  return (
+    <div className="overflow-hidden rounded-card border border-line bg-surface">
+      {/* 머리줄은 넓은 화면에서만 — 줄마다 같은 뜻을 화면 낭독용 글자로 적어 둔다 */}
+      <div aria-hidden className={`hidden border-b border-line bg-surface-muted py-2.5 text-caption font-semibold text-ink-muted md:grid ${SCENARIO_GRID}`}>
+        <span>도표</span>
+        <span>위 카드의 칸이 이 값이면</span>
+        <span className="text-right">
+          기본 과실
+          <span className="block font-normal">{parties}</span>
+        </span>
+      </div>
+      <ul className="divide-y divide-line">
+        {rows.map((row, i) => (
+          <li key={i} className={`py-2.5 ${SCENARIO_GRID}`}>
+            <div className="min-w-0">
+              <span className="font-semibold whitespace-nowrap">
+                {row.chartId}
+                {row.variant && ` (${row.variant})`}
+              </span>
+              {row.title && <span className="block text-caption text-ink-muted">{row.title}</span>}
+            </div>
+            <ul aria-label="이 값이면" className="col-span-2 row-start-2 flex flex-wrap content-start gap-1.5 md:col-span-1 md:col-start-2 md:row-start-1">
+              {row.conditions.map((condition) => (
+                <li key={condition.key} className="inline-flex min-h-6 flex-wrap items-center gap-x-1.5 rounded-badge bg-surface-muted px-2 py-0.5 text-caption">
+                  <a href={`#fact-${condition.key}`} onClick={onEditCard} className="text-ink-muted underline underline-offset-4">
+                    {condition.label}
+                  </a>
+                  <span className="font-semibold">{condition.values.join(" 또는 ")}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="col-start-2 row-start-1 text-right whitespace-nowrap md:col-start-3">
+              <span className="sr-only">기본 과실 {parties} </span>
+              <span className="font-mono font-semibold tabular-nums">
+                {row.baseA} : {row.baseB}
+              </span>
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * 모르는 칸의 경우별 도표 — 앞 몇 줄은 펼쳐 두고 나머지는 접는다. 확정한 비율이 아님을 목록 위에 적는다.
+ * common은 경우들의 기본 과실이 모두 같아 BE가 그 비율을 준 결과다(위에 크게 보인다).
+ */
+function Scenarios({ rows, common, mapping, ego, onEditCard }: { rows: ScenarioRow[]; common: boolean; mapping: PartyMapping; ego?: EgoName; onEditCard?: () => void }) {
+  const parties = `${chartPartyName(mapping, "A", ego)} : ${chartPartyName(mapping, "B", ego)}`;
+  const charts = new Set(rows.map((row) => row.chartId)).size;
+  const rest = rows.slice(SCENARIOS_SHOWN);
+  return (
+    <section aria-labelledby="fault-scenarios-title" className="flex flex-col gap-3">
+      <div>
+        <h3 id="fault-scenarios-title" className="font-semibold">
+          모르는 칸이 이런 값이면
+          <span className="ml-2 text-caption font-normal text-ink-muted">
+            도표 {charts}개 · 경우 {rows.length}개
+          </span>
+        </h3>
+        <p className="mt-1">
+          {common
+            ? "모른다고 답한 칸이 아래 값일 때 고를 도표가 있고, 그 기본 과실은 모두 같아요."
+            : "모른다고 답한 칸의 값에 따라 도표와 기본 과실이 달라져서 비율을 정하지 못했어요."}{" "}
+          맞는 경우를 확인해 위 카드에 값을 넣고 다시 판단해 주세요.
+        </p>
+        <p className="mt-1 text-caption text-ink-muted">
+          확정한 비율이 아니에요. 검색된 후보 도표 가운데 지금 카드와 맞을 수 있는 도표만 견준 것이라 여기 없는 경우도 있을 수 있어요. 기본 과실은 수정요소를 넣기 전 값이에요.
+        </p>
+        {/* 좁은 화면에는 머리줄이 없어 비율의 순서를 여기 적는다 */}
+        <p className="mt-1 text-caption text-ink-muted md:hidden">기본 과실은 {parties} 순서예요.</p>
+      </div>
+      <ScenarioList rows={rows.slice(0, SCENARIOS_SHOWN)} parties={parties} onEditCard={onEditCard} />
+      {rest.length > 0 && (
+        <details>
+          <summary className="cursor-pointer text-caption font-semibold text-ink-muted">그 밖의 경우 {rest.length}개 보기</summary>
+          <div className="mt-3">
+            <ScenarioList rows={rest} parties={parties} onEditCard={onEditCard} />
+          </div>
+        </details>
+      )}
+    </section>
+  );
+}
+
 function NotReady({ result, mapping, ego, onEditCard }: { result: JudgmentResult; mapping: PartyMapping; ego?: EgoName; onEditCard?: () => void }) {
   const deferred = result.status === "deferred";
-  const { reasons, swapHints } = splitSwapHints(result.reasons);
+  const common = !deferred && result.fault_A !== null && result.fault_B !== null;
+  const scenarios = scenarioRows(result.scenarios, ego);
+  // 경우별 도표를 표로 그리면 사유 끝의 같은 내용 글 줄은 뺀다. 표로 못 그리는 결과(예전 저장분)는 글 줄을 그대로 둔다.
+  const { reasons, swapHints } = splitSwapHints(scenarios.length > 0 ? splitScenarioLines(result.reasons).reasons : result.reasons);
   return (
     <div className="flex flex-col gap-4 break-keep">
       <h2 id="fault-result-title" className="text-heading font-semibold">
         {deferred ? "판단을 보류했어요" : "추가 확인이 필요해요"}
       </h2>
-      {/* '모름'으로 답한 칸이 어느 값이어도 기본 과실이 같으면 그 비율이 온다(BE #276) — 크게 보인다 */}
-      {!deferred && result.fault_A !== null && result.fault_B !== null && (
+      {/* '모름'으로 답한 칸 때문에 갈린 경우의 기본 과실이 모두 같으면 그 비율이 온다(BE scenario_outcome) — 크게 보인다.
+          경우는 도표가 있는 값뿐이라(하나일 수도 있다) 「모르는 칸과 상관없이」라고 적지 않는다. */}
+      {common && (
         <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-caption font-semibold text-ink-muted">기본 과실(모르는 칸과 상관없이 같음)</span>
+          <span className="text-caption font-semibold text-ink-muted">기본 과실(아래 경우 모두 같음)</span>
           <span className="text-heading font-semibold tabular-nums">
             {chartPartyName(mapping, "A", ego)} {result.fault_A} : {chartPartyName(mapping, "B", ego)} {result.fault_B}
           </span>
@@ -302,6 +408,7 @@ function NotReady({ result, mapping, ego, onEditCard }: { result: JudgmentResult
           </p>
         </Notice>
       )}
+      {scenarios.length > 0 && <Scenarios rows={scenarios} common={common} mapping={mapping} ego={ego} onEditCard={onEditCard} />}
       {result.questions.length > 0 && (
         <div>
           <p className="text-caption font-semibold text-ink-muted">위 카드에서 확인할 칸</p>
