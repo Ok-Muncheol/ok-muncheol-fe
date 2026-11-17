@@ -23,6 +23,7 @@ import {
   reasonParts,
   remainingReview,
   resetFields,
+  scenarioRows,
   swapChartParties,
   withAnswers,
 } from "./card.ts";
@@ -333,4 +334,68 @@ test("fieldsToFix는 미확인 칸과 가장 가까운 도표의 다른 칸만 �
   // 도표 A가 블랙박스 차면 카드 칸 이름으로 바꾼다
   assert.deepEqual(fieldsToFix(["S-1: 카드와 불일치 ['movement_A']"], swapChartParties(mapping)), ["movement_B"]);
   assert.deepEqual(fieldsToFix(["검수한 도표 근거 없음"], mapping), []);
+});
+
+test("scenarioRows는 BE 경우별 도표를 카드 칸 이름·보기 글자로 바꿔 카드 칸 순서로 두고, 값만 다른 경우를 한 줄로 묶는다", () => {
+  // 도표 A가 블랙박스 차인 카드 — BE가 card_fields에 카드 칸 이름·값으로 바꿔 준다(도표 movement_B = 카드 movement_A, 왼쪽 ↔ 오른쪽)
+  const chart11 = { chart_id: "차1-1", title: "녹색직진 대 적색직진", variant: null, base_A: 0, base_B: 100 };
+  const scenarios = [
+    { ...chart11, fields: { movement_B: "straight", signal_A: "green", signal_B: "red", relative_position: "left" }, card_fields: { movement_A: "straight", signal_B: "green", signal_A: "red", relative_position: "right" } },
+    { ...chart11, fields: { movement_B: "straight", signal_A: "green", signal_B: "red", relative_position: "right" }, card_fields: { movement_A: "straight", signal_B: "green", signal_A: "red", relative_position: "left" } },
+    {
+      fields: { movement_B: "stopped", door_open_B: "true", secondary_collision: "false" },
+      card_fields: { movement_A: "stopped", door_open_A: "true", secondary_collision: "false" },
+      chart_id: "차52-1", title: "", variant: "가", base_A: 20, base_B: 80,
+    },
+  ];
+  assert.deepEqual(scenarioRows(scenarios), [
+    {
+      chartId: "차1-1", title: "녹색직진 대 적색직진", variant: null, baseA: 0, baseB: 100,
+      conditions: [
+        { key: "signal_A", label: "상대 차 신호", values: ["적색"] },
+        { key: "signal_B", label: "블랙박스 차 신호", values: ["녹색"] },
+        { key: "movement_A", label: "상대 차 움직임", values: ["직진"] },
+        // 온 쪽만 다른 두 경우는 한 줄이 되고, 값은 그 칸의 보기 순서다(BE 순서는 오른쪽·왼쪽)
+        { key: "relative_position", label: "상대 차가 온 쪽", values: ["왼쪽 도로에서", "오른쪽 도로에서"] },
+      ],
+    },
+    {
+      // 참거짓 칸은 그 칸의 보기 글자(예·아니요)로, 빈 제목은 null로
+      chartId: "차52-1", title: null, variant: "가", baseA: 20, baseB: 80,
+      conditions: [
+        { key: "movement_A", label: "상대 차 움직임", values: ["정차·주정차"] },
+        { key: "door_open_A", label: "상대 차 문 열림", values: ["예"] },
+        { key: "secondary_collision", label: "앞차가 사고로 정차 중(2차 사고)", values: ["아니요"] },
+      ],
+    },
+  ]);
+  // 영상 없이 진행한 카드는 카드 B를 가입자 차로 부른다
+  assert.equal(scenarioRows(scenarios, "가입자 차")[0].conditions[1].label, "가입자 차 신호");
+});
+
+test("scenarioRows는 두 칸이 2×2로 갈린 경우 넷을 한 줄로 묶고, 비율·변형·칸이 다른 경우는 따로 둔다", () => {
+  const chart = { chart_id: "차2-4", title: "황(적)색 직진 대 황(적)색 좌회전(동일신호)", variant: null, base_A: 50, base_B: 50 };
+  const grid = ["yellow", "red"].flatMap((a) => ["yellow", "red"].map((b) => ({ ...chart, fields: {}, card_fields: { movement_A: "left_turn", signal_A: a, signal_B: b } })));
+  const rows = scenarioRows([
+    ...grid,
+    // 같은 도표라도 변형·비율이 다르면 묶지 않는다
+    { ...chart, variant: "나", base_A: 60, base_B: 40, fields: {}, card_fields: { movement_A: "left_turn", signal_A: "green", signal_B: "red" } },
+    // 칸 구성이 다르면(표지 칸이 더 있음) 묶지 않는다
+    { ...chart, fields: {}, card_fields: { movement_A: "left_turn", signal_A: "green", signal_B: "green", unprotected_left_sign: "false" } },
+    // 두 칸이 다른 경우(신호 둘 다 다름)는 묶으면 없는 조합이 생기므로 따로 둔다
+    { ...chart, fields: {}, card_fields: { movement_A: "left_turn", signal_A: "flashing_red", signal_B: "flashing_yellow" } },
+  ]);
+  assert.deepEqual(rows.map((row) => [row.variant, row.baseA, ...row.conditions.map((c) => `${c.key}=${c.values.join("|")}`)]), [
+    [null, 50, "signal_A=황색|적색", "signal_B=황색|적색", "movement_A=좌회전"],
+    [null, 50, "signal_A=녹색", "signal_B=녹색", "unprotected_left_sign=없음", "movement_A=좌회전"],
+    [null, 50, "signal_A=적색 점멸", "signal_B=황색 점멸", "movement_A=좌회전"],
+    ["나", 60, "signal_A=녹색", "signal_B=적색", "movement_A=좌회전"],
+  ]);
+});
+
+test("scenarioRows는 카드 칸 이름·값이 없는 예전 결과(11/17 정오 전 저장분)와 경우가 없는 결과를 줄로 만들지 않는다", () => {
+  const old = [{ fields: { movement_B: "left_turn", signal_A: "green" }, chart_id: "차44-1", variant: null, base_A: 20, base_B: 80 }];
+  assert.deepEqual(scenarioRows(old), []);
+  assert.deepEqual(scenarioRows(undefined), []);
+  assert.deepEqual(scenarioRows([]), []);
 });

@@ -14,6 +14,7 @@ import {
   judgmentEvidence,
   partyRoles,
   runBadgeStatus,
+  splitScenarioLines,
   splitSwapHints,
   stageLabel,
   stageSteps,
@@ -191,4 +192,20 @@ test("판정 사유에서 도표 A/B 맞바꿈 대조 줄(BE swap_hints)을 머�
     swapHints: ["남는 도표: 차43-1 「차로 감소 도로 (합류) 사고」", "차43-2 「후행 직진 대 선행 진로변경」: 카드와 불일치 ['relative_position']"],
   });
   assert.deepEqual(splitSwapHints(["수치 검증 실패"]), { reasons: ["수치 검증 실패"], swapHints: [] });
+});
+
+test("판정 사유에서 경우별 도표 글 줄(BE scenario_outcome)은 안내 문장부터 끝까지 뗀다 — 화면은 result.scenarios로 표를 그린다", () => {
+  const lines = [
+    "B 차량의 진행 방향 직진, 상대 위치(B가 가는 방향에서 볼 때 A가 있던 쪽) 맞은편 → 차32-1 「직진 대 맞은편 직진(교행사고)」 A 50 : B 50",
+    "그 밖에 경우 4개",
+  ];
+  // 추가 확인 필요(BE #281~): 값마다 다를 때와 모든 경우가 같을 때의 안내 문장
+  const different = "모른다고 답한 칸(B 차량의 진행 방향)은 값마다 기본 과실이 달라요. 아래에서 맞는 경우를 확인해 주세요(수정요소 전):";
+  const same = "모른다고 답한 칸(차로 감소(합류) 여부)이 아래 값이면 고를 도표가 있고, 그 경우는 모두 기본 과실이 A 40 : B 60예요(검색된 검수 도표 기준, 수정요소 전). 경우별 도표:";
+  assert.deepEqual(splitScenarioLines([different, ...lines]), { reasons: [], scenarioLines: [different, ...lines] });
+  assert.deepEqual(splitScenarioLines([same, ...lines]).reasons, []);
+  // 보류 사유 끝에 붙던 때(BE #277)의 머리말
+  const deferred = ["도표 선택 칸 미확인: movement_B", "모르는 칸 값마다 고를 수 있는 도표(기본 과실, 수정요소 전 · 비율 확정 아님):", ...lines];
+  assert.deepEqual(splitScenarioLines(deferred), { reasons: deferred.slice(0, 1), scenarioLines: deferred.slice(1) });
+  assert.deepEqual(splitScenarioLines(["검수한 도표 근거 없음"]), { reasons: ["검수한 도표 근거 없음"], scenarioLines: [] });
 });

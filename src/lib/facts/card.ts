@@ -5,7 +5,7 @@
  * 도표 A/B(party_mapping.chart_party_*)는 카드 A/B와 다를 수 있다 — 과실 비율은 매핑으로 차 이름을 붙인다.
  * 확정할 수 있는지는 BE가 정한다. 여기서는 보여 주는 순서와 묶음만 정한다. 런타임 import는 두지 않는다.
  */
-import type { FactCard, FactField, FactPatch, PartyMapping } from "../api/types";
+import type { FactCard, FactField, FactPatch, PartyMapping, UnknownScenario } from "../api/types";
 
 type Fields = Record<string, FactField>;
 type Value = FactField["value"];
@@ -547,4 +547,75 @@ export function fieldsToFix(reasons: readonly string[], mapping: PartyMapping): 
   const mismatches = reasons.filter((r) => r.includes("카드와 불일치")).map(keysOf).filter((keys) => keys.length > 0);
   const fewest = Math.min(...mismatches.map((keys) => keys.length));
   return [...new Set([...unconfirmed, ...mismatches.filter((keys) => keys.length === fewest).flat()])];
+}
+
+/** 경우별 도표의 조건 하나 — 카드 칸(key)과 화면 이름, 그 칸의 값 글자들(어느 값이어도 같은 도표다). */
+export type ScenarioCondition = { key: string; label: string; values: string[] };
+/** 경우 한 줄 — 위 카드의 칸이 이 조건이면 이 도표·변형이고 기본 과실(도표 A : 도표 B, 수정요소 전)은 이 값이다. */
+export type ScenarioRow = { chartId: string; title: string | null; variant: string | null; baseA: number; baseB: number; conditions: ScenarioCondition[] };
+
+/** 칸 → 값들. 한 줄로 묶은 경우다 — 값이 여럿이면 어느 값이어도 같은 도표·변형이다. */
+type ScenarioBox = Record<string, string[]>;
+
+/**
+ * 한 칸의 값만 다른 경우를 값 목록 하나로 합친다 — 더 합칠 것이 없을 때까지 되풀이한다(BE graph.py _merged와 같은 규칙).
+ * 같은 도표·변형·비율로 가는 경우끼리만 넘긴다. 다른 칸이 모두 같을 때만 합치므로 합친 값은 어느 조합이든 그 도표다.
+ */
+function mergeBoxes(boxes: readonly ScenarioBox[]): ScenarioBox[] {
+  const merged = boxes.map((box) => ({ ...box }));
+  const sameValues = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((v) => b.includes(v));
+  for (let again = true; again; ) {
+    again = false;
+    for (let i = 0; i < merged.length && !again; i++) {
+      for (let j = i + 1; j < merged.length; j++) {
+        const [first, second] = [merged[i], merged[j]];
+        const keys = Object.keys(first);
+        if (keys.length !== Object.keys(second).length || !keys.every((k) => k in second)) continue;
+        const differs = keys.filter((k) => !sameValues(first[k], second[k]));
+        if (differs.length !== 1) continue;
+        first[differs[0]] = [...new Set([...first[differs[0]], ...second[differs[0]]])];
+        merged.splice(j, 1);
+        again = true;
+        break;
+      }
+    }
+  }
+  return merged;
+}
+
+/**
+ * BE 경우별 도표(result.scenarios)를 화면 줄로 — 판단이 '모른다'고 한 칸 때문에 도표를 못 골랐을 때, 그 칸이 어떤 값이면
+ * 어느 도표·기본 과실인지다(확정한 비율이 아니다). 도표·변형·비율이 같고 한 칸의 값만 다른 경우는 한 줄로 묶고(왼쪽 또는 오른쪽),
+ * 조건은 카드 칸 이름·보기 글자로 바꿔 카드 칸 순서로, 값은 그 칸의 보기 순서로 둔다. 줄 순서는 BE 순서(검색 점수 순)다.
+ * BE가 카드 칸 이름·값(card_fields)을 준 경우만 줄로 만든다. 그것이 없는 결과(11/17 정오 전 저장분 — 모르는 칸 전부의 값 조합이라
+ * 줄마다 칸이 열 개를 넘고 도표가 하나뿐이었다)는 빈 목록이고, 화면은 사유의 글 줄을 그대로 보인다.
+ */
+export function scenarioRows(scenarios: readonly UnknownScenario[] | undefined, ego: EgoName = VIDEO_EGO): ScenarioRow[] {
+  const order = CARD_FIELD_ORDER as readonly string[];
+  const at = (key: string) => (order.includes(key) ? order.indexOf(key) : order.length);
+  // 보기에 없는 값은 뒤로
+  const optionAt = (key: string, raw: string) => {
+    const options = Object.keys(OPTIONS[key] ?? {});
+    return options.includes(raw) ? options.indexOf(raw) : options.length;
+  };
+  const groups = new Map<string, { head: Omit<ScenarioRow, "conditions">; boxes: ScenarioBox[] }>();
+  for (const s of scenarios ?? []) {
+    if (!s.card_fields) continue;
+    const id = JSON.stringify([s.chart_id, s.variant, s.base_A, s.base_B]);
+    const group = groups.get(id) ?? { head: { chartId: s.chart_id, title: s.title || null, variant: s.variant, baseA: s.base_A, baseB: s.base_B }, boxes: [] };
+    group.boxes.push(Object.fromEntries(Object.entries(s.card_fields).map(([key, value]) => [key, [value]])));
+    groups.set(id, group);
+  }
+  return [...groups.values()].flatMap(({ head, boxes }) =>
+    mergeBoxes(boxes).map((box) => ({
+      ...head,
+      conditions: Object.entries(box)
+        .sort(([a], [b]) => at(a) - at(b))
+        .map(([key, values]) => ({
+          key,
+          label: cardLabel(key, ego),
+          values: [...values].sort((a, b) => optionAt(key, a) - optionAt(key, b)).map((raw) => cardValueLabel(key, parseOption(key, raw), ego)),
+        })),
+    })),
+  );
 }
