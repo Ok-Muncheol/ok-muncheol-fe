@@ -6,11 +6,13 @@
  * 카드에는 보이는 제목·설명을 두지 않는다. 제목 「오늘 지역별 접수」는 화면 낭독기가 읽는 숨은 제목(sr-only h2)으로만 남긴다.
  * 지도는 눈으로 보는 그림이라 화면 낭독기·키보드에서는 감추고(aria-hidden · tabIndex -1) 같은 값을 목록이 읽힌다.
  * 경계는 korea-map.ts(통계청 SGIS 2018 · 공공누리 제1유형 — 출처를 지도 아래에 적는다)이고 라벨 자리는 아래 LABELS에서 손으로 맞췄다.
+ * 새 접수가 들어오면 그 지역 자리에 접수 시각부터 10초 동안 물결이 퍼진다(live-arrivals.tsx — 관제 화면이 몇 초마다 최근 접수를 읽는다).
  */
 import Link from "next/link";
 import { type RegionToday, binLabel, byCount } from "@/lib/admin/view";
 import { Card } from "@/ui/controls";
 import { ISLAND_INSET, MAP_HEIGHT, MAP_WIDTH, REGION_PATHS } from "./korea-map";
+import { RegionRipples } from "./live-arrivals";
 
 const FILL = ["fill-map-0", "fill-map-1", "fill-map-2", "fill-map-3", "fill-map-4"];
 const SWATCH = ["bg-map-0", "bg-map-1", "bg-map-2", "bg-map-3", "bg-map-4"];
@@ -38,6 +40,9 @@ const LABELS: Record<string, { x: number; y: number; anchor?: { x: number; y: nu
   경남: { x: 429, y: 738 },
   제주: { x: 126, y: 1168 },
 };
+
+/** 새 접수 물결이 퍼지는 자리 — 이름표 자리이고, 이름표를 지역 밖에 둔 인천은 지시선 끝(지역 안 점)이다 */
+const RIPPLE_ANCHORS = Object.fromEntries(Object.entries(LABELS).map(([region, { x, y, anchor }]) => [region, anchor ?? { x, y }]));
 
 const at = (value: number, total: number) => `${((value / total) * 100).toFixed(2)}%`;
 
@@ -95,6 +100,8 @@ export function RegionMap({ today, selected, hrefFor }: { today: RegionToday; se
                     ),
                 )}
               </svg>
+              {/* 새 접수 물결 — 지도 면 위, 이름표 아래(live-arrivals.tsx) */}
+              <RegionRipples anchors={RIPPLE_ANCHORS} width={MAP_WIDTH} height={MAP_HEIGHT} />
               {today.regions.map(({ region, count }) => {
                 const label = LABELS[region];
                 const on = region === selected;

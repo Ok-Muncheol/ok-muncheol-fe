@@ -222,6 +222,26 @@
 }
 
 /*
+ * 관제 지도의 새 접수 물결(src/features/admin/live-arrivals.tsx) — 물방울이 떨어진 잔잔한 물처럼 동심원이 천천히 퍼지며 옅어지고(ok-ripple),
+ * 끝날 때는 다 같이 옅어진다(ok-ripple-out). 움직임 줄이기 설정에서는 쓰지 않는다(motion-safe).
+ */
+@keyframes ok-ripple {
+  from {
+    opacity: 0.85;
+    transform: scale(0.12);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+@keyframes ok-ripple-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/*
  * 터치 기기의 입력란은 16px 아래로 내리지 않는다. iOS 사파리는 그보다 작은 입력란에 초점이 가면
  * 화면을 확대하고 되돌리지 않는다. text-body 같은 유틸리티를 이기도록 레이어 밖에 둔다.
  */
