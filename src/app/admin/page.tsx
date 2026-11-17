@@ -12,10 +12,13 @@
  * 지도 · 접수 건 순으로 쌓아 표가 본문 폭을 다 쓴다. 어느 쪽이든 줄 끝의 상세·이관 단추까지 가로 스크롤 없이 보인다.
  * BE가 지역별 수를 주기 전 응답이면 지도 없이 접수 건이 전체 폭이다.
  * 접수 건 칸은 보이는 제목 없이 탭부터 시작한다. 제목 「접수 건」은 화면 낭독기용 숨은 제목(sr-only)으로만 둔다(지도 카드의 「오늘 지역별 접수」도 같다).
+ * 화면이 보이는 동안 3초마다 최근 접수를 읽어, 바뀌면 다시 그리고 새 접수는 그 지역 지도에 10초 동안 물결을 띄운다(LiveArrivals).
+ * 시연 영상용 접수는 화면에 단추를 두지 않고 BE `scripts/demo_intake.py`로 넣는다(10초 뒤 나타나 1분 뒤 지워진다).
  */
 import Link from "next/link";
 import { IntakeTable } from "@/features/admin/intake-table";
 import { PAGE_SIZE, loadAdmin } from "@/features/admin/admin-source";
+import { LiveArrivals } from "@/features/admin/live-arrivals";
 import { RegionMap } from "@/features/admin/region-map";
 import { INTAKE_TABS, REGIONS, adminHref, parseAdminView, regionToday, shortTime, stageGroupCounts, staffName } from "@/lib/admin/view";
 import { Badge, ButtonLink, Notice, PageHeader, Stat, StatStrip } from "@/ui/controls";
@@ -48,7 +51,7 @@ export default async function AdminPage(props: PageProps<"/admin">) {
   const today = regionToday(summary);
 
   return (
-    <>
+    <LiveArrivals>
       <PageHeader title="사건 관제" />
 
       <StatStrip className="mb-6" aside={<span className="text-caption text-ink-muted">{shortTime(overview.generated_at)} 기준</span>}>
@@ -134,6 +137,6 @@ export default async function AdminPage(props: PageProps<"/admin">) {
           </section>
         </div>
       </div>
-    </>
+    </LiveArrivals>
   );
 }
