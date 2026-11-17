@@ -1,5 +1,5 @@
 /**
- * C: 세 코퍼스 근거 표시. 인정기준·결정례·약관을 따로 묶고, 근거마다 부모 ID·적용판·적용기간·원문 페이지를 보인다.
+ * C: 세 코퍼스 근거 표시. 인정기준·결정례·약관을 따로 묶고(근거가 없는 코퍼스는 그리지 않는다), 근거마다 부모 ID·적용판·적용기간·원문 페이지를 보인다.
  * 원문 링크는 BE가 내준 서명 URL(sourceLinks)만 쓴다. document.source_uri는 비공개 Storage 경로라 링크로 쓰지 않는다.
  * 서명 URL은 견본·로그에 남기지 않는다(FE TEAM.md 「원칙」). 선택/제외 이유는 BE 판단 결과 값을 그대로 보인다.
  */
@@ -103,28 +103,25 @@ export function EvidencePanel({ hits, sourceLinks = {}, decisions = {} }: Props)
           세 코퍼스에서 판단에 쓸 근거를 찾지 못했습니다. 근거 없이 판정하지 않으며 추가 확인이 필요합니다.
         </Notice>
       )}
-      {hits.length > 0 &&
-        CORPUS_ORDER.map((corpus) => {
-          const group = hits.filter((hit) => hit.chunk.document.corpus === corpus);
-          return (
-            <Card key={corpus} title={CORPUS_LABELS[corpus]} aside={<Badge>{group.length}건</Badge>}>
-              {group.length === 0 ? (
-                <Empty>이 코퍼스의 근거 없음</Empty>
-              ) : (
-                <ul className="divide-y divide-line">
-                  {group.map((hit) => (
-                    <EvidenceItem
-                      key={hit.chunk.chunk_id}
-                      hit={hit}
-                      link={sourceLinks[hit.chunk.document.document_id]}
-                      decision={decisions[hit.chunk.chunk_id]}
-                    />
-                  ))}
-                </ul>
-              )}
-            </Card>
-          );
-        })}
+      {/* 근거가 없는 코퍼스는 그리지 않는다 — 판단은 인정기준만 찾으므로 빈 결정례·약관 칸은 '찾았는데 없었다'로 읽힌다. */}
+      {CORPUS_ORDER.map((corpus) => {
+        const group = hits.filter((hit) => hit.chunk.document.corpus === corpus);
+        if (group.length === 0) return null;
+        return (
+          <Card key={corpus} title={CORPUS_LABELS[corpus]} aside={<Badge>{group.length}건</Badge>}>
+            <ul className="divide-y divide-line">
+              {group.map((hit) => (
+                <EvidenceItem
+                  key={hit.chunk.chunk_id}
+                  hit={hit}
+                  link={sourceLinks[hit.chunk.document.document_id]}
+                  decision={decisions[hit.chunk.chunk_id]}
+                />
+              ))}
+            </ul>
+          </Card>
+        );
+      })}
     </section>
   );
 }
