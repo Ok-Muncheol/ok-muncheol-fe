@@ -33,6 +33,7 @@ import {
   sameMapping,
   withAnswers,
   withDefaultChart,
+  withScenario,
 } from "@/lib/facts/card";
 import { answeredValues, workspaceKey } from "@/lib/judgment/view";
 import { Button, ButtonLink, Notice, Spinner } from "@/ui/controls";
@@ -89,6 +90,18 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
   const [failure, setFailure] = useState<Failure | null>(null);
   /** 고친 칸 없이 다시 눌러 BE가 이전 판단을 그대로 돌려줬다 — 결과 위에 알린다 */
   const [unchanged, setUnchanged] = useState(false);
+  /** 경우별 도표의 「이 값으로 카드 고치기」 — 그 경우의 칸 값을 카드에 한 번에 넣고(담당자 확인), 카드를 수정 상태로 열어 그리로 올라간다.
+   *  담당자는 바뀐 칸을 보고 「확정하고 과실 판단」을 누르면 된다. */
+  function applyScenario(cardFields: Record<string, string>) {
+    setDraft((fields) => withScenario(fields, cardFields));
+    setTouched((keys) => new Set([...keys, ...Object.keys(cardFields)]));
+    setFailure(null);
+    setUnchanged(false);
+    setResetKey((n) => n + 1);
+    setEditing(true);
+    scrollTo("fact-card");
+  }
+
   /** 「초기화」 횟수 — 바뀌면 카드 칸을 처음 상태로 다시 그린다 */
   const [resetKey, setResetKey] = useState(0);
   const [sampleResult, setSampleResult] = useState<JudgmentResult | null>(null);
@@ -456,6 +469,7 @@ export function CaseWorkspace({ caseId, live, hasVideo, card, run, loadError, re
                   stale={stale}
                   reportHref={nextHref}
                   onEditCard={busy === null && confirmed && pendingQuestions.length === 0 && !editing ? editCard : undefined}
+                  onApplyScenario={busy === null && confirmed && pendingQuestions.length === 0 && !editing ? applyScenario : undefined}
                   sample={sampleResult !== null}
                 />
               </>

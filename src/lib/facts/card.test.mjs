@@ -24,6 +24,7 @@ import {
   remainingReview,
   resetFields,
   scenarioRows,
+  withScenario,
   swapChartParties,
   withAnswers,
 } from "./card.ts";
@@ -358,6 +359,8 @@ test("scenarioRows는 BE 경우별 도표를 카드 칸 이름·보기 글자로
         // 온 쪽만 다른 두 경우는 한 줄이 되고, 값은 그 칸의 보기 순서다(BE 순서는 오른쪽·왼쪽)
         { key: "relative_position", label: "상대 차가 온 쪽", values: ["왼쪽 도로에서", "오른쪽 도로에서"] },
       ],
+      // 「이 값으로 고치기」는 값이 여럿인 칸에 보기 순서의 첫 값을 넣는다
+      cardFields: { signal_A: "red", signal_B: "green", movement_A: "straight", relative_position: "left" },
     },
     {
       // 참거짓 칸은 그 칸의 보기 글자(예·아니요)로, 빈 제목은 null로
@@ -367,6 +370,7 @@ test("scenarioRows는 BE 경우별 도표를 카드 칸 이름·보기 글자로
         { key: "door_open_A", label: "상대 차 문 열림", values: ["예"] },
         { key: "secondary_collision", label: "앞차가 사고로 정차 중(2차 사고)", values: ["아니요"] },
       ],
+      cardFields: { movement_A: "stopped", door_open_A: "true", secondary_collision: "false" },
     },
   ]);
   // 영상 없이 진행한 카드는 카드 B를 가입자 차로 부른다
@@ -398,4 +402,16 @@ test("scenarioRows는 카드 칸 이름·값이 없는 예전 결과(11/17 정�
   assert.deepEqual(scenarioRows(old), []);
   assert.deepEqual(scenarioRows(undefined), []);
   assert.deepEqual(scenarioRows([]), []);
+});
+
+test("withScenario는 경우의 칸 값을 담당자가 고른 값으로 한 번에 넣고, 카드에 없는 칸은 새로 만든다", () => {
+  const fields = { signal_A: f("unknown", "human_confirmed"), movement_A: f("left_turn"), weather: f("clear") };
+  const next = withScenario(fields, { signal_A: "red", movement_A: "straight", door_open_A: "true" });
+  assert.deepEqual(next.signal_A, pick(fields.signal_A, "red"));
+  assert.deepEqual(next.movement_A, pick(fields.movement_A, "straight"));
+  // 참거짓 칸은 원값 글자를 참거짓으로
+  assert.deepEqual(next.door_open_A, pick(emptyField(), true));
+  // 다른 칸·원래 카드는 그대로
+  assert.equal(next.weather, fields.weather);
+  assert.equal(fields.signal_A.value, "unknown");
 });
