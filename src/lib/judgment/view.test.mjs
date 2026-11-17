@@ -209,6 +209,7 @@ test("판정 사유에서 경우별 도표 글 줄(BE scenario_outcome)은 안�
   const deferred = ["도표 선택 칸 미확인: movement_B", "모르는 칸 값마다 고를 수 있는 도표(기본 과실, 수정요소 전 · 비율 확정 아님):", ...lines];
   assert.deepEqual(splitScenarioLines(deferred), { reasons: deferred.slice(0, 1), scenarioLines: deferred.slice(1) });
   assert.deepEqual(splitScenarioLines(["검수한 도표 근거 없음"]), { reasons: ["검수한 도표 근거 없음"], scenarioLines: [] });
+});
 
 test("workspaceKey — 같은 카드 버전으로 다시 접수해 이전 판단이 돌아오면 key가 그대로다", () => {
   const card = { version: 3, status: "confirmed" };
