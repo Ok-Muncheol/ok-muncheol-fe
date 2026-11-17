@@ -37,7 +37,7 @@ export interface ApiClient {
   getCase(caseId: string): Promise<Record<string, unknown>>;
   /**
    * POST /cases/{id}/restart — 사건을 그 단계의 처음으로 되돌려 저장한다(되돌린 뒤의 사건 요약). 그때까지의 카드·판단·보고서는 지우지 않고
-   * 이력으로 남는다. intake는 접수 단계(카드 없음), judgment는 AI 원본 카드를 확인 전 상태의 새 버전으로 다시 만든 사실 카드 단계다.
+   * 이력으로 남는다. 서류와 면책 체크·협의 과실은 지운다(사건에 하나뿐인 입력이라 남기면 다음 보고서가 이어 쓴다). intake는 접수 단계(카드 없음), judgment는 AI 원본 카드를 확인 전 상태의 새 버전으로 다시 만든 사실 카드 단계다.
    * 분석·판단이 진행 중이면 409 analysis_in_progress·judgment_in_progress, BE DB에 되돌리기 칼럼이 아직 없으면 intake는 503 restart_db_not_ready
    */
   restartCase(caseId: string, stage: "intake" | "judgment"): Promise<CaseSummary>;
