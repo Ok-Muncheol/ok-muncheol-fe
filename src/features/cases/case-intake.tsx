@@ -490,7 +490,7 @@ export function CaseIntake({ sample, existing }: { sample: boolean; existing?: E
             (replacing === "asking" || restarting ? (
               <Notice tone="warning" title="접수 단계로 되돌리고 영상을 다시 올릴까요?">
                 <p className="break-keep">
-                  사건이 접수 단계로 돌아가 저장되고, 되돌린 뒤에는 취소할 수 없어요. 지금까지 확인한 사실 카드와 판단은 이력으로만 남고, 새 영상으로 분석한 사실 카드로 판단을 다시 해요.
+                  사건이 접수 단계로 돌아가 저장되고, 되돌린 뒤에는 취소할 수 없어요. 지금까지 확인한 사실 카드와 판단은 이력으로만 남고, 새 영상으로 분석한 사실 카드로 판단을 다시 해요. 넣어 둔 서류(견적서 · 대물 · 대인 입력)와 면책 체크 · 협의 과실은 지워져요.
                   {existing.approved && " 승인한 검토 보고서도 이력으로 남고, 새 보고서를 다시 승인해야 해요."}
                 </p>
                 {restartProblem && (

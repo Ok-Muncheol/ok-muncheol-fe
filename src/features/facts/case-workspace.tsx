@@ -443,7 +443,7 @@ export function CaseWorkspace({ caseId, head, progress, live, hasVideo, card, ru
         <div className="mb-4">
           <Notice tone="warning" title="판단 단계의 처음으로 되돌릴까요?">
             <p className="break-keep">
-              사실 카드가 AI가 채운 처음 상태로 돌아가 확정이 풀리고, 사건이 판단 단계로 저장돼요. 되돌린 뒤에는 취소할 수 없어요. 지금까지 고친 값과 판단 결과는 이력으로만 남아요.
+              사실 카드가 AI가 채운 처음 상태로 돌아가 확정이 풀리고, 사건이 판단 단계로 저장돼요. 되돌린 뒤에는 취소할 수 없어요. 지금까지 고친 값과 판단 결과는 이력으로만 남아요. 넣어 둔 서류(견적서 · 대물 · 대인 입력)와 면책 체크 · 협의 과실은 지워져요.
               {approved && " 승인한 검토 보고서도 이력으로 남고, 새 보고서를 다시 승인해야 해요."}
             </p>
             {resetProblem && (
